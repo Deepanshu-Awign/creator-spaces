@@ -1,12 +1,13 @@
 
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, User, Heart, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -16,6 +17,22 @@ const Navigation = () => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleFavoritesClick = () => {
+    navigate("/favorites");
+  };
+
+  const handleBookingsClick = () => {
+    navigate("/bookings");
+  };
+
+  const handleProfileClick = () => {
+    navigate("/profile");
+  };
+
+  const handleLoginClick = () => {
+    navigate("/login");
+  };
 
   return (
     <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm shadow-sm z-50">
@@ -44,26 +61,36 @@ const Navigation = () => {
 
           {/* Desktop Auth & User Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/favorites">
-              <Button variant="ghost" size="sm" className="hover:bg-orange-50">
-                <Heart className="w-4 h-4" />
-              </Button>
-            </Link>
-            <Link to="/bookings">
-              <Button variant="ghost" size="sm" className="hover:bg-orange-50">
-                <Calendar className="w-4 h-4" />
-              </Button>
-            </Link>
-            <Link to="/profile">
-              <Button variant="ghost" size="sm" className="hover:bg-orange-50">
-                <User className="w-4 h-4" />
-              </Button>
-            </Link>
-            <Link to="/login">
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-                Sign In
-              </Button>
-            </Link>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="hover:bg-orange-50"
+              onClick={handleFavoritesClick}
+            >
+              <Heart className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="hover:bg-orange-50"
+              onClick={handleBookingsClick}
+            >
+              <Calendar className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="hover:bg-orange-50"
+              onClick={handleProfileClick}
+            >
+              <User className="w-4 h-4" />
+            </Button>
+            <Button 
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+              onClick={handleLoginClick}
+            >
+              Sign In
+            </Button>
           </div>
 
           {/* Mobile menu button */}
@@ -95,24 +122,38 @@ const Navigation = () => {
                 </Link>
               ))}
               <div className="border-t pt-4 flex space-x-2">
-                <Link to="/favorites" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="ghost" size="sm">
-                    <Heart className="w-4 h-4 mr-2" />
-                    Favorites
-                  </Button>
-                </Link>
-                <Link to="/bookings" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="ghost" size="sm">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Bookings
-                  </Button>
-                </Link>
-              </div>
-              <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
-                  Sign In
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    handleFavoritesClick();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  <Heart className="w-4 h-4 mr-2" />
+                  Favorites
                 </Button>
-              </Link>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    handleBookingsClick();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Bookings
+                </Button>
+              </div>
+              <Button 
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                onClick={() => {
+                  handleLoginClick();
+                  setIsMenuOpen(false);
+                }}
+              >
+                Sign In
+              </Button>
             </div>
           </div>
         )}

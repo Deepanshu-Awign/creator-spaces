@@ -24,12 +24,19 @@ interface StudioCardProps {
 const StudioCard = ({ studio }: StudioCardProps) => {
   const navigate = useNavigate();
 
-  const handleViewDetails = () => {
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation();
     navigate(`/studio/${studio.id}`);
   };
 
   const handleCardClick = () => {
     navigate(`/studio/${studio.id}`);
+  };
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log("Added to favorites:", studio.title);
+    // Handle favorite functionality here
   };
 
   return (
@@ -44,10 +51,7 @@ const StudioCard = ({ studio }: StudioCardProps) => {
           variant="ghost"
           size="sm"
           className="absolute top-3 right-3 bg-white/80 hover:bg-white hover:text-red-500 transition-colors"
-          onClick={(e) => {
-            e.stopPropagation();
-            // Handle favorite functionality here
-          }}
+          onClick={handleFavoriteClick}
         >
           <Heart className="w-4 h-4" />
         </Button>
@@ -103,10 +107,7 @@ const StudioCard = ({ studio }: StudioCardProps) => {
           <Button
             size="sm"
             className="bg-orange-500 hover:bg-orange-600 text-white"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleViewDetails();
-            }}
+            onClick={handleViewDetails}
           >
             View Details
           </Button>
