@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Search, Filter, MapPin, Star, Grid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,12 @@ const Studios = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [priceRange, setPriceRange] = useState([1000, 10000]);
   const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState("");
+  const [selectedStudioType, setSelectedStudioType] = useState("");
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [minRating, setMinRating] = useState<number[]>([]);
+  const [sortBy, setSortBy] = useState("");
 
   const mockStudios = [
     {
@@ -20,66 +26,78 @@ const Studios = () => {
       title: "Downtown Podcast Studio",
       location: "Mumbai, Maharashtra",
       price: "₹2,500/hour",
+      priceValue: 2500,
       rating: 4.8,
       reviewCount: 124,
       image: "/placeholder.svg",
       tags: ["Hot Selling", "Verified"],
-      amenities: ["Soundproof", "Professional Mics", "Editing Suite"]
+      amenities: ["Soundproof", "Professional Mics", "Editing Suite"],
+      type: "podcast"
     },
     {
       id: 2,
       title: "Creative Photography Loft",
       location: "Bangalore, Karnataka",
       price: "₹3,200/hour",
+      priceValue: 3200,
       rating: 4.9,
       reviewCount: 89,
       image: "/placeholder.svg",
       tags: ["Trending", "Popular"],
-      amenities: ["Natural Light", "Props Available", "Backdrop"]
+      amenities: ["Natural Light", "Props Available", "Backdrop"],
+      type: "photography"
     },
     {
       id: 3,
       title: "Video Production House",
       location: "Delhi, NCR",
       price: "₹4,500/hour",
+      priceValue: 4500,
       rating: 4.7,
       reviewCount: 156,
       image: "/placeholder.svg",
       tags: ["Premium", "Featured"],
-      amenities: ["Green Screen", "4K Cameras", "Lighting Kit"]
+      amenities: ["Green Screen", "4K Cameras", "Lighting Kit"],
+      type: "video"
     },
     {
       id: 4,
       title: "Modern Meeting Studio",
       location: "Pune, Maharashtra",
       price: "₹1,800/hour",
+      priceValue: 1800,
       rating: 4.6,
       reviewCount: 67,
       image: "/placeholder.svg",
       tags: ["Budget Friendly"],
-      amenities: ["AC", "Projector", "Whiteboard"]
+      amenities: ["AC", "Projector", "Whiteboard"],
+      type: "meeting"
     },
     {
       id: 5,
       title: "Music Recording Studio",
       location: "Chennai, Tamil Nadu",
       price: "₹5,200/hour",
+      priceValue: 5200,
       rating: 4.9,
       reviewCount: 203,
       image: "/placeholder.svg",
       tags: ["Premium", "Top Rated"],
-      amenities: ["Acoustic Treatment", "Mixing Console", "Instruments"]
+      amenities: ["Acoustic Treatment", "Mixing Console", "Instruments"],
+      type: "music"
     },
     {
       id: 6,
       title: "Content Creator Space",
       location: "Hyderabad, Telangana",
       price: "₹2,800/hour",
+      priceValue: 2800,
       rating: 4.7,
       reviewCount: 91,
       image: "/placeholder.svg",
       tags: ["Popular", "New"],
-      amenities: ["Ring Lights", "Tripods", "Backdrops"]
+      amenities: ["Ring Lights", "Tripods", "Backdrops"],
+      type: "content"
     }
   ];
 
@@ -97,13 +115,118 @@ const Studios = () => {
   ];
 
   const studioTypes = [
-    "Podcast Studio",
-    "Photography Studio",
-    "Video Production",
-    "Meeting Room",
-    "Music Studio",
-    "Content Creation"
+    { value: "podcast", label: "Podcast Studio" },
+    { value: "photography", label: "Photography Studio" },
+    { value: "video", label: "Video Production" },
+    { value: "meeting", label: "Meeting Room" },
+    { value: "music", label: "Music Studio" },
+    { value: "content", label: "Content Creation" }
   ];
+
+  const locations = [
+    { value: "mumbai", label: "Mumbai" },
+    { value: "bangalore", label: "Bangalore" },
+    { value: "delhi", label: "Delhi" },
+    { value: "pune", label: "Pune" },
+    { value: "chennai", label: "Chennai" },
+    { value: "hyderabad", label: "Hyderabad" }
+  ];
+
+  const handleAmenityChange = (amenity: string, checked: boolean) => {
+    if (checked) {
+      setSelectedAmenities(prev => [...prev, amenity]);
+    } else {
+      setSelectedAmenities(prev => prev.filter(a => a !== amenity));
+    }
+  };
+
+  const handleRatingChange = (rating: number, checked: boolean) => {
+    if (checked) {
+      setMinRating(prev => [...prev, rating]);
+    } else {
+      setMinRating(prev => prev.filter(r => r !== rating));
+    }
+  };
+
+  const filteredStudios = useMemo(() => {
+    let filtered = mockStudios.filter(studio => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        if (!studio.title.toLowerCase().includes(query) &&
+            !studio.location.toLowerCase().includes(query) &&
+            !studio.type.toLowerCase().includes(query)) {
+          return false;
+        }
+      }
+
+      // Location filter
+      if (selectedLocation) {
+        if (!studio.location.toLowerCase().includes(selectedLocation)) {
+          return false;
+        }
+      }
+
+      // Studio type filter
+      if (selectedStudioType) {
+        if (studio.type !== selectedStudioType) {
+          return false;
+        }
+      }
+
+      // Price range filter
+      if (studio.priceValue < priceRange[0] || studio.priceValue > priceRange[1]) {
+        return false;
+      }
+
+      // Amenities filter
+      if (selectedAmenities.length > 0) {
+        if (!selectedAmenities.some(amenity => studio.amenities.includes(amenity))) {
+          return false;
+        }
+      }
+
+      // Rating filter
+      if (minRating.length > 0) {
+        const maxRequiredRating = Math.max(...minRating);
+        if (studio.rating < maxRequiredRating) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Sort filtered results
+    if (sortBy) {
+      filtered.sort((a, b) => {
+        switch (sortBy) {
+          case "price-low":
+            return a.priceValue - b.priceValue;
+          case "price-high":
+            return b.priceValue - a.priceValue;
+          case "rating":
+            return b.rating - a.rating;
+          case "popular":
+            return b.reviewCount - a.reviewCount;
+          default:
+            return 0;
+        }
+      });
+    }
+
+    return filtered;
+  }, [mockStudios, searchQuery, selectedLocation, selectedStudioType, priceRange, selectedAmenities, minRating, sortBy]);
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedLocation("");
+    setSelectedStudioType("");
+    setPriceRange([1000, 10000]);
+    setSelectedAmenities([]);
+    setMinRating([]);
+    setSortBy("");
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -125,32 +248,33 @@ const Studios = () => {
                 <Input
                   placeholder="Search studios by name, location, or type..."
                   className="pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               
               <div className="flex items-center gap-2">
-                <Select>
+                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Location" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="mumbai">Mumbai</SelectItem>
-                    <SelectItem value="bangalore">Bangalore</SelectItem>
-                    <SelectItem value="delhi">Delhi</SelectItem>
-                    <SelectItem value="pune">Pune</SelectItem>
-                    <SelectItem value="chennai">Chennai</SelectItem>
-                    <SelectItem value="hyderabad">Hyderabad</SelectItem>
+                    {locations.map((location) => (
+                      <SelectItem key={location.value} value={location.value}>
+                        {location.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
 
-                <Select>
+                <Select value={selectedStudioType} onValueChange={setSelectedStudioType}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Studio Type" />
                   </SelectTrigger>
                   <SelectContent>
                     {studioTypes.map((type) => (
-                      <SelectItem key={type} value={type.toLowerCase()}>
-                        {type}
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -191,7 +315,12 @@ const Studios = () => {
             {/* Filters Sidebar */}
             {showFilters && (
               <div className="w-80 bg-white rounded-lg shadow-sm p-6 h-fit">
-                <h3 className="font-semibold text-lg mb-4">Filters</h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-semibold text-lg">Filters</h3>
+                  <Button variant="ghost" size="sm" onClick={clearFilters}>
+                    Clear All
+                  </Button>
+                </div>
                 
                 {/* Price Range */}
                 <div className="mb-6">
@@ -216,7 +345,11 @@ const Studios = () => {
                   <div className="space-y-2">
                     {[4.5, 4.0, 3.5, 3.0].map((rating) => (
                       <div key={rating} className="flex items-center space-x-2">
-                        <Checkbox id={`rating-${rating}`} />
+                        <Checkbox 
+                          id={`rating-${rating}`}
+                          checked={minRating.includes(rating)}
+                          onCheckedChange={(checked) => handleRatingChange(rating, !!checked)}
+                        />
                         <label htmlFor={`rating-${rating}`} className="text-sm flex items-center">
                           <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
                           {rating}+ stars
@@ -232,7 +365,11 @@ const Studios = () => {
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {amenities.map((amenity) => (
                       <div key={amenity} className="flex items-center space-x-2">
-                        <Checkbox id={amenity} />
+                        <Checkbox 
+                          id={amenity}
+                          checked={selectedAmenities.includes(amenity)}
+                          onCheckedChange={(checked) => handleAmenityChange(amenity, !!checked)}
+                        />
                         <label htmlFor={amenity} className="text-sm">
                           {amenity}
                         </label>
@@ -240,10 +377,6 @@ const Studios = () => {
                     ))}
                   </div>
                 </div>
-
-                <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
-                  Apply Filters
-                </Button>
               </div>
             )}
 
@@ -251,9 +384,9 @@ const Studios = () => {
             <div className="flex-1">
               <div className="mb-4 flex justify-between items-center">
                 <p className="text-slate-600">
-                  Showing {mockStudios.length} studios
+                  Showing {filteredStudios.length} studios
                 </p>
-                <Select>
+                <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
@@ -262,7 +395,6 @@ const Studios = () => {
                     <SelectItem value="price-low">Price: Low to High</SelectItem>
                     <SelectItem value="price-high">Price: High to Low</SelectItem>
                     <SelectItem value="rating">Highest Rated</SelectItem>
-                    <SelectItem value="newest">Newest First</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -272,10 +404,19 @@ const Studios = () => {
                   ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                   : "space-y-4"
               }>
-                {mockStudios.map((studio) => (
+                {filteredStudios.map((studio) => (
                   <StudioCard key={studio.id} studio={studio} />
                 ))}
               </div>
+
+              {filteredStudios.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-slate-500 text-lg">No studios found matching your criteria</p>
+                  <Button variant="outline" onClick={clearFilters} className="mt-4">
+                    Clear Filters
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>

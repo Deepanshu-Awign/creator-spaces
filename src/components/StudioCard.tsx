@@ -3,6 +3,7 @@ import { Heart, Star, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 
 interface Studio {
   id: number;
@@ -21,9 +22,19 @@ interface StudioCardProps {
 }
 
 const StudioCard = ({ studio }: StudioCardProps) => {
+  const navigate = useNavigate();
+
+  const handleViewDetails = () => {
+    navigate(`/studio/${studio.id}`);
+  };
+
+  const handleCardClick = () => {
+    navigate(`/studio/${studio.id}`);
+  };
+
   return (
-    <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
-      <div className="relative">
+    <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
+      <div className="relative" onClick={handleCardClick}>
         <img
           src={studio.image}
           alt={studio.title}
@@ -33,6 +44,10 @@ const StudioCard = ({ studio }: StudioCardProps) => {
           variant="ghost"
           size="sm"
           className="absolute top-3 right-3 bg-white/80 hover:bg-white hover:text-red-500 transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            // Handle favorite functionality here
+          }}
         >
           <Heart className="w-4 h-4" />
         </Button>
@@ -88,6 +103,10 @@ const StudioCard = ({ studio }: StudioCardProps) => {
           <Button
             size="sm"
             className="bg-orange-500 hover:bg-orange-600 text-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewDetails();
+            }}
           >
             View Details
           </Button>
