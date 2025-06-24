@@ -1,24 +1,42 @@
 
-import { useState } from "react";
-import { User, Mail, Phone, MapPin, Calendar, Heart, Star, Edit } from "lucide-react";
+import { useState, useEffect } from "react";
+import { User, Mail, Phone, MapPin, Calendar, Heart, Star, Edit, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 
-const Profile = () => {
-  const [user] = useState({
-    name: "Priya Sharma",
-    email: "priya.sharma@example.com",
-    phone: "+91 98765 43210",
-    location: "Mumbai, Maharashtra",
-    joinDate: "March 2023",
-    avatar: "/placeholder.svg",
-    verified: true
-  });
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  phone: string | null;
+  location: string | null;
+  avatar_url: string | null;
+  created_at: string;
+}
 
+const Profile = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    full_name: '',
+    phone: '',
+    location: ''
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Mock bookings and favorites for now (will be real data in Phase 3)
   const bookings = [
     {
       id: 1,
@@ -28,26 +46,6 @@ const Profile = () => {
       duration: "2 hours",
       status: "confirmed",
       price: "₹5,000",
-      image: "/placeholder.svg"
-    },
-    {
-      id: 2,
-      studio: "Creative Photography Loft",
-      date: "2024-01-08",
-      time: "10:00",
-      duration: "4 hours",
-      status: "completed",
-      price: "₹12,800",
-      image: "/placeholder.svg"
-    },
-    {
-      id: 3,
-      studio: "Music Recording Studio",
-      date: "2023-12-20",
-      time: "16:00",
-      duration: "3 hours",
-      status: "completed",
-      price: "₹15,600",
       image: "/placeholder.svg"
     }
   ];
@@ -60,16 +58,84 @@ const Profile = () => {
       price: "₹2,500/hour",
       rating: 4.8,
       image: "/placeholder.svg"
-    },
-    {
-      id: 2,
-      title: "Creative Photography Loft",
-      location: "Bangalore, Karnataka",
-      price: "₹3,200/hour",
-      rating: 4.9,
-      image: "/placeholder.svg"
     }
   ];
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user?.id)
+        .single();
+
+      if (error) throw error;
+
+      setProfile(data);
+      setEditForm({
+        full_name: data.full_name || '',
+        phone: data.phone || '',
+        location: data.location || ''
+      });
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load profile information."
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editForm.full_name || null,
+          phone: editForm.phone || null,
+          location: editForm.location || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setProfile(prev => prev ? {
+        ...prev,
+        full_name: editForm.full_name || null,
+        phone: editForm.phone || null,
+        location: editForm.location || null
+      } : null);
+
+      setIsEditing(false);
+      toast({
+        title: "Success",
+        description: "Profile updated successfully!"
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update profile. Please try again."
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -84,6 +150,32 @@ const Profile = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Navigation />
+        <div className="pt-20 px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center">Loading profile...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Navigation />
+        <div className="pt-20 px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center">Profile not found</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Navigation />
@@ -95,45 +187,117 @@ const Profile = () => {
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
                 <Avatar className="w-32 h-32">
-                  <AvatarImage src={user.avatar} />
+                  <AvatarImage src={profile.avatar_url || undefined} />
                   <AvatarFallback className="text-2xl">
-                    {user.name.split(' ').map(n => n[0]).join('')}
+                    {profile.full_name 
+                      ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
+                      : profile.email.slice(0, 2).toUpperCase()
+                    }
                   </AvatarFallback>
                 </Avatar>
                 
                 <div className="flex-1 text-center md:text-left">
                   <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                    <h1 className="text-3xl font-bold text-slate-800">{user.name}</h1>
-                    {user.verified && (
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        Verified
-                      </Badge>
-                    )}
+                    <h1 className="text-3xl font-bold text-slate-800">
+                      {profile.full_name || 'User'}
+                    </h1>
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      Verified
+                    </Badge>
                   </div>
                   
-                  <div className="space-y-2 text-slate-600 mb-6">
-                    <div className="flex items-center justify-center md:justify-start">
-                      <Mail className="w-4 h-4 mr-2" />
-                      {user.email}
+                  {isEditing ? (
+                    <div className="space-y-4 mb-6">
+                      <div>
+                        <Label htmlFor="full_name">Full Name</Label>
+                        <Input
+                          id="full_name"
+                          value={editForm.full_name}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
+                          placeholder="Enter your full name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="phone">Phone</Label>
+                        <Input
+                          id="phone"
+                          value={editForm.phone}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                          placeholder="Enter your phone number"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="location">Location</Label>
+                        <Input
+                          id="location"
+                          value={editForm.location}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
+                          placeholder="Enter your location"
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-center justify-center md:justify-start">
-                      <Phone className="w-4 h-4 mr-2" />
-                      {user.phone}
+                  ) : (
+                    <div className="space-y-2 text-slate-600 mb-6">
+                      <div className="flex items-center justify-center md:justify-start">
+                        <Mail className="w-4 h-4 mr-2" />
+                        {profile.email}
+                      </div>
+                      {profile.phone && (
+                        <div className="flex items-center justify-center md:justify-start">
+                          <Phone className="w-4 h-4 mr-2" />
+                          {profile.phone}
+                        </div>
+                      )}
+                      {profile.location && (
+                        <div className="flex items-center justify-center md:justify-start">
+                          <MapPin className="w-4 h-4 mr-2" />
+                          {profile.location}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-center md:justify-start">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Member since {new Date(profile.created_at).toLocaleDateString('en-US', { 
+                          month: 'long', 
+                          year: 'numeric' 
+                        })}
+                      </div>
                     </div>
-                    <div className="flex items-center justify-center md:justify-start">
-                      <MapPin className="w-4 h-4 mr-2" />
-                      {user.location}
-                    </div>
-                    <div className="flex items-center justify-center md:justify-start">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Member since {user.joinDate}
-                    </div>
-                  </div>
+                  )}
                   
-                  <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Profile
-                  </Button>
+                  {isEditing ? (
+                    <div className="flex space-x-2">
+                      <Button 
+                        onClick={handleSaveProfile}
+                        disabled={saving}
+                        className="bg-orange-500 hover:bg-orange-600 text-white"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        {saving ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setIsEditing(false);
+                          setEditForm({
+                            full_name: profile.full_name || '',
+                            phone: profile.phone || '',
+                            location: profile.location || ''
+                          });
+                        }}
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      onClick={() => setIsEditing(true)}
+                      className="bg-orange-500 hover:bg-orange-600 text-white"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -173,16 +337,6 @@ const Profile = () => {
                           <Badge className={getStatusColor(booking.status)}>
                             {booking.status}
                           </Badge>
-                          {booking.status === "confirmed" && (
-                            <div className="mt-2 space-x-2">
-                              <Button variant="outline" size="sm">
-                                Reschedule
-                              </Button>
-                              <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                                Cancel
-                              </Button>
-                            </div>
-                          )}
                         </div>
                       </div>
                     ))}

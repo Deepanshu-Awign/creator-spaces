@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Mail, ArrowRight, Eye, EyeOff, User } from "lucide-react";
+import { Mail, ArrowRight, Eye, EyeOff, User, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,14 +15,13 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [otp, setOtp] = useState("");
-  const [step, setStep] = useState<"auth" | "otp">("auth");
+  const [step, setStep] = useState<"auth" | "magic-link-sent">("auth");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("signin");
   
   const { toast } = useToast();
-  const { user, signIn, signUp, sendOtp, verifyOtp } = useAuth();
+  const { user, signIn, signUp, sendMagicLink } = useAuth();
 
   // Redirect if already authenticated
   if (user) {
@@ -82,47 +81,23 @@ const Login = () => {
     }
   };
 
-  const handleSendOTP = async (e: React.FormEvent) => {
+  const handleSendMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
-      const { error } = await sendOtp(email);
+      const { error } = await sendMagicLink(email);
       if (error) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: error.message || "Failed to send OTP. Please try again.",
+          description: error.message || "Failed to send magic link. Please try again.",
         });
       } else {
-        setStep("otp");
+        setStep("magic-link-sent");
         toast({
-          title: "OTP Sent",
-          description: "Please check your email for the verification code.",
-        });
-      }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      const { error } = await verifyOtp(email, otp);
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Verification Failed",
-          description: error.message || "Invalid OTP. Please try again.",
+          title: "Magic Link Sent!",
+          description: "Please check your email and click the link to sign in.",
         });
       }
     } catch (error) {
@@ -147,14 +122,14 @@ const Login = () => {
               Welcome to BookMyStudio
             </h1>
             <p className="text-slate-600">
-              {step === "otp" ? "Verify your email" : "Sign in to access your bookings and favorites"}
+              {step === "magic-link-sent" ? "Check your email" : "Sign in to access your bookings and favorites"}
             </p>
           </div>
 
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="text-center">
-                {step === "otp" ? "Verify OTP" : "Authentication"}
+                {step === "magic-link-sent" ? "Magic Link Sent!" : "Authentication"}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -163,7 +138,7 @@ const Login = () => {
                   <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="signin">Sign In</TabsTrigger>
                     <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                    <TabsTrigger value="otp">OTP Login</TabsTrigger>
+                    <TabsTrigger value="magic-link">Magic Link</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="signin">
@@ -290,14 +265,14 @@ const Login = () => {
                     </form>
                   </TabsContent>
 
-                  <TabsContent value="otp">
-                    <form onSubmit={handleSendOTP} className="space-y-4">
+                  <TabsContent value="magic-link">
+                    <form onSubmit={handleSendMagicLink} className="space-y-4">
                       <div>
-                        <Label htmlFor="otp-email">Email Address</Label>
+                        <Label htmlFor="magic-email">Email Address</Label>
                         <div className="relative mt-2">
                           <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                           <Input
-                            id="otp-email"
+                            id="magic-email"
                             type="email"
                             placeholder="Enter your email"
                             value={email}
@@ -313,70 +288,59 @@ const Login = () => {
                         className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3"
                         disabled={isLoading || !email}
                       >
-                        {isLoading ? "Sending OTP..." : (
+                        {isLoading ? "Sending Link..." : (
                           <>
-                            Send OTP
+                            Send Magic Link
                             <ArrowRight className="w-5 h-5 ml-2" />
                           </>
                         )}
                       </Button>
 
                       <p className="text-xs text-slate-500 text-center">
-                        We'll send you a one-time password to verify your email address.
+                        We'll send you a secure link to sign in without a password.
                       </p>
                     </form>
                   </TabsContent>
                 </Tabs>
               ) : (
-                <form onSubmit={handleVerifyOTP} className="space-y-6">
+                <div className="text-center space-y-6">
+                  <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                    <Check className="w-8 h-8 text-green-600" />
+                  </div>
+                  
                   <div>
-                    <Label htmlFor="otp">Enter OTP</Label>
-                    <p className="text-sm text-slate-600 mb-2">
-                      We sent a 6-digit code to {email}
+                    <h3 className="text-lg font-semibold text-slate-800 mb-2">
+                      Check Your Email
+                    </h3>
+                    <p className="text-slate-600 mb-4">
+                      We sent a magic link to <strong>{email}</strong>
                     </p>
-                    <Input
-                      id="otp"
-                      type="text"
-                      placeholder="000000"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      maxLength={6}
-                      className="text-center text-lg tracking-widest"
-                      required
-                    />
+                    <p className="text-sm text-slate-500">
+                      Click the link in your email to sign in. The link will expire in 1 hour.
+                    </p>
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3"
-                    disabled={isLoading || otp.length !== 6}
-                  >
-                    {isLoading ? "Verifying..." : "Verify & Sign In"}
-                  </Button>
-
-                  <div className="text-center space-y-2">
-                    <p className="text-sm text-slate-600">
-                      Didn't receive the code?
-                    </p>
+                  <div className="space-y-2">
                     <Button
                       type="button"
                       variant="ghost"
-                      onClick={handleSendOTP}
+                      onClick={() => handleSendMagicLink(new Event('submit') as any)}
                       className="text-orange-500 hover:text-orange-600"
                       disabled={isLoading}
                     >
-                      Resend OTP
+                      Resend Magic Link
                     </Button>
+                    <br />
                     <Button
                       type="button"
                       variant="ghost"
                       onClick={() => setStep("auth")}
-                      className="text-slate-500 hover:text-slate-600 ml-4"
+                      className="text-slate-500 hover:text-slate-600"
                     >
-                      Change Email
+                      Back to Sign In
                     </Button>
                   </div>
-                </form>
+                </div>
               )}
             </CardContent>
           </Card>

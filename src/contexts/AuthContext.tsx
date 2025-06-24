@@ -10,8 +10,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  sendOtp: (email: string) => Promise<{ error: any }>;
-  verifyOtp: (email: string, otp: string) => Promise<{ error: any }>;
+  sendMagicLink: (email: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -105,7 +104,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const sendOtp = async (email: string) => {
+  const sendMagicLink = async (email: string) => {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -117,28 +116,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (error) throw error;
       return { error: null };
     } catch (error) {
-      console.error('OTP send error:', error);
-      return { error };
-    }
-  };
-
-  const verifyOtp = async (email: string, otp: string) => {
-    try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token: otp,
-        type: 'email'
-      });
-      
-      if (error) throw error;
-      
-      if (data.user) {
-        window.location.href = '/';
-      }
-      
-      return { error: null };
-    } catch (error) {
-      console.error('OTP verify error:', error);
+      console.error('Magic link send error:', error);
       return { error };
     }
   };
@@ -164,8 +142,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signIn,
     signUp,
     signOut,
-    sendOtp,
-    verifyOtp,
+    sendMagicLink,
   };
 
   return (
