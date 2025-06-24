@@ -1,13 +1,22 @@
 
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User } from "lucide-react";
+import { Menu, X, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -24,6 +33,10 @@ const Navigation = () => {
 
   const handleLoginClick = () => {
     navigate("/login");
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   return (
@@ -53,20 +66,40 @@ const Navigation = () => {
 
           {/* Desktop Auth & User Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="hover:bg-orange-50"
-              onClick={handleProfileClick}
-            >
-              <User className="w-4 h-4" />
-            </Button>
-            <Button 
-              className="bg-orange-500 hover:bg-orange-600 text-white"
-              onClick={handleLoginClick}
-            >
-              Sign In
-            </Button>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="hover:bg-orange-50">
+                    <User className="w-4 h-4 mr-2" />
+                    {user.email}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleProfileClick}>
+                    <User className="w-4 h-4 mr-2" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/bookings")}>
+                    My Bookings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/favorites")}>
+                    Favorites
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button 
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+                onClick={handleLoginClick}
+              >
+                Sign In
+              </Button>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -97,15 +130,42 @@ const Navigation = () => {
                   {item.name}
                 </Link>
               ))}
-              <Button 
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white mt-4"
-                onClick={() => {
-                  handleLoginClick();
-                  setIsMenuOpen(false);
-                }}
-              >
-                Sign In
-              </Button>
+              {user ? (
+                <div className="space-y-2 pt-2 border-t">
+                  <Button 
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      handleProfileClick();
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Profile
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    className="w-full justify-start text-red-600 hover:text-red-700"
+                    onClick={() => {
+                      handleSignOut();
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white mt-4"
+                  onClick={() => {
+                    handleLoginClick();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  Sign In
+                </Button>
+              )}
             </div>
           </div>
         )}
