@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, Heart, Calendar } from "lucide-react";
+import { Menu, X, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Navigation = () => {
@@ -18,14 +18,6 @@ const Navigation = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const handleFavoritesClick = () => {
-    navigate("/favorites");
-  };
-
-  const handleBookingsClick = () => {
-    navigate("/bookings");
-  };
-
   const handleProfileClick = () => {
     navigate("/profile");
   };
@@ -40,7 +32,7 @@ const Navigation = () => {
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center">
             <span className="text-2xl font-bold text-slate-800">
-              Book<span className="text-orange-500">MyStage</span>
+              Book<span className="text-orange-500">MyStudio</span>
             </span>
           </Link>
 
@@ -61,22 +53,6 @@ const Navigation = () => {
 
           {/* Desktop Auth & User Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="hover:bg-orange-50"
-              onClick={handleFavoritesClick}
-            >
-              <Heart className="w-4 h-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="hover:bg-orange-50"
-              onClick={handleBookingsClick}
-            >
-              <Calendar className="w-4 h-4" />
-            </Button>
             <Button 
               variant="ghost" 
               size="sm" 
@@ -121,32 +97,8 @@ const Navigation = () => {
                   {item.name}
                 </Link>
               ))}
-              <div className="border-t pt-4 flex space-x-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    handleFavoritesClick();
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  <Heart className="w-4 h-4 mr-2" />
-                  Favorites
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    handleBookingsClick();
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Bookings
-                </Button>
-              </div>
               <Button 
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white mt-4"
                 onClick={() => {
                   handleLoginClick();
                   setIsMenuOpen(false);

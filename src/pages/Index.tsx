@@ -1,10 +1,10 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, MapPin, Calendar, Users, Camera, Mic, Video, Heart } from "lucide-react";
+import { Search, MapPin, Calendar, Users, Camera, Mic, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import StudioCard from "@/components/StudioCard";
 
@@ -95,9 +95,11 @@ const Index = () => {
                   className="border-0 focus-visible:ring-0 text-lg"
                 />
               </div>
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-6 rounded-full text-lg font-semibold transition-all hover:scale-105">
-                Search Studios
-              </Button>
+              <div className="flex justify-center">
+                <Button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-6 rounded-full text-lg font-semibold transition-all hover:scale-105">
+                  Search Studios
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -145,7 +147,7 @@ const Index = () => {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold mb-6">Ready to Create Something Amazing?</h2>
           <p className="text-xl mb-8 text-blue-100">
-            Join thousands of creators who trust BookMyStage for their perfect studio space.
+            Join thousands of creators who trust BookMyStudio for their perfect studio space.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/studios">
