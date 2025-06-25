@@ -7,8 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
+import { useBookings } from "@/hooks/useBookings";
+import { useNavigate } from "react-router-dom";
 
 interface Studio {
+  id: number;
   price: number;
   title: string;
 }
@@ -18,10 +22,14 @@ interface BookingFormProps {
 }
 
 const BookingForm = ({ studio }: BookingFormProps) => {
+  const { user } = useAuth();
+  const { createBooking } = useBookings();
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [duration, setDuration] = useState("1");
   const [guests, setGuests] = useState("1");
+  const [isBooking, setIsBooking] = useState(false);
 
   const calculateTotal = () => {
     const hours = parseInt(duration);
@@ -42,6 +50,38 @@ const BookingForm = ({ studio }: BookingFormProps) => {
     "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", 
     "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
   ];
+
+  const handleBookNow = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (!selectedDate || !startTime) {
+      return;
+    }
+
+    setIsBooking(true);
+    try {
+      const booking = await createBooking({
+        studioId: studio.id.toString(),
+        date: selectedDate,
+        startTime: startTime,
+        duration: parseInt(duration),
+        guestCount: parseInt(guests),
+        totalPrice: pricing.total
+      });
+
+      if (booking) {
+        // Navigate to profile to see the booking
+        navigate('/profile');
+      }
+    } catch (error) {
+      console.error('Booking error:', error);
+    } finally {
+      setIsBooking(false);
+    }
+  };
 
   return (
     <Card className="shadow-lg">
@@ -153,14 +193,15 @@ const BookingForm = ({ studio }: BookingFormProps) => {
         {/* Booking Button */}
         <Button 
           className="w-full bg-orange-500 hover:bg-orange-600 text-white py-6 text-lg font-semibold"
-          disabled={!selectedDate || !startTime}
+          disabled={!selectedDate || !startTime || isBooking}
+          onClick={handleBookNow}
         >
           <CreditCard className="w-5 h-5 mr-2" />
-          Book Now
+          {isBooking ? 'Processing...' : user ? 'Book Now' : 'Login to Book'}
         </Button>
 
         <p className="text-sm text-slate-500 text-center">
-          You won't be charged yet. Review your booking details first.
+          {user ? "You won't be charged yet. Review your booking details first." : "Please login to continue with booking."}
         </p>
       </CardContent>
     </Card>

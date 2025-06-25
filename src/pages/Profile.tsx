@@ -11,7 +11,10 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
+import { useFavorites } from "@/hooks/useFavorites";
+import { useBookings } from "@/hooks/useBookings";
 
 interface UserProfile {
   id: string;
@@ -26,6 +29,7 @@ interface UserProfile {
 const Profile = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -36,30 +40,8 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Mock bookings and favorites for now (will be real data in Phase 3)
-  const bookings = [
-    {
-      id: 1,
-      studio: "Downtown Podcast Studio",
-      date: "2024-01-15",
-      time: "14:00",
-      duration: "2 hours",
-      status: "confirmed",
-      price: "₹5,000",
-      image: "/placeholder.svg"
-    }
-  ];
-
-  const favorites = [
-    {
-      id: 1,
-      title: "Downtown Podcast Studio",
-      location: "Mumbai, Maharashtra",
-      price: "₹2,500/hour",
-      rating: 4.8,
-      image: "/placeholder.svg"
-    }
-  ];
+  const { favorites, loading: favoritesLoading, removeFavorite } = useFavorites();
+  const { bookings, loading: bookingsLoading } = useBookings();
 
   useEffect(() => {
     if (user) {
@@ -112,7 +94,6 @@ const Profile = () => {
 
       if (error) throw error;
 
-      // Update local state
       setProfile(prev => prev ? {
         ...prev,
         full_name: editForm.full_name || null,
@@ -148,6 +129,19 @@ const Profile = () => {
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const handleStudioClick = (studioId: string) => {
+    navigate(`/studio/${studioId}`);
+  };
+
+  const handleBookNow = (studioId: string) => {
+    navigate(`/studio/${studioId}`);
+  };
+
+  const handleRemoveFavorite = async (studioId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await removeFavorite(studioId);
   };
 
   if (loading) {
@@ -317,30 +311,38 @@ const Profile = () => {
                   <CardTitle>My Bookings</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {bookings.map((booking) => (
-                      <div key={booking.id} className="flex items-center space-x-4 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-                        <img
-                          src={booking.image}
-                          alt={booking.studio}
-                          className="w-16 h-16 object-cover rounded-lg"
-                        />
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-slate-800">{booking.studio}</h3>
-                          <div className="text-sm text-slate-600 space-y-1">
-                            <p>{new Date(booking.date).toLocaleDateString()} at {booking.time}</p>
-                            <p>Duration: {booking.duration}</p>
-                            <p className="font-medium text-slate-800">{booking.price}</p>
+                  {bookingsLoading ? (
+                    <div className="text-center py-8">Loading bookings...</div>
+                  ) : bookings.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      No bookings found. Start by booking your first studio!
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {bookings.map((booking) => (
+                        <div key={booking.id} className="flex items-center space-x-4 p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                          <img
+                            src={booking.image}
+                            alt={booking.studio}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-slate-800">{booking.studio}</h3>
+                            <div className="text-sm text-slate-600 space-y-1">
+                              <p>{new Date(booking.date).toLocaleDateString()} at {booking.time}</p>
+                              <p>Duration: {booking.duration}</p>
+                              <p className="font-medium text-slate-800">{booking.price}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <Badge className={getStatusColor(booking.status)}>
+                              {booking.status}
+                            </Badge>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <Badge className={getStatusColor(booking.status)}>
-                            {booking.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -355,39 +357,63 @@ const Profile = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {favorites.map((studio) => (
-                      <div key={studio.id} className="border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                        <img
-                          src={studio.image}
-                          alt={studio.title}
-                          className="w-full h-40 object-cover"
-                        />
-                        <div className="p-4">
-                          <h3 className="font-semibold text-slate-800 mb-2">{studio.title}</h3>
-                          <div className="flex items-center text-sm text-slate-600 mb-2">
-                            <MapPin className="w-4 h-4 mr-1" />
-                            {studio.location}
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-                              <span className="text-sm font-medium">{studio.rating}</span>
+                  {favoritesLoading ? (
+                    <div className="text-center py-8">Loading favorites...</div>
+                  ) : favorites.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      No favorite studios yet. Browse studios and add them to your favorites!
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {favorites.map((studio) => (
+                        <div 
+                          key={studio.id} 
+                          className="border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                          onClick={() => handleStudioClick(studio.id)}
+                        >
+                          <img
+                            src={studio.image}
+                            alt={studio.title}
+                            className="w-full h-40 object-cover"
+                          />
+                          <div className="p-4">
+                            <h3 className="font-semibold text-slate-800 mb-2">{studio.title}</h3>
+                            <div className="flex items-center text-sm text-slate-600 mb-2">
+                              <MapPin className="w-4 h-4 mr-1" />
+                              {studio.location}
                             </div>
-                            <span className="font-semibold text-slate-800">{studio.price}</span>
-                          </div>
-                          <div className="mt-4 flex space-x-2">
-                            <Button size="sm" className="flex-1 bg-orange-500 hover:bg-orange-600 text-white">
-                              Book Now
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <Heart className="w-4 h-4 text-red-500 fill-current" />
-                            </Button>
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center">
+                                <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
+                                <span className="text-sm font-medium">{studio.rating}</span>
+                                <span className="text-sm text-slate-500 ml-1">({studio.reviewCount} reviews)</span>
+                              </div>
+                              <span className="font-semibold text-slate-800">{studio.price}</span>
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button 
+                                size="sm" 
+                                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleBookNow(studio.id);
+                                }}
+                              >
+                                Book Now
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={(e) => handleRemoveFavorite(studio.id, e)}
+                              >
+                                <Heart className="w-4 h-4 text-red-500 fill-current" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
