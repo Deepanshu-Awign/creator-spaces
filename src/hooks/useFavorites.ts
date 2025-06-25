@@ -89,7 +89,9 @@ export const useFavorites = () => {
 
         if (error) throw error;
 
+        // Update local state immediately for better UX
         setFavorites(prev => prev.filter(fav => fav.id !== studioId));
+        
         toast({
           title: "Removed from favorites",
           description: "Studio removed from your favorites."
@@ -105,6 +107,9 @@ export const useFavorites = () => {
 
         if (error) throw error;
 
+        // Refresh favorites to get the new favorite with studio data
+        await fetchFavorites();
+        
         toast({
           title: "Added to favorites",
           description: "Studio added to your favorites."
@@ -147,6 +152,11 @@ export const useFavorites = () => {
     }
   };
 
+  // Check if a studio is favorited
+  const isFavorite = (studioId: string) => {
+    return favorites.some(fav => fav.id === studioId);
+  };
+
   useEffect(() => {
     fetchFavorites();
   }, [user]);
@@ -156,6 +166,7 @@ export const useFavorites = () => {
     loading,
     toggleFavorite,
     removeFavorite,
+    isFavorite,
     refetch: fetchFavorites
   };
 };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft, Heart, Share, Star, MapPin } from "lucide-react";
@@ -10,6 +9,7 @@ import BookingForm from "@/components/BookingForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useFavorites } from "@/hooks/useFavorites";
 
 const StudioDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,11 +19,45 @@ const StudioDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { favorites, toggleFavorite } = useFavorites();
   const [canReview, setCanReview] = useState(false);
   const [reviewText, setReviewText] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
+
+  // Check if current studio is in favorites
+  const isFavorite = favorites.some((fav) => fav.id === id);
+
+  const handleFavoriteClick = () => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Login Required",
+        description: "Please login to add studios to favorites."
+      });
+      return;
+    }
+    if (id) {
+      toggleFavorite(id);
+    }
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: studio?.title,
+        text: `Check out this amazing studio: ${studio?.title}`,
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "Link Copied",
+        description: "Studio link copied to clipboard!"
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchStudio = async () => {
@@ -281,11 +315,16 @@ const StudioDetail = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={handleShare}>
                       <Share className="w-4 h-4" />
                     </Button>
-                    <Button variant="outline" size="sm">
-                      <Heart className="w-4 h-4" />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleFavoriteClick}
+                      className={isFavorite ? "text-red-500 hover:text-red-600" : "hover:text-red-500"}
+                    >
+                      <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500" : ""}`} />
                     </Button>
                   </div>
                 </div>

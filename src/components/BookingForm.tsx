@@ -11,6 +11,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useBookings } from "@/hooks/useBookings";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import type { RazorpayOptions, RazorpayResponse } from "@/types/razorpay";
 
 const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
@@ -28,6 +30,7 @@ const BookingForm = ({ studio }: BookingFormProps) => {
   const { user } = useAuth();
   const { createBooking } = useBookings();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [duration, setDuration] = useState("1");
@@ -58,30 +61,59 @@ const BookingForm = ({ studio }: BookingFormProps) => {
     "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
   ];
 
-  // Razorpay payment handler
+  // Enhanced Razorpay payment handler
   const launchRazorpay = (bookingId: string, amount: number) => {
-    const options = {
+    const options: RazorpayOptions = {
       key: RAZORPAY_KEY_ID,
       amount: amount * 100, // in paise
       currency: "INR",
       name: "BookMyStudio",
       description: `Booking for ${studio?.title || 'Studio'}`,
-      handler: async function (response: any) {
-        // Update booking/payment status in Supabase
-        await supabase
-          .from("bookings")
-          .update({ payment_status: "paid", status: "confirmed", payment_id: response.razorpay_payment_id })
-          .eq("id", bookingId);
-        navigate("/profile");
+      handler: async (response: RazorpayResponse) => {
+        try {
+          // Update booking/payment status in Supabase
+          const { error } = await supabase
+            .from("bookings")
+            .update({ 
+              payment_status: "paid", 
+              status: "confirmed", 
+              payment_id: response.razorpay_payment_id 
+            })
+            .eq("id", bookingId);
+
+          if (error) throw error;
+
+          toast({
+            title: "Payment Successful!",
+            description: "Your booking has been confirmed."
+          });
+          
+          navigate("/profile");
+        } catch (err) {
+          console.error("Payment confirmation error:", err);
+          toast({
+            variant: "destructive",
+            title: "Payment Error",
+            description: "Payment was successful but confirmation failed. Please contact support."
+          });
+        }
       },
       prefill: {
         email: user?.email,
       },
       theme: {
         color: "#ff6600"
+      },
+      modal: {
+        ondismiss: () => {
+          toast({
+            title: "Payment Cancelled",
+            description: "Your booking is still pending. Complete payment to confirm."
+          });
+        }
       }
     };
-    // @ts-ignore
+
     const rzp = new window.Razorpay(options);
     rzp.open();
   };
@@ -106,16 +138,19 @@ const BookingForm = ({ studio }: BookingFormProps) => {
         .eq('booking_date', selectedDate)
         .eq('start_time', startTime)
         .single();
+      
       if (existing) {
         setError("This time slot is already booked. Please choose another.");
         setIsBooking(false);
         return;
       }
+      
       if (conflictError && conflictError.code !== 'PGRST116') {
         setError("Error checking availability. Please try again.");
         setIsBooking(false);
         return;
       }
+      
       // Create booking with pending payment
       const booking = await createBooking({
         studioId: studio.id,
@@ -125,9 +160,30 @@ const BookingForm = ({ studio }: BookingFormProps) => {
         guestCount: parseInt(guests),
         totalPrice: pricing.total
       });
+      
       if (booking && RAZORPAY_KEY_ID) {
-        launchRazorpay(booking.id, pricing.total);
+        // Load Razorpay script if not already loaded
+        if (!window.Razorpay) {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = () => launchRazorpay(booking.id, pricing.total);
+          script.onerror = () => {
+            toast({
+              variant: "destructive",
+              title: "Payment Error",
+              description: "Failed to load payment gateway. Please try again."
+            });
+            setIsBooking(false);
+          };
+          document.body.appendChild(script);
+        } else {
+          launchRazorpay(booking.id, pricing.total);
+        }
       } else if (booking) {
+        toast({
+          title: "Booking Created",
+          description: "Your booking has been created successfully."
+        });
         navigate('/profile');
       }
     } catch (err: any) {
@@ -259,11 +315,11 @@ const BookingForm = ({ studio }: BookingFormProps) => {
           onClick={handleBookNow}
         >
           <CreditCard className="w-5 h-5 mr-2" />
-          {isBooking ? 'Processing...' : user ? 'Book Now' : 'Login to Book'}
+          {isBooking ? 'Processing...' : user ? 'Pay Now' : 'Login to Book'}
         </Button>
         {error && <div className="text-red-500 text-center text-sm mt-2">{error}</div>}
         <p className="text-sm text-slate-500 text-center">
-          {user ? "You won't be charged yet. Review your booking details first." : "Please login to continue with booking."}
+          {user ? "Complete payment to confirm your booking instantly." : "Please login to continue with booking."}
         </p>
       </CardContent>
     </Card>
