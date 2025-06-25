@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, MapPin, Calendar, Users, Camera, Mic, Video } from "lucide-react";
@@ -31,7 +30,8 @@ const Index = () => {
           id: studio.id,
           title: studio.title,
           location: studio.location,
-          price: `₹${(studio.price_per_hour / 100).toLocaleString()}/hour`,
+          price: `₹${studio.price_per_hour?.toLocaleString()}/hour`,
+          priceValue: studio.price_per_hour,
           rating: studio.rating || 0,
           reviewCount: studio.total_reviews || 0,
           image: studio.images?.[0] || "/placeholder.svg",

@@ -1,12 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { ArrowLeft, Heart, Share, Star, MapPin, Calendar, Clock, Users, Wifi, Car, Coffee } from "lucide-react";
+import { ArrowLeft, Heart, Share, Star, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import Navigation from "@/components/Navigation";
 import BookingForm from "@/components/BookingForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,19 +29,33 @@ const StudioDetail = () => {
       setLoading(true);
       setError(null);
       try {
-        // Fixed query - removed rating from profiles table since it doesn't exist there
+        console.log("Fetching studio with ID:", id);
         const { data, error } = await supabase
           .from("studios")
           .select("*, profiles:host_id(full_name, avatar_url)")
           .eq("id", id)
           .single();
-        if (error) throw error;
+        
+        if (error) {
+          console.error("Error fetching studio:", error);
+          throw error;
+        }
+        
+        console.log("Fetched studio data:", data);
+        
+        if (!data) {
+          setError("Studio not found");
+          return;
+        }
+
         setStudio({
           ...data,
           image: data.images?.[0] || "/placeholder.svg",
           amenities: data.amenities || [],
-          features: [], // You can map features if you have them
+          features: [],
           host: data.profiles || { full_name: "Host", avatar_url: "/placeholder.svg" },
+          // Ensure price_per_hour is properly set
+          price_per_hour: data.price_per_hour || 0
         });
       } catch (err: any) {
         console.error("Error fetching studio:", err);
@@ -53,6 +64,7 @@ const StudioDetail = () => {
         setLoading(false);
       }
     };
+
     const fetchReviews = async () => {
       try {
         const { data, error } = await supabase
@@ -74,7 +86,7 @@ const StudioDetail = () => {
         setReviews([]);
       }
     };
-    // Check if user can review (has completed booking and hasn't reviewed yet)
+
     const checkCanReview = async () => {
       if (!user || !id) return setCanReview(false);
       try {
@@ -99,6 +111,7 @@ const StudioDetail = () => {
         setCanReview(false);
       }
     };
+
     if (id) {
       fetchStudio();
       fetchReviews();
@@ -166,6 +179,7 @@ const StudioDetail = () => {
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-slate-500">Loading studio...</div>;
   }
+  
   if (error || !studio) {
     return <div className="min-h-screen flex items-center justify-center text-red-500">{error || "Studio not found."}</div>;
   }
@@ -180,6 +194,7 @@ const StudioDetail = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Studios
           </Button>
+          
           {/* Image Gallery */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
             <div className="lg:col-span-3">
@@ -200,6 +215,7 @@ const StudioDetail = () => {
               ))}
             </div>
           </div>
+          
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
@@ -207,9 +223,6 @@ const StudioDetail = () => {
               <div>
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <div className="flex gap-2 mb-2">
-                      {/* Add tags if available */}
-                    </div>
                     <h1 className="text-3xl font-bold text-slate-800 mb-2">
                       {studio.title}
                     </h1>
@@ -230,13 +243,14 @@ const StudioDetail = () => {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center">
                     <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                    <span className="font-medium ml-1">{studio.rating}</span>
+                    <span className="font-medium ml-1">{studio.rating || 0}</span>
                   </div>
                   <span className="text-slate-600">
                     {studio.total_reviews || 0} reviews
                   </span>
                 </div>
               </div>
+              
               {/* Description */}
               <div>
                 <h2 className="text-xl font-semibold mb-3">About this studio</h2>
@@ -244,20 +258,19 @@ const StudioDetail = () => {
                   {studio.description}
                 </p>
               </div>
-              {/* Features */}
-              {/* You can add features if available in your schema */}
+              
               {/* Amenities */}
               <div>
                 <h2 className="text-xl font-semibold mb-4">Amenities</h2>
                 <div className="grid grid-cols-2 gap-4">
                   {(studio.amenities || []).map((amenity: string, index: number) => (
                     <div key={index} className="flex items-center">
-                      {/* You can map icons if you want */}
                       <span className="text-slate-700">{amenity}</span>
                     </div>
                   ))}
                 </div>
               </div>
+              
               {/* Host */}
               <Card>
                 <CardContent className="p-6">
@@ -281,6 +294,7 @@ const StudioDetail = () => {
                   </div>
                 </CardContent>
               </Card>
+              
               {/* Reviews */}
               <div>
                 <div className="flex items-center justify-between mb-6">
@@ -317,6 +331,7 @@ const StudioDetail = () => {
                   ))}
                   {reviews.length === 0 && <div className="text-slate-500">No reviews yet.</div>}
                 </div>
+                
                 {canReview && (
                   <form onSubmit={handleReviewSubmit} className="mt-8 bg-white p-6 rounded-lg shadow space-y-4">
                     <h3 className="text-lg font-semibold">Leave a Review</h3>
@@ -349,6 +364,7 @@ const StudioDetail = () => {
                 )}
               </div>
             </div>
+            
             {/* Booking Sidebar */}
             <div className="lg:col-span-1">
               <div className="sticky top-24">

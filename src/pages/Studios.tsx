@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Studios = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [priceRange, setPriceRange] = useState([1000, 10000]);
+  const [priceRange, setPriceRange] = useState([100000, 1000000]); // Fixed price range
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
@@ -24,16 +24,16 @@ const Studios = () => {
   const [error, setError] = useState<string | null>(null);
 
   const amenities = [
-    "Soundproof",
+    "Professional Microphones",
     "Professional Lighting",
-    "Green Screen",
-    "Professional Cameras",
+    "Green Screen", 
+    "4K Cameras",
     "Editing Suite",
-    "Props Available",
-    "Natural Light",
-    "AC",
-    "Parking Available",
-    "WiFi"
+    "Props Collection",
+    "High-Speed WiFi",
+    "Audio Interface",
+    "Soundproof Booth",
+    "Recording Software"
   ];
 
   const studioTypes = [
@@ -59,28 +59,44 @@ const Studios = () => {
       setLoading(true);
       setError(null);
       try {
+        console.log("Fetching studios from database...");
         const { data, error } = await supabase
           .from("studios")
           .select("*")
           .eq("is_active", true);
-        if (error) throw error;
-        setStudios(
-          (data || []).map((studio) => ({
-            ...studio,
-            id: studio.id,
-            title: studio.title,
-            location: studio.location,
-            price: `₹${studio.price_per_hour?.toLocaleString()}/hour`,
-            priceValue: studio.price_per_hour,
-            rating: studio.rating || 0,
-            reviewCount: studio.total_reviews || 0,
-            image: studio.images?.[0] || "/placeholder.svg",
-            tags: [], // You can map tags if you have them in your schema
-            amenities: studio.amenities || [],
-            type: (studio as any).type || ""
-          }))
-        );
+        
+        if (error) {
+          console.error("Supabase error:", error);
+          throw error;
+        }
+        
+        console.log("Fetched studios data:", data);
+        
+        if (!data || data.length === 0) {
+          console.log("No studios found in database");
+          setStudios([]);
+          return;
+        }
+
+        const formattedStudios = data.map((studio) => ({
+          ...studio,
+          id: studio.id,
+          title: studio.title,
+          location: studio.location,
+          price: `₹${studio.price_per_hour?.toLocaleString()}/hour`,
+          priceValue: studio.price_per_hour || 0,
+          rating: studio.rating || 0,
+          reviewCount: studio.total_reviews || 0,
+          image: studio.images?.[0] || "/placeholder.svg",
+          tags: studio.rating >= 4.8 ? ["Hot Selling", "Verified"] : studio.rating >= 4.5 ? ["Trending", "Popular"] : ["Featured"],
+          amenities: studio.amenities || [],
+          type: "" // You can map type based on title or add type field to database
+        }));
+        
+        console.log("Formatted studios:", formattedStudios);
+        setStudios(formattedStudios);
       } catch (err: any) {
+        console.error("Error fetching studios:", err);
         setError(err.message || "Failed to load studios.");
       } finally {
         setLoading(false);
@@ -111,20 +127,13 @@ const Studios = () => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         if (!studio.title.toLowerCase().includes(query) &&
-            !studio.location.toLowerCase().includes(query) &&
-            !studio.type.toLowerCase().includes(query)) {
+            !studio.location.toLowerCase().includes(query)) {
           return false;
         }
       }
       // Location filter
       if (selectedLocation) {
         if (!studio.location.toLowerCase().includes(selectedLocation)) {
-          return false;
-        }
-      }
-      // Studio type filter
-      if (selectedStudioType) {
-        if (studio.type !== selectedStudioType) {
           return false;
         }
       }
@@ -165,13 +174,13 @@ const Studios = () => {
       });
     }
     return filtered;
-  }, [studios, searchQuery, selectedLocation, selectedStudioType, priceRange, selectedAmenities, minRating, sortBy]);
+  }, [studios, searchQuery, selectedLocation, priceRange, selectedAmenities, minRating, sortBy]);
 
   const clearFilters = () => {
     setSearchQuery("");
     setSelectedLocation("");
     setSelectedStudioType("");
-    setPriceRange([1000, 10000]);
+    setPriceRange([100000, 1000000]);
     setSelectedAmenities([]);
     setMinRating([]);
     setSortBy("");
@@ -187,6 +196,7 @@ const Studios = () => {
             <h1 className="text-3xl font-bold text-slate-800 mb-4">Discover Studios</h1>
             <p className="text-slate-600">Find the perfect space for your creative needs</p>
           </div>
+          
           {/* Search and View Controls */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
             <div className="flex flex-col lg:flex-row gap-4 items-center">
@@ -208,18 +218,6 @@ const Studios = () => {
                     {locations.map((location) => (
                       <SelectItem key={location.value} value={location.value}>
                         {location.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={selectedStudioType} onValueChange={setSelectedStudioType}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Studio Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {studioTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -253,6 +251,7 @@ const Studios = () => {
               </div>
             </div>
           </div>
+          
           <div className="flex gap-6">
             {/* Filters Sidebar */}
             {showFilters && (
@@ -269,14 +268,14 @@ const Studios = () => {
                   <Slider
                     value={priceRange}
                     onValueChange={setPriceRange}
-                    max={10000}
-                    min={500}
-                    step={500}
+                    max={1000000}
+                    min={50000}
+                    step={50000}
                     className="mb-2"
                   />
                   <div className="flex justify-between text-sm text-slate-600">
-                    <span>₹{priceRange[0]}</span>
-                    <span>₹{priceRange[1]}</span>
+                    <span>₹{priceRange[0].toLocaleString()}</span>
+                    <span>₹{priceRange[1].toLocaleString()}</span>
                   </div>
                 </div>
                 {/* Rating */}
@@ -318,6 +317,7 @@ const Studios = () => {
                 </div>
               </div>
             )}
+            
             {/* Studios Grid/List */}
             <div className="flex-1">
               <div className="mb-4 flex justify-between items-center">
@@ -336,6 +336,7 @@ const Studios = () => {
                   </SelectContent>
                 </Select>
               </div>
+              
               {loading ? (
                 <div className="text-center py-12 text-slate-500">Loading studios...</div>
               ) : error ? (
@@ -351,6 +352,7 @@ const Studios = () => {
                   ))}
                 </div>
               )}
+              
               {!loading && !error && filteredStudios.length === 0 && (
                 <div className="text-center py-12">
                   <p className="text-slate-500 text-lg">No studios found matching your criteria</p>
