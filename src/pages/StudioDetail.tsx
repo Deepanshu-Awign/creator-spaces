@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft, Heart, Share, Star, MapPin } from "lucide-react";
@@ -26,6 +27,12 @@ const StudioDetail = () => {
 
   useEffect(() => {
     const fetchStudio = async () => {
+      if (!id) {
+        setError("Studio ID not provided");
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {
@@ -48,15 +55,31 @@ const StudioDetail = () => {
           return;
         }
 
-        setStudio({
-          ...data,
-          image: data.images?.[0] || "/placeholder.svg",
+        // Transform the data to match the expected format
+        const transformedStudio = {
+          id: data.id,
+          title: data.title || "Untitled Studio",
+          description: data.description || "No description available",
+          location: data.location || "Location not specified",
+          price_per_hour: data.price_per_hour || 0,
+          rating: data.rating || 0,
+          total_reviews: data.total_reviews || 0,
+          images: data.images || ["/placeholder.svg"],
+          image: (data.images && data.images[0]) || "/placeholder.svg",
           amenities: data.amenities || [],
           features: [],
-          host: data.profiles || { full_name: "Host", avatar_url: "/placeholder.svg" },
-          // Ensure price_per_hour is properly set
-          price_per_hour: data.price_per_hour || 0
-        });
+          host: {
+            full_name: data.profiles?.full_name || "Host",
+            avatar_url: data.profiles?.avatar_url || "/placeholder.svg"
+          },
+          is_active: data.is_active,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+          host_id: data.host_id
+        };
+
+        console.log("Transformed studio data:", transformedStudio);
+        setStudio(transformedStudio);
       } catch (err: any) {
         console.error("Error fetching studio:", err);
         setError(err.message || "Failed to load studio.");
@@ -66,6 +89,8 @@ const StudioDetail = () => {
     };
 
     const fetchReviews = async () => {
+      if (!id) return;
+
       try {
         const { data, error } = await supabase
           .from("reviews")
@@ -112,11 +137,9 @@ const StudioDetail = () => {
       }
     };
 
-    if (id) {
-      fetchStudio();
-      fetchReviews();
-      checkCanReview();
-    }
+    fetchStudio();
+    fetchReviews();
+    checkCanReview();
   }, [user, id]);
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
@@ -177,11 +200,31 @@ const StudioDetail = () => {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-slate-500">Loading studio...</div>;
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Navigation />
+        <div className="pt-20 flex items-center justify-center min-h-[60vh]">
+          <div className="text-slate-500 text-lg">Loading studio details...</div>
+        </div>
+      </div>
+    );
   }
   
   if (error || !studio) {
-    return <div className="min-h-screen flex items-center justify-center text-red-500">{error || "Studio not found."}</div>;
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Navigation />
+        <div className="pt-20 flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="text-red-500 text-lg mb-4">{error || "Studio not found"}</div>
+            <Button onClick={() => window.history.back()} variant="outline">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Go Back
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -202,6 +245,9 @@ const StudioDetail = () => {
                 src={studio.image}
                 alt={studio.title}
                 className="w-full h-96 lg:h-[500px] object-cover rounded-lg"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/placeholder.svg";
+                }}
               />
             </div>
             <div className="grid grid-cols-4 lg:grid-cols-1 gap-2">
@@ -211,6 +257,9 @@ const StudioDetail = () => {
                   src={image}
                   alt={`${studio.title} ${index + 1}`}
                   className={`w-full h-20 lg:h-24 object-cover rounded-lg cursor-pointer transition-all`}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/placeholder.svg";
+                  }}
                 />
               ))}
             </div>
@@ -243,10 +292,13 @@ const StudioDetail = () => {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center">
                     <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                    <span className="font-medium ml-1">{studio.rating || 0}</span>
+                    <span className="font-medium ml-1">{studio.rating}</span>
                   </div>
                   <span className="text-slate-600">
                     {studio.total_reviews || 0} reviews
+                  </span>
+                  <span className="text-2xl font-bold text-orange-500">
+                    ₹{(studio.price_per_hour || 0).toLocaleString()}/hour
                   </span>
                 </div>
               </div>
@@ -268,6 +320,9 @@ const StudioDetail = () => {
                       <span className="text-slate-700">{amenity}</span>
                     </div>
                   ))}
+                  {(!studio.amenities || studio.amenities.length === 0) && (
+                    <div className="text-slate-500">No amenities listed</div>
+                  )}
                 </div>
               </div>
               

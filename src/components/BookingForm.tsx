@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Calendar, Clock, Users, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
 interface Studio {
   id: string;
-  price: number;
+  price_per_hour: number;
   title: string;
 }
 
@@ -34,9 +35,12 @@ const BookingForm = ({ studio }: BookingFormProps) => {
   const [isBooking, setIsBooking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Ensure price_per_hour is a valid number with fallback
+  const hourlyPrice = studio?.price_per_hour || 0;
+
   const calculateTotal = () => {
     const hours = parseInt(duration);
-    const basePrice = studio.price * hours;
+    const basePrice = hourlyPrice * hours;
     const serviceFee = Math.round(basePrice * 0.1);
     const taxes = Math.round((basePrice + serviceFee) * 0.18);
     return {
@@ -61,7 +65,7 @@ const BookingForm = ({ studio }: BookingFormProps) => {
       amount: amount * 100, // in paise
       currency: "INR",
       name: "BookMyStudio",
-      description: `Booking for ${studio.title}`,
+      description: `Booking for ${studio?.title || 'Studio'}`,
       handler: async function (response: any) {
         // Update booking/payment status in Supabase
         await supabase
@@ -127,11 +131,25 @@ const BookingForm = ({ studio }: BookingFormProps) => {
         navigate('/profile');
       }
     } catch (err: any) {
+      console.error("Booking error:", err);
       setError(err.message || "Booking error. Please try again.");
     } finally {
       setIsBooking(false);
     }
   };
+
+  // Early return if studio data is not available
+  if (!studio || !studio.id) {
+    return (
+      <Card className="shadow-lg">
+        <CardContent className="p-6">
+          <div className="text-center text-slate-500">
+            Loading booking form...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="shadow-lg">
@@ -139,7 +157,7 @@ const BookingForm = ({ studio }: BookingFormProps) => {
         <CardTitle className="flex items-center justify-between">
           <span>Book this studio</span>
           <span className="text-2xl font-bold text-orange-500">
-            ₹{studio.price.toLocaleString()}/hour
+            ₹{hourlyPrice.toLocaleString()}/hour
           </span>
         </CardTitle>
       </CardHeader>
@@ -217,7 +235,7 @@ const BookingForm = ({ studio }: BookingFormProps) => {
         {/* Price Breakdown */}
         <div className="space-y-3">
           <div className="flex justify-between">
-            <span>₹{studio.price.toLocaleString()} × {duration} hour{parseInt(duration) > 1 ? 's' : ''}</span>
+            <span>₹{hourlyPrice.toLocaleString()} × {duration} hour{parseInt(duration) > 1 ? 's' : ''}</span>
             <span>₹{pricing.basePrice.toLocaleString()}</span>
           </div>
           <div className="flex justify-between text-sm text-slate-600">
