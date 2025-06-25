@@ -9,6 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import Navigation from "@/components/Navigation";
 import BookingForm from "@/components/BookingForm";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const StudioDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +18,13 @@ const StudioDetail = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [canReview, setCanReview] = useState(false);
+  const [reviewText, setReviewText] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStudio = async () => {
@@ -61,11 +70,88 @@ const StudioDetail = () => {
         setReviews([]);
       }
     };
+    // Check if user can review (has completed booking and hasn't reviewed yet)
+    const checkCanReview = async () => {
+      if (!user || !id) return setCanReview(false);
+      // Check for completed booking
+      const { data: bookings, error: bookingError } = await supabase
+        .from("bookings")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("studio_id", id)
+        .eq("status", "completed");
+      if (bookingError || !bookings || bookings.length === 0) return setCanReview(false);
+      // Check if already reviewed
+      const { data: existingReview } = await supabase
+        .from("reviews")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("studio_id", id)
+        .single();
+      setCanReview(!existingReview);
+    };
     if (id) {
       fetchStudio();
       fetchReviews();
+      checkCanReview();
     }
-  }, [id]);
+  }, [user, id]);
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingReview(true);
+    setReviewError(null);
+    try {
+      // Find the completed booking for this user and studio
+      const { data: bookings } = await supabase
+        .from("bookings")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("studio_id", id)
+        .eq("status", "completed");
+      if (!bookings || bookings.length === 0) {
+        setReviewError("You must complete a booking before reviewing.");
+        setSubmittingReview(false);
+        return;
+      }
+      const bookingId = bookings[0].id;
+      // Insert review
+      const { error } = await supabase
+        .from("reviews")
+        .insert({
+          booking_id: bookingId,
+          user_id: user.id,
+          studio_id: id,
+          rating: reviewRating,
+          comment: reviewText
+        });
+      if (error) throw error;
+      setReviewText("");
+      setReviewRating(5);
+      setCanReview(false);
+      toast({ title: "Review submitted!", description: "Thank you for your feedback." });
+      // Refresh reviews
+      const { data, error: reviewFetchError } = await supabase
+        .from("reviews")
+        .select("*, profiles:user_id(full_name, avatar_url)")
+        .eq("studio_id", id)
+        .order("created_at", { ascending: false });
+      if (!reviewFetchError) {
+        setReviews(
+          (data || []).map((review) => ({
+            ...review,
+            user: review.profiles?.full_name || "User",
+            avatar: review.profiles?.avatar_url || "/placeholder.svg",
+            date: new Date(review.created_at).toLocaleDateString(),
+          }))
+        );
+      }
+    } catch (err: any) {
+      setReviewError(err.message || "Failed to submit review.");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-slate-500">Loading studio...</div>;
@@ -221,7 +307,36 @@ const StudioDetail = () => {
                   ))}
                   {reviews.length === 0 && <div className="text-slate-500">No reviews yet.</div>}
                 </div>
-                {/* TODO: Add review submission form for eligible users */}
+                {canReview && (
+                  <form onSubmit={handleReviewSubmit} className="mt-8 bg-white p-6 rounded-lg shadow space-y-4">
+                    <h3 className="text-lg font-semibold">Leave a Review</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-700">Your Rating:</span>
+                      {[1,2,3,4,5].map((star) => (
+                        <button
+                          type="button"
+                          key={star}
+                          onClick={() => setReviewRating(star)}
+                          className={star <= reviewRating ? "text-yellow-400" : "text-slate-300"}
+                        >
+                          <Star className="w-6 h-6" />
+                        </button>
+                      ))}
+                    </div>
+                    <textarea
+                      className="w-full border rounded p-2"
+                      rows={3}
+                      placeholder="Share your experience..."
+                      value={reviewText}
+                      onChange={e => setReviewText(e.target.value)}
+                      required
+                    />
+                    <Button type="submit" disabled={submittingReview} className="bg-orange-500 hover:bg-orange-600 text-white">
+                      {submittingReview ? "Submitting..." : "Submit Review"}
+                    </Button>
+                    {reviewError && <div className="text-red-500 text-sm mt-2">{reviewError}</div>}
+                  </form>
+                )}
               </div>
             </div>
             {/* Booking Sidebar */}
