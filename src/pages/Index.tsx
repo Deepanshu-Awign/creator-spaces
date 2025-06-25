@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, MapPin, Calendar, Users, Camera, Mic, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,45 +7,49 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import StudioCard from "@/components/StudioCard";
+import DatabaseSeeder from "@/components/DatabaseSeeder";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [featuredStudios, setFeaturedStudios] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const featuredStudios = [
-    {
-      id: 1,
-      title: "Downtown Podcast Studio",
-      location: "Mumbai, Maharashtra",
-      price: "₹2,500/hour",
-      rating: 4.8,
-      reviewCount: 124,
-      image: "/placeholder.svg",
-      tags: ["Hot Selling", "Verified"],
-      amenities: ["Soundproof", "Professional Mics", "Editing Suite"]
-    },
-    {
-      id: 2,
-      title: "Creative Photography Loft",
-      location: "Bangalore, Karnataka",
-      price: "₹3,200/hour",
-      rating: 4.9,
-      reviewCount: 89,
-      image: "/placeholder.svg",
-      tags: ["Trending", "Popular"],
-      amenities: ["Natural Light", "Props Available", "Backdrop"]
-    },
-    {
-      id: 3,
-      title: "Video Production House",
-      location: "Delhi, NCR",
-      price: "₹4,500/hour",
-      rating: 4.7,
-      reviewCount: 156,
-      image: "/placeholder.svg",
-      tags: ["Premium", "Featured"],
-      amenities: ["Green Screen", "4K Cameras", "Lighting Kit"]
-    }
-  ];
+  useEffect(() => {
+    const fetchFeaturedStudios = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("studios")
+          .select("*")
+          .eq("is_active", true)
+          .order("rating", { ascending: false })
+          .limit(6);
+
+        if (error) throw error;
+
+        const formattedStudios = data?.map(studio => ({
+          id: studio.id,
+          title: studio.title,
+          location: studio.location,
+          price: `₹${(studio.price_per_hour / 100).toLocaleString()}/hour`,
+          rating: studio.rating || 0,
+          reviewCount: studio.total_reviews || 0,
+          image: studio.images?.[0] || "/placeholder.svg",
+          tags: studio.rating >= 4.8 ? ["Hot Selling", "Verified"] : studio.rating >= 4.5 ? ["Trending", "Popular"] : ["Featured"],
+          amenities: studio.amenities?.slice(0, 3) || []
+        })) || [];
+
+        setFeaturedStudios(formattedStudios);
+      } catch (error) {
+        console.error("Error fetching studios:", error);
+        setFeaturedStudios([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedStudios();
+  }, []);
 
   const categories = [
     { icon: Mic, name: "Podcast Studios", count: "120+ Studios" },
@@ -68,6 +72,11 @@ const Index = () => {
           <p className="text-xl text-slate-600 mb-12 max-w-2xl mx-auto animate-fade-in">
             Discover and book professional studios for podcasting, photography, video production, and more. Your creative vision starts here.
           </p>
+
+          {/* Database Seeder - Show only if no studios */}
+          {!loading && featuredStudios.length === 0 && (
+            <DatabaseSeeder />
+          )}
 
           {/* Search Bar */}
           <div className="bg-white rounded-full shadow-2xl p-2 max-w-4xl mx-auto mb-12 animate-scale-in">
@@ -96,9 +105,11 @@ const Index = () => {
                 />
               </div>
               <div className="flex justify-center">
-                <Button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-6 rounded-full text-lg font-semibold transition-all hover:scale-105">
-                  Search Studios
-                </Button>
+                <Link to="/studios">
+                  <Button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-6 rounded-full text-lg font-semibold transition-all hover:scale-105">
+                    Search Studios
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
@@ -111,13 +122,15 @@ const Index = () => {
           <h2 className="text-3xl font-bold text-slate-800 text-center mb-12">Browse by Category</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {categories.map((category, index) => (
-              <Card key={index} className="hover:shadow-xl transition-all duration-300 hover:-translate-y-2 cursor-pointer group">
-                <CardContent className="p-8 text-center">
-                  <category.icon className="w-12 h-12 text-orange-500 mx-auto mb-4 group-hover:scale-110 transition-transform" />
-                  <h3 className="text-xl font-semibold text-slate-800 mb-2">{category.name}</h3>
-                  <p className="text-slate-600">{category.count}</p>
-                </CardContent>
-              </Card>
+              <Link to="/studios" key={index}>
+                <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-2 cursor-pointer group">
+                  <CardContent className="p-8 text-center">
+                    <category.icon className="w-12 h-12 text-orange-500 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+                    <h3 className="text-xl font-semibold text-slate-800 mb-2">{category.name}</h3>
+                    <p className="text-slate-600">{category.count}</p>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>
@@ -134,11 +147,25 @@ const Index = () => {
               </Button>
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredStudios.map((studio) => (
-              <StudioCard key={studio.id} studio={studio} />
-            ))}
-          </div>
+          
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-slate-200 animate-pulse rounded-lg h-80"></div>
+              ))}
+            </div>
+          ) : featuredStudios.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredStudios.map((studio) => (
+                <StudioCard key={studio.id} studio={studio} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-slate-600 text-lg mb-4">No studios available at the moment.</p>
+              <p className="text-slate-500">Please check back later or use the seeder above to add sample data.</p>
+            </div>
+          )}
         </div>
       </section>
 
