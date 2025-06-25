@@ -1,5 +1,4 @@
-
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search, Filter, MapPin, Star, Grid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +7,7 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import Navigation from "@/components/Navigation";
 import StudioCard from "@/components/StudioCard";
+import { supabase } from "@/integrations/supabase/client";
 
 const Studios = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -19,87 +19,9 @@ const Studios = () => {
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [minRating, setMinRating] = useState<number[]>([]);
   const [sortBy, setSortBy] = useState("");
-
-  const mockStudios = [
-    {
-      id: 1,
-      title: "Downtown Podcast Studio",
-      location: "Mumbai, Maharashtra",
-      price: "₹2,500/hour",
-      priceValue: 2500,
-      rating: 4.8,
-      reviewCount: 124,
-      image: "/placeholder.svg",
-      tags: ["Hot Selling", "Verified"],
-      amenities: ["Soundproof", "Professional Mics", "Editing Suite"],
-      type: "podcast"
-    },
-    {
-      id: 2,
-      title: "Creative Photography Loft",
-      location: "Bangalore, Karnataka",
-      price: "₹3,200/hour",
-      priceValue: 3200,
-      rating: 4.9,
-      reviewCount: 89,
-      image: "/placeholder.svg",
-      tags: ["Trending", "Popular"],
-      amenities: ["Natural Light", "Props Available", "Backdrop"],
-      type: "photography"
-    },
-    {
-      id: 3,
-      title: "Video Production House",
-      location: "Delhi, NCR",
-      price: "₹4,500/hour",
-      priceValue: 4500,
-      rating: 4.7,
-      reviewCount: 156,
-      image: "/placeholder.svg",
-      tags: ["Premium", "Featured"],
-      amenities: ["Green Screen", "4K Cameras", "Lighting Kit"],
-      type: "video"
-    },
-    {
-      id: 4,
-      title: "Modern Meeting Studio",
-      location: "Pune, Maharashtra",
-      price: "₹1,800/hour",
-      priceValue: 1800,
-      rating: 4.6,
-      reviewCount: 67,
-      image: "/placeholder.svg",
-      tags: ["Budget Friendly"],
-      amenities: ["AC", "Projector", "Whiteboard"],
-      type: "meeting"
-    },
-    {
-      id: 5,
-      title: "Music Recording Studio",
-      location: "Chennai, Tamil Nadu",
-      price: "₹5,200/hour",
-      priceValue: 5200,
-      rating: 4.9,
-      reviewCount: 203,
-      image: "/placeholder.svg",
-      tags: ["Premium", "Top Rated"],
-      amenities: ["Acoustic Treatment", "Mixing Console", "Instruments"],
-      type: "music"
-    },
-    {
-      id: 6,
-      title: "Content Creator Space",
-      location: "Hyderabad, Telangana",
-      price: "₹2,800/hour",
-      priceValue: 2800,
-      rating: 4.7,
-      reviewCount: 91,
-      image: "/placeholder.svg",
-      tags: ["Popular", "New"],
-      amenities: ["Ring Lights", "Tripods", "Backdrops"],
-      type: "content"
-    }
-  ];
+  const [studios, setStudios] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const amenities = [
     "Soundproof",
@@ -132,6 +54,41 @@ const Studios = () => {
     { value: "hyderabad", label: "Hyderabad" }
   ];
 
+  useEffect(() => {
+    const fetchStudios = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const { data, error } = await supabase
+          .from("studios")
+          .select("*")
+          .eq("is_active", true);
+        if (error) throw error;
+        setStudios(
+          (data || []).map((studio) => ({
+            ...studio,
+            id: studio.id,
+            title: studio.title,
+            location: studio.location,
+            price: `₹${studio.price_per_hour?.toLocaleString()}/hour`,
+            priceValue: studio.price_per_hour,
+            rating: studio.rating || 0,
+            reviewCount: studio.total_reviews || 0,
+            image: studio.images?.[0] || "/placeholder.svg",
+            tags: [], // You can map tags if you have them in your schema
+            amenities: studio.amenities || [],
+            type: (studio as any).type || ""
+          }))
+        );
+      } catch (err: any) {
+        setError(err.message || "Failed to load studios.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStudios();
+  }, []);
+
   const handleAmenityChange = (amenity: string, checked: boolean) => {
     if (checked) {
       setSelectedAmenities(prev => [...prev, amenity]);
@@ -149,7 +106,7 @@ const Studios = () => {
   };
 
   const filteredStudios = useMemo(() => {
-    let filtered = mockStudios.filter(studio => {
+    let filtered = studios.filter(studio => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -159,33 +116,28 @@ const Studios = () => {
           return false;
         }
       }
-
       // Location filter
       if (selectedLocation) {
         if (!studio.location.toLowerCase().includes(selectedLocation)) {
           return false;
         }
       }
-
       // Studio type filter
       if (selectedStudioType) {
         if (studio.type !== selectedStudioType) {
           return false;
         }
       }
-
       // Price range filter
       if (studio.priceValue < priceRange[0] || studio.priceValue > priceRange[1]) {
         return false;
       }
-
       // Amenities filter
       if (selectedAmenities.length > 0) {
         if (!selectedAmenities.some(amenity => studio.amenities.includes(amenity))) {
           return false;
         }
       }
-
       // Rating filter
       if (minRating.length > 0) {
         const maxRequiredRating = Math.max(...minRating);
@@ -193,10 +145,8 @@ const Studios = () => {
           return false;
         }
       }
-
       return true;
     });
-
     // Sort filtered results
     if (sortBy) {
       filtered.sort((a, b) => {
@@ -214,9 +164,8 @@ const Studios = () => {
         }
       });
     }
-
     return filtered;
-  }, [mockStudios, searchQuery, selectedLocation, selectedStudioType, priceRange, selectedAmenities, minRating, sortBy]);
+  }, [studios, searchQuery, selectedLocation, selectedStudioType, priceRange, selectedAmenities, minRating, sortBy]);
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -231,7 +180,6 @@ const Studios = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       <Navigation />
-      
       <div className="pt-20 px-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
@@ -239,7 +187,6 @@ const Studios = () => {
             <h1 className="text-3xl font-bold text-slate-800 mb-4">Discover Studios</h1>
             <p className="text-slate-600">Find the perfect space for your creative needs</p>
           </div>
-
           {/* Search and View Controls */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
             <div className="flex flex-col lg:flex-row gap-4 items-center">
@@ -252,7 +199,6 @@ const Studios = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              
               <div className="flex items-center gap-2">
                 <Select value={selectedLocation} onValueChange={setSelectedLocation}>
                   <SelectTrigger className="w-48">
@@ -266,7 +212,6 @@ const Studios = () => {
                     ))}
                   </SelectContent>
                 </Select>
-
                 <Select value={selectedStudioType} onValueChange={setSelectedStudioType}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Studio Type" />
@@ -279,7 +224,6 @@ const Studios = () => {
                     ))}
                   </SelectContent>
                 </Select>
-
                 <Button
                   variant="outline"
                   onClick={() => setShowFilters(!showFilters)}
@@ -288,7 +232,6 @@ const Studios = () => {
                   <Filter className="w-4 h-4" />
                   Filters
                 </Button>
-
                 <div className="flex border rounded-lg">
                   <Button
                     variant={viewMode === "grid" ? "default" : "ghost"}
@@ -310,7 +253,6 @@ const Studios = () => {
               </div>
             </div>
           </div>
-
           <div className="flex gap-6">
             {/* Filters Sidebar */}
             {showFilters && (
@@ -321,7 +263,6 @@ const Studios = () => {
                     Clear All
                   </Button>
                 </div>
-                
                 {/* Price Range */}
                 <div className="mb-6">
                   <h4 className="font-medium mb-3">Price Range (per hour)</h4>
@@ -338,7 +279,6 @@ const Studios = () => {
                     <span>₹{priceRange[1]}</span>
                   </div>
                 </div>
-
                 {/* Rating */}
                 <div className="mb-6">
                   <h4 className="font-medium mb-3">Minimum Rating</h4>
@@ -358,7 +298,6 @@ const Studios = () => {
                     ))}
                   </div>
                 </div>
-
                 {/* Amenities */}
                 <div className="mb-6">
                   <h4 className="font-medium mb-3">Amenities</h4>
@@ -379,12 +318,11 @@ const Studios = () => {
                 </div>
               </div>
             )}
-
             {/* Studios Grid/List */}
             <div className="flex-1">
               <div className="mb-4 flex justify-between items-center">
                 <p className="text-slate-600">
-                  Showing {filteredStudios.length} studios
+                  {loading ? "Loading studios..." : error ? error : `Showing ${filteredStudios.length} studios`}
                 </p>
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="w-48">
@@ -398,18 +336,22 @@ const Studios = () => {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className={
-                viewMode === "grid"
-                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                  : "space-y-4"
-              }>
-                {filteredStudios.map((studio) => (
-                  <StudioCard key={studio.id} studio={studio} />
-                ))}
-              </div>
-
-              {filteredStudios.length === 0 && (
+              {loading ? (
+                <div className="text-center py-12 text-slate-500">Loading studios...</div>
+              ) : error ? (
+                <div className="text-center py-12 text-red-500">{error}</div>
+              ) : (
+                <div className={
+                  viewMode === "grid"
+                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                    : "space-y-4"
+                }>
+                  {filteredStudios.map((studio) => (
+                    <StudioCard key={studio.id} studio={studio} />
+                  ))}
+                </div>
+              )}
+              {!loading && !error && filteredStudios.length === 0 && (
                 <div className="text-center py-12">
                   <p className="text-slate-500 text-lg">No studios found matching your criteria</p>
                   <Button variant="outline" onClick={clearFilters} className="mt-4">

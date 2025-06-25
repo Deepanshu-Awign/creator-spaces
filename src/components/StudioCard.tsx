@@ -1,12 +1,12 @@
-
 import { Heart, Star, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { useFavorites } from "@/hooks/useFavorites";
 
 interface Studio {
-  id: number;
+  id: string;
   title: string;
   location: string;
   price: string;
@@ -23,6 +23,8 @@ interface StudioCardProps {
 
 const StudioCard = ({ studio }: StudioCardProps) => {
   const navigate = useNavigate();
+  const { favorites, toggleFavorite } = useFavorites();
+  const isFavorite = favorites.some((fav) => fav.id === studio.id);
 
   const handleViewDetails = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -35,8 +37,7 @@ const StudioCard = ({ studio }: StudioCardProps) => {
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log("Added to favorites:", studio.title);
-    // Handle favorite functionality here
+    toggleFavorite(studio.id);
   };
 
   return (
@@ -53,7 +54,7 @@ const StudioCard = ({ studio }: StudioCardProps) => {
           className="absolute top-3 right-3 bg-white/80 hover:bg-white hover:text-red-500 transition-colors"
           onClick={handleFavoriteClick}
         >
-          <Heart className="w-4 h-4" />
+          <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
         </Button>
         <div className="absolute top-3 left-3 flex gap-1">
           {studio.tags.map((tag) => (

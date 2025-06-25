@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Calendar, Clock, Users, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,9 +9,12 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBookings } from "@/hooks/useBookings";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+
+const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
 interface Studio {
-  id: number;
+  id: string;
   price: number;
   title: string;
 }
@@ -30,6 +32,7 @@ const BookingForm = ({ studio }: BookingFormProps) => {
   const [duration, setDuration] = useState("1");
   const [guests, setGuests] = useState("1");
   const [isBooking, setIsBooking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const calculateTotal = () => {
     const hours = parseInt(duration);
@@ -51,33 +54,80 @@ const BookingForm = ({ studio }: BookingFormProps) => {
     "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
   ];
 
+  // Razorpay payment handler
+  const launchRazorpay = (bookingId: string, amount: number) => {
+    const options = {
+      key: RAZORPAY_KEY_ID,
+      amount: amount * 100, // in paise
+      currency: "INR",
+      name: "BookMyStudio",
+      description: `Booking for ${studio.title}`,
+      handler: async function (response: any) {
+        // Update booking/payment status in Supabase
+        await supabase
+          .from("bookings")
+          .update({ payment_status: "paid", status: "confirmed", payment_id: response.razorpay_payment_id })
+          .eq("id", bookingId);
+        navigate("/profile");
+      },
+      prefill: {
+        email: user?.email,
+      },
+      theme: {
+        color: "#ff6600"
+      }
+    };
+    // @ts-ignore
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
+
   const handleBookNow = async () => {
+    setError(null);
     if (!user) {
       navigate('/login');
       return;
     }
-
     if (!selectedDate || !startTime) {
+      setError("Please select date and time.");
       return;
     }
-
     setIsBooking(true);
     try {
+      // Conflict prevention: check for existing booking
+      const { data: existing, error: conflictError } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('studio_id', studio.id)
+        .eq('booking_date', selectedDate)
+        .eq('start_time', startTime)
+        .single();
+      if (existing) {
+        setError("This time slot is already booked. Please choose another.");
+        setIsBooking(false);
+        return;
+      }
+      if (conflictError && conflictError.code !== 'PGRST116') {
+        setError("Error checking availability. Please try again.");
+        setIsBooking(false);
+        return;
+      }
+      // Create booking with pending payment
       const booking = await createBooking({
-        studioId: studio.id.toString(),
+        studioId: studio.id,
         date: selectedDate,
         startTime: startTime,
         duration: parseInt(duration),
         guestCount: parseInt(guests),
         totalPrice: pricing.total
       });
-
-      if (booking) {
-        // Navigate to profile to see the booking
+      if (booking && RAZORPAY_KEY_ID) {
+        launchRazorpay(booking.id, pricing.total);
+      } else if (booking) {
         navigate('/profile');
       }
-    } catch (error) {
-      console.error('Booking error:', error);
+    } catch (err: any) {
+      setError(err.message || "Booking error. Please try again.");
     } finally {
       setIsBooking(false);
     }
@@ -107,7 +157,6 @@ const BookingForm = ({ studio }: BookingFormProps) => {
             min={new Date().toISOString().split('T')[0]}
           />
         </div>
-
         {/* Time Selection */}
         <div>
           <Label className="flex items-center mb-2">
@@ -127,7 +176,6 @@ const BookingForm = ({ studio }: BookingFormProps) => {
             </SelectContent>
           </Select>
         </div>
-
         {/* Duration */}
         <div>
           <Label className="flex items-center mb-2">
@@ -146,7 +194,6 @@ const BookingForm = ({ studio }: BookingFormProps) => {
             </SelectContent>
           </Select>
         </div>
-
         {/* Guests */}
         <div>
           <Label className="flex items-center mb-2">
@@ -166,9 +213,7 @@ const BookingForm = ({ studio }: BookingFormProps) => {
             </SelectContent>
           </Select>
         </div>
-
         <Separator />
-
         {/* Price Breakdown */}
         <div className="space-y-3">
           <div className="flex justify-between">
@@ -189,7 +234,6 @@ const BookingForm = ({ studio }: BookingFormProps) => {
             <span>₹{pricing.total.toLocaleString()}</span>
           </div>
         </div>
-
         {/* Booking Button */}
         <Button 
           className="w-full bg-orange-500 hover:bg-orange-600 text-white py-6 text-lg font-semibold"
@@ -199,7 +243,7 @@ const BookingForm = ({ studio }: BookingFormProps) => {
           <CreditCard className="w-5 h-5 mr-2" />
           {isBooking ? 'Processing...' : user ? 'Book Now' : 'Login to Book'}
         </Button>
-
+        {error && <div className="text-red-500 text-center text-sm mt-2">{error}</div>}
         <p className="text-sm text-slate-500 text-center">
           {user ? "You won't be charged yet. Review your booking details first." : "Please login to continue with booking."}
         </p>
