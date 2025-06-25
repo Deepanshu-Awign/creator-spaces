@@ -11,7 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Studios = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [priceRange, setPriceRange] = useState([100000, 1000000]); // Fixed price range
+  const DEFAULT_PRICE_RANGE = [100, 10000];
+  const [priceRange, setPriceRange] = useState(DEFAULT_PRICE_RANGE);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
@@ -59,44 +60,36 @@ const Studios = () => {
       setLoading(true);
       setError(null);
       try {
-        console.log("Fetching studios from database...");
         const { data, error } = await supabase
           .from("studios")
           .select("*")
           .eq("is_active", true);
-        
-        if (error) {
-          console.error("Supabase error:", error);
-          throw error;
-        }
-        
-        console.log("Fetched studios data:", data);
-        
-        if (!data || data.length === 0) {
-          console.log("No studios found in database");
-          setStudios([]);
-          return;
-        }
-
-        const formattedStudios = data.map((studio) => ({
-          ...studio,
-          id: studio.id,
-          title: studio.title,
-          location: studio.location,
-          price: `₹${studio.price_per_hour?.toLocaleString()}/hour`,
-          priceValue: studio.price_per_hour || 0,
-          rating: studio.rating || 0,
-          reviewCount: studio.total_reviews || 0,
-          image: studio.images?.[0] || "/placeholder.svg",
-          tags: studio.rating >= 4.8 ? ["Hot Selling", "Verified"] : studio.rating >= 4.5 ? ["Trending", "Popular"] : ["Featured"],
-          amenities: studio.amenities || [],
-          type: "" // You can map type based on title or add type field to database
-        }));
-        
-        console.log("Formatted studios:", formattedStudios);
-        setStudios(formattedStudios);
+        if (error) throw error;
+        setStudios(
+          (data || []).map((studio) => {
+            // Extract city name for filtering
+            let cityName = "";
+            if (studio.location) {
+              cityName = studio.location.split(",")[0].trim();
+            }
+            return {
+              ...studio,
+              id: studio.id,
+              title: studio.title,
+              location: studio.location,
+              cityName,
+              price: `₹${studio.price_per_hour?.toLocaleString()}/hour`,
+              priceValue: studio.price_per_hour,
+              rating: studio.rating || 0,
+              reviewCount: studio.total_reviews || 0,
+              image: studio.images?.[0] || "/placeholder.svg",
+              tags: [],
+              amenities: studio.amenities || [],
+              type: (studio as any).type || ""
+            };
+          })
+        );
       } catch (err: any) {
-        console.error("Error fetching studios:", err);
         setError(err.message || "Failed to load studios.");
       } finally {
         setLoading(false);
@@ -123,22 +116,35 @@ const Studios = () => {
 
   const filteredStudios = useMemo(() => {
     let filtered = studios.filter(studio => {
+      // Debug: log price values
+      console.log(`Studio: ${studio.title}, Price: ${studio.priceValue}`);
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         if (!studio.title.toLowerCase().includes(query) &&
-            !studio.location.toLowerCase().includes(query)) {
+            !studio.location.toLowerCase().includes(query) &&
+            !studio.type.toLowerCase().includes(query)) {
           return false;
         }
       }
-      // Location filter
+      // Location filter (match city name, case-insensitive)
       if (selectedLocation) {
-        if (!studio.location.toLowerCase().includes(selectedLocation)) {
+        const filterCity = selectedLocation.toLowerCase();
+        const studioCity = (studio.cityName || "").toLowerCase();
+        console.log(`Filtering by city: ${filterCity}, Studio city: ${studioCity}`);
+        if (!studioCity.includes(filterCity)) {
+          return false;
+        }
+      }
+      // Studio type filter
+      if (selectedStudioType) {
+        if (studio.type !== selectedStudioType) {
           return false;
         }
       }
       // Price range filter
       if (studio.priceValue < priceRange[0] || studio.priceValue > priceRange[1]) {
+        console.log(`Filtered out by price: ${studio.priceValue}`);
         return false;
       }
       // Amenities filter
@@ -156,6 +162,7 @@ const Studios = () => {
       }
       return true;
     });
+    console.log(`Filtered studios count: ${filtered.length}`);
     // Sort filtered results
     if (sortBy) {
       filtered.sort((a, b) => {
@@ -174,13 +181,13 @@ const Studios = () => {
       });
     }
     return filtered;
-  }, [studios, searchQuery, selectedLocation, priceRange, selectedAmenities, minRating, sortBy]);
+  }, [studios, searchQuery, selectedLocation, selectedStudioType, priceRange, selectedAmenities, minRating, sortBy]);
 
   const clearFilters = () => {
     setSearchQuery("");
     setSelectedLocation("");
     setSelectedStudioType("");
-    setPriceRange([100000, 1000000]);
+    setPriceRange(DEFAULT_PRICE_RANGE);
     setSelectedAmenities([]);
     setMinRating([]);
     setSortBy("");
@@ -268,14 +275,14 @@ const Studios = () => {
                   <Slider
                     value={priceRange}
                     onValueChange={setPriceRange}
-                    max={1000000}
-                    min={50000}
-                    step={50000}
+                    max={10000}
+                    min={100}
+                    step={100}
                     className="mb-2"
                   />
                   <div className="flex justify-between text-sm text-slate-600">
-                    <span>₹{priceRange[0].toLocaleString()}</span>
-                    <span>₹{priceRange[1].toLocaleString()}</span>
+                    <span>₹{priceRange[0]}</span>
+                    <span>₹{priceRange[1]}</span>
                   </div>
                 </div>
                 {/* Rating */}
