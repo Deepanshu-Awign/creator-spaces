@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft, Heart, Share, Star, MapPin, Calendar, Clock, Users, Wifi, Car, Coffee } from "lucide-react";
@@ -31,9 +32,10 @@ const StudioDetail = () => {
       setLoading(true);
       setError(null);
       try {
+        // Fixed query - removed rating from profiles table since it doesn't exist there
         const { data, error } = await supabase
           .from("studios")
-          .select("*, profiles:host_id(full_name, avatar_url, rating)")
+          .select("*, profiles:host_id(full_name, avatar_url)")
           .eq("id", id)
           .single();
         if (error) throw error;
@@ -42,9 +44,10 @@ const StudioDetail = () => {
           image: data.images?.[0] || "/placeholder.svg",
           amenities: data.amenities || [],
           features: [], // You can map features if you have them
-          host: data.profiles || { full_name: "Host", avatar_url: "/placeholder.svg", rating: 0 },
+          host: data.profiles || { full_name: "Host", avatar_url: "/placeholder.svg" },
         });
       } catch (err: any) {
+        console.error("Error fetching studio:", err);
         setError(err.message || "Failed to load studio.");
       } finally {
         setLoading(false);
@@ -67,28 +70,34 @@ const StudioDetail = () => {
           }))
         );
       } catch (err) {
+        console.error("Error fetching reviews:", err);
         setReviews([]);
       }
     };
     // Check if user can review (has completed booking and hasn't reviewed yet)
     const checkCanReview = async () => {
       if (!user || !id) return setCanReview(false);
-      // Check for completed booking
-      const { data: bookings, error: bookingError } = await supabase
-        .from("bookings")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("studio_id", id)
-        .eq("status", "completed");
-      if (bookingError || !bookings || bookings.length === 0) return setCanReview(false);
-      // Check if already reviewed
-      const { data: existingReview } = await supabase
-        .from("reviews")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("studio_id", id)
-        .single();
-      setCanReview(!existingReview);
+      try {
+        // Check for completed booking
+        const { data: bookings, error: bookingError } = await supabase
+          .from("bookings")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("studio_id", id)
+          .eq("status", "completed");
+        if (bookingError || !bookings || bookings.length === 0) return setCanReview(false);
+        // Check if already reviewed
+        const { data: existingReview } = await supabase
+          .from("reviews")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("studio_id", id)
+          .maybeSingle();
+        setCanReview(!existingReview);
+      } catch (err) {
+        console.error("Error checking review eligibility:", err);
+        setCanReview(false);
+      }
     };
     if (id) {
       fetchStudio();
@@ -147,6 +156,7 @@ const StudioDetail = () => {
         );
       }
     } catch (err: any) {
+      console.error("Error submitting review:", err);
       setReviewError(err.message || "Failed to submit review.");
     } finally {
       setSubmittingReview(false);
@@ -263,7 +273,7 @@ const StudioDetail = () => {
                         </h3>
                         <div className="flex items-center text-sm text-slate-600">
                           <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-                          {studio.host.rating || 0} rating
+                          Host verified
                         </div>
                       </div>
                     </div>
