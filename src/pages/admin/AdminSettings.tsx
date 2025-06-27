@@ -41,6 +41,8 @@ const AdminSettings = () => {
   // Update settings mutation
   const updateSettingsMutation = useMutation({
     mutationFn: async (updates: Record<string, any>) => {
+      const { data: userData } = await supabase.auth.getUser();
+      
       const promises = Object.entries(updates).map(([key, value]) =>
         supabase
           .from('system_settings')
@@ -48,7 +50,7 @@ const AdminSettings = () => {
             key,
             value: JSON.stringify(value),
             updated_at: new Date().toISOString(),
-            updated_by: (await supabase.auth.getUser()).data.user?.id
+            updated_by: userData.user?.id
           })
       );
 
