@@ -1,0 +1,71 @@
+
+import React from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { toast } from 'sonner';
+import StudioForm from './StudioForm';
+
+interface EditStudioModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  studio: any;
+}
+
+const EditStudioModal = ({ open, onOpenChange, studio }: EditStudioModalProps) => {
+  const queryClient = useQueryClient();
+
+  const editStudioMutation = useMutation({
+    mutationFn: async (studioData: any) => {
+      const { data, error } = await supabase
+        .from('studios')
+        .update(studioData)
+        .eq('id', studio.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Log the activity
+      await supabase.rpc('log_admin_activity', {
+        _action: 'Updated studio',
+        _target_type: 'studio',
+        _target_id: studio.id,
+        _details: studioData
+      });
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminStudios'] });
+      toast.success('Studio updated successfully');
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      console.error('Error updating studio:', error);
+      toast.error('Failed to update studio');
+    }
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Studio</DialogTitle>
+        </DialogHeader>
+        <StudioForm
+          onSubmit={(data) => editStudioMutation.mutate(data)}
+          initialData={studio}
+          isLoading={editStudioMutation.isPending}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default EditStudioModal;

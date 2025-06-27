@@ -20,11 +20,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Search, MoreHorizontal, UserPlus, Shield, ShieldCheck } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Search, MoreHorizontal, UserPlus, Shield, ShieldCheck, Edit, Trash2, UserX, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import AddUserModal from '@/components/admin/AddUserModal';
+import EditUserModal from '@/components/admin/EditUserModal';
 
 const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [deletingUser, setDeletingUser] = useState<any>(null);
   const queryClient = useQueryClient();
 
   // Fetch users with their roles
@@ -84,6 +99,34 @@ const AdminUsers = () => {
     }
   });
 
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Log the activity
+      await supabase.rpc('log_admin_activity', {
+        _action: 'Deleted user',
+        _target_type: 'user',
+        _target_id: userId
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      toast.success('User deleted successfully');
+      setDeletingUser(null);
+    },
+    onError: (error) => {
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user');
+    }
+  });
+
   const getUserRole = (user: any): string => {
     return user.user_roles?.[0]?.role || 'user';
   };
@@ -106,7 +149,7 @@ const AdminUsers = () => {
           <h1 className="text-3xl font-bold text-gray-900">Users</h1>
           <p className="text-gray-600 mt-2">Manage users and their roles</p>
         </div>
-        <Button className="gap-2">
+        <Button onClick={() => setShowAddModal(true)} className="gap-2">
           <UserPlus className="w-4 h-4" />
           Add User
         </Button>
@@ -170,19 +213,39 @@ const AdminUsers = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => assignRoleMutation.mutate({ userId: user.id, role: 'admin' })}
+                          onClick={() => setEditingUser(user)}
+                          className="gap-2"
                         >
+                          <Edit className="w-4 h-4" />
+                          Edit User
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => assignRoleMutation.mutate({ userId: user.id, role: 'admin' })}
+                          className="gap-2"
+                        >
+                          <Shield className="w-4 h-4" />
                           Make Admin
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => assignRoleMutation.mutate({ userId: user.id, role: 'manager' })}
+                          className="gap-2"
                         >
+                          <ShieldCheck className="w-4 h-4" />
                           Make Manager
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => assignRoleMutation.mutate({ userId: user.id, role: 'user' })}
+                          className="gap-2"
                         >
+                          <UserCheck className="w-4 h-4" />
                           Make User
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setDeletingUser(user)}
+                          className="gap-2 text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete User
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -193,6 +256,42 @@ const AdminUsers = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Add User Modal */}
+      <AddUserModal
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+      />
+
+      {/* Edit User Modal */}
+      {editingUser && (
+        <EditUserModal
+          open={!!editingUser}
+          onOpenChange={(open) => !open && setEditingUser(null)}
+          user={editingUser}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingUser} onOpenChange={() => setDeletingUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deletingUser?.full_name || deletingUser?.email}"? This action cannot be undone and will remove all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteUserMutation.mutate(deletingUser.id)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

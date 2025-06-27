@@ -4,8 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { 
   Table,
   TableBody,
@@ -20,22 +20,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, MoreHorizontal, Calendar, Filter } from 'lucide-react';
+import { Search, MoreHorizontal, Calendar, CheckCircle, XCircle, Eye, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminBookings = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const queryClient = useQueryClient();
 
-  // Fetch bookings with related data
+  // Fetch bookings
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['adminBookings', searchTerm, statusFilter],
     queryFn: async () => {
@@ -43,43 +43,32 @@ const AdminBookings = () => {
         .from('bookings')
         .select(`
           *,
-          profiles:user_id(full_name, email),
-          studios:studio_id(title, location)
+          profiles!bookings_user_id_fkey(full_name, email),
+          studios!bookings_studio_id_fkey(title, location)
         `)
         .order('created_at', { ascending: false });
+
+      if (searchTerm) {
+        query = query.or(`profiles.full_name.ilike.%${searchTerm}%,studios.title.ilike.%${searchTerm}%`);
+      }
 
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
       }
 
       const { data } = await query;
-      
-      if (searchTerm && data) {
-        return data.filter(booking => 
-          booking.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          booking.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          booking.studios?.title?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-
       return data || [];
     }
   });
 
   // Update booking status mutation
-  const updateBookingMutation = useMutation({
-    mutationFn: async ({ bookingId, status, adminNotes }: { 
-      bookingId: string; 
-      status: string; 
-      adminNotes?: string;
-    }) => {
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ bookingId, status }: { bookingId: string; status: string }) => {
       const { error } = await supabase
         .from('bookings')
         .update({ 
           status,
-          admin_notes: adminNotes,
-          approved_at: status === 'confirmed' ? new Date().toISOString() : null,
-          approved_by: status === 'confirmed' ? (await supabase.auth.getUser()).data.user?.id : null
+          ...(status === 'approved' && { approved_at: new Date().toISOString() })
         })
         .eq('id', bookingId);
 
@@ -87,31 +76,31 @@ const AdminBookings = () => {
 
       // Log the activity
       await supabase.rpc('log_admin_activity', {
-        _action: `Updated booking status to ${status}`,
+        _action: `${status.charAt(0).toUpperCase() + status.slice(1)} booking`,
         _target_type: 'booking',
         _target_id: bookingId
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminBookings'] });
-      toast.success('Booking updated successfully');
+      toast.success('Booking status updated successfully');
     },
     onError: (error) => {
-      console.error('Error updating booking:', error);
-      toast.error('Failed to update booking');
+      console.error('Error updating booking status:', error);
+      toast.error('Failed to update booking status');
     }
   });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return <Badge className="bg-green-100 text-green-800">Confirmed</Badge>;
+        return <Badge variant="default" className="bg-green-500">Confirmed</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+        return <Badge variant="secondary">Pending</Badge>;
       case 'cancelled':
         return <Badge variant="destructive">Cancelled</Badge>;
       case 'completed':
-        return <Badge className="bg-blue-100 text-blue-800">Completed</Badge>;
+        return <Badge variant="outline" className="border-green-500 text-green-700">Completed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -120,9 +109,9 @@ const AdminBookings = () => {
   const getPaymentStatusBadge = (status: string) => {
     switch (status) {
       case 'paid':
-        return <Badge className="bg-green-100 text-green-800">Paid</Badge>;
+        return <Badge variant="default" className="bg-green-500">Paid</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+        return <Badge variant="secondary">Pending</Badge>;
       case 'failed':
         return <Badge variant="destructive">Failed</Badge>;
       default:
@@ -137,30 +126,16 @@ const AdminBookings = () => {
           <h1 className="text-3xl font-bold text-gray-900">Bookings</h1>
           <p className="text-gray-600 mt-2">Manage all studio bookings</p>
         </div>
-        <Button className="gap-2">
-          <Calendar className="w-4 h-4" />
-          Calendar View
-        </Button>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>All Bookings</CardTitle>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search bookings..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
-              </div>
+            <div className="flex gap-4">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-40">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue />
+                  <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
@@ -170,6 +145,15 @@ const AdminBookings = () => {
                   <SelectItem value="completed">Completed</SelectItem>
                 </SelectContent>
               </Select>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search bookings..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -178,8 +162,8 @@ const AdminBookings = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Booking Details</TableHead>
-                <TableHead>Studio</TableHead>
                 <TableHead>Customer</TableHead>
+                <TableHead>Studio</TableHead>
                 <TableHead>Date & Time</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
@@ -192,15 +176,16 @@ const AdminBookings = () => {
                 <TableRow key={booking.id}>
                   <TableCell>
                     <div>
-                      <div className="font-medium">#{booking.id.slice(-8)}</div>
+                      <div className="font-medium">#{booking.id.slice(0, 8)}</div>
                       <div className="text-sm text-gray-500">
-                        {booking.duration_hours}h booking
+                        {booking.duration_hours}h • {booking.guest_count} guests
                       </div>
-                      {booking.guest_count && (
-                        <div className="text-xs text-gray-400">
-                          {booking.guest_count} guests
-                        </div>
-                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{booking.profiles?.full_name}</div>
+                      <div className="text-sm text-gray-500">{booking.profiles?.email}</div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -211,25 +196,17 @@ const AdminBookings = () => {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-medium">{booking.profiles?.full_name || 'No name'}</div>
-                      <div className="text-sm text-gray-500">{booking.profiles?.email}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{new Date(booking.booking_date).toLocaleDateString()}</div>
+                      <div className="font-medium">
+                        {new Date(booking.booking_date).toLocaleDateString()}
+                      </div>
                       <div className="text-sm text-gray-500">{booking.start_time}</div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">₹{(booking.total_price / 100).toLocaleString()}</div>
+                    <div className="font-medium">₹{booking.total_price}</div>
                   </TableCell>
-                  <TableCell>
-                    {getStatusBadge(booking.status)}
-                  </TableCell>
-                  <TableCell>
-                    {getPaymentStatusBadge(booking.payment_status)}
-                  </TableCell>
+                  <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                  <TableCell>{getPaymentStatusBadge(booking.payment_status)}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -238,29 +215,40 @@ const AdminBookings = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => updateBookingMutation.mutate({ 
-                            bookingId: booking.id, 
-                            status: 'confirmed' 
-                          })}
-                        >
-                          Confirm Booking
+                        <DropdownMenuItem className="gap-2">
+                          <Eye className="w-4 h-4" />
+                          View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => updateBookingMutation.mutate({ 
-                            bookingId: booking.id, 
-                            status: 'cancelled' 
-                          })}
-                        >
-                          Cancel Booking
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => updateBookingMutation.mutate({ 
-                            bookingId: booking.id, 
-                            status: 'completed' 
-                          })}
-                        >
-                          Mark Complete
+                        {booking.status === 'pending' && (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: 'confirmed' })}
+                              className="gap-2"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              Approve
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: 'cancelled' })}
+                              className="gap-2 text-red-600"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              Cancel
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        {booking.status === 'confirmed' && (
+                          <DropdownMenuItem
+                            onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: 'completed' })}
+                            className="gap-2"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Mark Complete
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem className="gap-2">
+                          <RefreshCw className="w-4 h-4" />
+                          Process Refund
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
