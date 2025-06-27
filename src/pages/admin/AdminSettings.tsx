@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +24,14 @@ const AdminSettings = () => {
       
       const settingsMap: Record<string, any> = {};
       data?.forEach(setting => {
-        settingsMap[setting.key] = JSON.parse(setting.value);
+        // Safely parse JSON values
+        try {
+          settingsMap[setting.key] = typeof setting.value === 'string' 
+            ? JSON.parse(setting.value) 
+            : setting.value;
+        } catch {
+          settingsMap[setting.key] = setting.value;
+        }
       });
       
       return settingsMap;
@@ -80,9 +87,9 @@ const AdminSettings = () => {
         site_name: settings.site_name || '',
         site_description: settings.site_description || '',
         admin_email: settings.admin_email || '',
-        booking_cancellation_hours: settings.booking_cancellation_hours || '',
-        commission_rate: settings.commission_rate || '',
-        max_booking_duration: settings.max_booking_duration || ''
+        booking_cancellation_hours: String(settings.booking_cancellation_hours || ''),
+        commission_rate: String(settings.commission_rate || ''),
+        max_booking_duration: String(settings.max_booking_duration || '')
       });
     }
   }, [settings]);
