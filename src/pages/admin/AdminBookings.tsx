@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,11 +28,13 @@ import {
 } from '@/components/ui/select';
 import { Search, MoreHorizontal, Calendar, CheckCircle, XCircle, Eye, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const AdminBookings = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Fetch bookings
   const { data: bookings, isLoading } = useQuery({
@@ -215,7 +216,10 @@ const AdminBookings = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="gap-2">
+                        <DropdownMenuItem 
+                          onClick={() => navigate(`/booking/${booking.id}`)}
+                          className="gap-2"
+                        >
                           <Eye className="w-4 h-4" />
                           View Details
                         </DropdownMenuItem>

@@ -13,6 +13,7 @@ import Login from "./pages/Login";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
+import BookingDetails from "./pages/BookingDetails";
 
 // Admin components
 import AdminRoute from "./components/AdminRoute";
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/studio/:id" element={<StudioDetail />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/bookings" element={<Profile />} />
+            <Route path="/booking/:id" element={<BookingDetails />} />
             <Route path="/favorites" element={<Profile />} />
             <Route path="/login" element={<Login />} />
             <Route path="/about" element={<About />} />

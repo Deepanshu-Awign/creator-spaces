@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,36 +34,46 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   const [lng, setLng] = useState(initialLng);
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const autocompleteRef = useRef<HTMLInputElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
 
   useEffect(() => {
-    // Load Google Maps API
-    const loadGoogleMaps = () => {
-      if (window.google) {
-        initializeMap();
-        return;
-      }
+    // Check if Google Maps API key is available
+    const envApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (envApiKey && envApiKey !== 'undefined') {
+      setApiKey(envApiKey);
+    } else {
+      setShowApiKeyInput(true);
+    }
+  }, []);
 
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      script.onload = initializeMap;
-      script.onerror = () => {
-        toast.error('Failed to load Google Maps');
-        setIsLoading(false);
-      };
-      document.head.appendChild(script);
-    };
-
-    if (isMapOpen) {
-      setIsLoading(true);
+  useEffect(() => {
+    if (isMapOpen && apiKey) {
       loadGoogleMaps();
     }
-  }, [isMapOpen]);
+  }, [isMapOpen, apiKey]);
+
+  const loadGoogleMaps = () => {
+    if (window.google) {
+      initializeMap();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = initializeMap;
+    script.onerror = () => {
+      toast.error('Failed to load Google Maps. Please check your API key.');
+      setIsLoading(false);
+    };
+    document.head.appendChild(script);
+  };
 
   const initializeMap = () => {
     if (!mapRef.current || !window.google) return;
@@ -95,8 +106,6 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
         const newLng = position.lng();
         setLat(newLat.toString());
         setLng(newLng.toString());
-        
-        // Reverse geocode to get address
         reverseGeocode(newLat, newLng);
       });
     }
@@ -213,13 +222,39 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
     setLng(initialLng);
   };
 
+  const handleOpenMap = () => {
+    if (!apiKey) {
+      toast.error('Please enter your Google Maps API key first');
+      return;
+    }
+    setIsMapOpen(true);
+    setIsLoading(true);
+  };
+
   return (
     <>
+      {showApiKeyInput && (
+        <div className="space-y-2 mb-4 p-4 border rounded-lg bg-yellow-50">
+          <Label htmlFor="google-maps-key">Google Maps API Key</Label>
+          <Input
+            id="google-maps-key"
+            type="password"
+            placeholder="Enter your Google Maps API key"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+          />
+          <p className="text-xs text-gray-600">
+            Get your API key from: <a href="https://console.cloud.google.com/google/maps-apis" target="_blank" className="text-blue-600 underline">Google Cloud Console</a>
+          </p>
+        </div>
+      )}
+
       <Button
         type="button"
         variant="outline"
-        onClick={() => setIsMapOpen(true)}
+        onClick={handleOpenMap}
         className="gap-2"
+        disabled={!apiKey}
       >
         <MapPin className="w-4 h-4" />
         Pick on Map
@@ -296,4 +331,4 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   );
 };
 
-export default GoogleMapsPicker; 
+export default GoogleMapsPicker;

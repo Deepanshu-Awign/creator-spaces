@@ -46,7 +46,8 @@ export const useBookings = () => {
         duration: `${booking.duration_hours} hour${booking.duration_hours > 1 ? 's' : ''}`,
         status: booking.status,
         price: `₹${booking.total_price?.toLocaleString()}`,
-        image: booking.studios?.images?.[0] || "/placeholder.svg"
+        image: booking.studios?.images?.[0] || "/placeholder.svg",
+        canReview: booking.status === 'completed'
       })) || [];
 
       setBookings(formattedBookings);
@@ -103,7 +104,7 @@ export const useBookings = () => {
         description: "Your booking request has been submitted."
       });
 
-      await fetchBookings(); // Refresh bookings list
+      await fetchBookings();
       return data;
     } catch (error) {
       console.error('Error creating booking:', error);
