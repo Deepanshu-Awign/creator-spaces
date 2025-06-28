@@ -36,11 +36,13 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [apiKey, setApiKey] = useState<string>('');
+  const [searchValue, setSearchValue] = useState('');
   
   const mapRef = useRef<HTMLDivElement>(null);
   const autocompleteRef = useRef<HTMLInputElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
+  const autocompleteInstanceRef = useRef<any>(null);
 
   useEffect(() => {
     // Get API key from environment
@@ -113,15 +115,24 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
         addMarker(parseFloat(lat), parseFloat(lng), map);
       }
 
-      // Initialize autocomplete
+      // Initialize autocomplete with better configuration
       if (autocompleteRef.current) {
         console.log('Initializing autocomplete...');
         try {
+          // Clear any existing autocomplete
+          if (autocompleteInstanceRef.current) {
+            window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+          }
+
           const autocomplete = new window.google.maps.places.Autocomplete(autocompleteRef.current, {
             types: ['establishment', 'geocode'],
-            componentRestrictions: { country: 'IN' }
+            componentRestrictions: { country: 'IN' },
+            fields: ['formatted_address', 'geometry', 'name', 'place_id']
           });
 
+          autocompleteInstanceRef.current = autocomplete;
+
+          // Add event listener for place selection
           autocomplete.addListener('place_changed', () => {
             console.log('Place changed event triggered');
             const place = autocomplete.getPlace();
@@ -133,12 +144,39 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
               const newAddress = place.formatted_address || place.name || '';
 
               console.log('Updating location:', { newLat, newLng, newAddress });
+              setSearchValue(newAddress);
               updateLocation(newLat, newLng, newAddress, map);
+              toast.success('Location selected successfully!');
             } else {
               console.log('No geometry found for selected place');
               toast.error('Could not get location for selected place. Please try clicking on the map instead.');
             }
           });
+
+          // Add CSS to ensure dropdown is visible
+          const style = document.createElement('style');
+          style.textContent = `
+            .pac-container {
+              z-index: 9999 !important;
+              background: white !important;
+              border: 1px solid #ccc !important;
+              border-radius: 4px !important;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+            }
+            .pac-item {
+              padding: 8px 12px !important;
+              cursor: pointer !important;
+              border-bottom: 1px solid #eee !important;
+            }
+            .pac-item:hover {
+              background-color: #f5f5f5 !important;
+            }
+            .pac-item-selected {
+              background-color: #e3f2fd !important;
+            }
+          `;
+          document.head.appendChild(style);
+
         } catch (error) {
           console.error('Error initializing autocomplete:', error);
           toast.error('Address search not available. Please use map click to select location.');
@@ -217,6 +255,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
       if (status === 'OK' && results && results[0]) {
         const newAddress = results[0].formatted_address;
         setAddress(newAddress);
+        setSearchValue(newAddress);
         
         // Also update the autocomplete input
         if (autocompleteRef.current) {
@@ -247,6 +286,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
     setAddress(initialAddress);
     setLat(initialLat);
     setLng(initialLng);
+    setSearchValue('');
   };
 
   const handleOpenMap = () => {
@@ -264,6 +304,35 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
       // Map already loaded, just reinitialize
       setTimeout(initializeMap, 100);
     }
+  };
+
+  const handleManualSearch = () => {
+    if (!searchValue.trim()) {
+      toast.error('Please enter an address to search');
+      return;
+    }
+
+    if (!window.google || !window.google.maps) {
+      toast.error('Google Maps not loaded');
+      return;
+    }
+
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ address: searchValue }, (results: any, status: any) => {
+      if (status === 'OK' && results && results[0]) {
+        const location = results[0].geometry.location;
+        const newLat = location.lat();
+        const newLng = location.lng();
+        const newAddress = results[0].formatted_address;
+
+        console.log('Manual search result:', { newLat, newLng, newAddress });
+        setAddress(newAddress);
+        updateLocation(newLat, newLng, newAddress, mapInstanceRef.current);
+        toast.success('Location found!');
+      } else {
+        toast.error('Could not find the address. Please try a different search term or click on the map.');
+      }
+    });
   };
 
   useEffect(() => {
@@ -304,14 +373,31 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
             <div className="flex-1 p-4 space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="address-search">Search Address</Label>
-                <Input
-                  ref={autocompleteRef}
-                  id="address-search"
-                  placeholder="Search for an address..."
-                  className="w-full"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    ref={autocompleteRef}
+                    id="address-search"
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    placeholder="Search for an address..."
+                    className="flex-1"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleManualSearch();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleManualSearch}
+                    disabled={!searchValue.trim()}
+                  >
+                    Search
+                  </Button>
+                </div>
                 <p className="text-xs text-gray-500">
-                  Type to search or click directly on the map to select a location
+                  Type to search, press Enter, or click directly on the map to select a location
                 </p>
               </div>
 
