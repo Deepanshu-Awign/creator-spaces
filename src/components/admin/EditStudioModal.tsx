@@ -52,6 +52,10 @@ const EditStudioModal = ({ open, onOpenChange, studio }: EditStudioModalProps) =
     }
   });
 
+  const handleSubmit = async (data: any) => {
+    await editStudioMutation.mutateAsync(data);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -59,7 +63,7 @@ const EditStudioModal = ({ open, onOpenChange, studio }: EditStudioModalProps) =
           <DialogTitle>Edit Studio</DialogTitle>
         </DialogHeader>
         <StudioForm
-          onSubmit={(data) => editStudioMutation.mutate(data)}
+          onSubmit={handleSubmit}
           initialData={studio}
           isLoading={editStudioMutation.isPending}
         />

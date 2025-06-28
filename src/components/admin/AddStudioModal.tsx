@@ -54,6 +54,10 @@ const AddStudioModal = ({ open, onOpenChange }: AddStudioModalProps) => {
     }
   });
 
+  const handleSubmit = async (data: any) => {
+    await addStudioMutation.mutateAsync(data);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -61,7 +65,7 @@ const AddStudioModal = ({ open, onOpenChange }: AddStudioModalProps) => {
           <DialogTitle>Add New Studio</DialogTitle>
         </DialogHeader>
         <StudioForm
-          onSubmit={(data) => addStudioMutation.mutate(data)}
+          onSubmit={handleSubmit}
           isLoading={addStudioMutation.isPending}
         />
       </DialogContent>
