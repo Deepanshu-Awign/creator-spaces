@@ -35,19 +35,17 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [apiKey, setApiKey] = useState('');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const autocompleteRef = useRef<HTMLInputElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
+  const autocompleteInstanceRef = useRef<any>(null);
 
   useEffect(() => {
-    // Check if Google Maps API key is available
+    // Get Google Maps API key from environment
     const envApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     if (envApiKey && envApiKey !== 'undefined') {
       setApiKey(envApiKey);
-    } else {
-      setShowApiKeyInput(true);
     }
   }, []);
 
@@ -63,11 +61,15 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
       return;
     }
 
+    setIsLoading(true);
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
     script.async = true;
     script.defer = true;
-    script.onload = initializeMap;
+    script.onload = () => {
+      setIsLoading(false);
+      initializeMap();
+    };
     script.onerror = () => {
       toast.error('Failed to load Google Maps. Please check your API key.');
       setIsLoading(false);
@@ -78,12 +80,15 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   const initializeMap = () => {
     if (!mapRef.current || !window.google) return;
 
-    setIsLoading(false);
+    // Default to India center or existing coordinates
+    const center = lat && lng 
+      ? { lat: parseFloat(lat), lng: parseFloat(lng) } 
+      : { lat: 20.5937, lng: 78.9629 };
 
     // Initialize map
     const map = new window.google.maps.Map(mapRef.current, {
-      center: lat && lng ? { lat: parseFloat(lat), lng: parseFloat(lng) } : { lat: 20.5937, lng: 78.9629 }, // India center
-      zoom: 13,
+      center: center,
+      zoom: lat && lng ? 15 : 6,
       mapTypeControl: false,
       streetViewControl: false,
     });
@@ -93,20 +98,23 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
     // Add marker if coordinates exist
     if (lat && lng) {
       const marker = new window.google.maps.Marker({
-        position: { lat: parseFloat(lat), lng: parseFloat(lng) },
+        position: center,
         map: map,
         draggable: true,
+        title: 'Studio Location'
       });
       markerRef.current = marker;
 
       // Handle marker drag
       marker.addListener('dragend', () => {
         const position = marker.getPosition();
-        const newLat = position.lat();
-        const newLng = position.lng();
-        setLat(newLat.toString());
-        setLng(newLng.toString());
-        reverseGeocode(newLat, newLng);
+        if (position) {
+          const newLat = position.lat();
+          const newLng = position.lng();
+          setLat(newLat.toString());
+          setLng(newLng.toString());
+          reverseGeocode(newLat, newLng);
+        }
       });
     }
 
@@ -117,19 +125,21 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
         componentRestrictions: { country: 'IN' }
       });
 
+      autocompleteInstanceRef.current = autocomplete;
+
       autocomplete.addListener('place_changed', () => {
         const place = autocomplete.getPlace();
         
-        if (place.geometry) {
+        if (place.geometry && place.geometry.location) {
           const newLat = place.geometry.location.lat();
           const newLng = place.geometry.location.lng();
-          const newAddress = place.formatted_address || place.name;
+          const newAddress = place.formatted_address || place.name || '';
 
           setLat(newLat.toString());
           setLng(newLng.toString());
           setAddress(newAddress);
 
-          // Update map
+          // Update map center and zoom
           map.setCenter({ lat: newLat, lng: newLng });
           map.setZoom(15);
 
@@ -141,16 +151,19 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
               position: { lat: newLat, lng: newLng },
               map: map,
               draggable: true,
+              title: 'Studio Location'
             });
             markerRef.current = marker;
 
             marker.addListener('dragend', () => {
               const position = marker.getPosition();
-              const markerLat = position.lat();
-              const markerLng = position.lng();
-              setLat(markerLat.toString());
-              setLng(markerLng.toString());
-              reverseGeocode(markerLat, markerLng);
+              if (position) {
+                const markerLat = position.lat();
+                const markerLng = position.lng();
+                setLat(markerLat.toString());
+                setLng(markerLng.toString());
+                reverseGeocode(markerLat, markerLng);
+              }
             });
           }
         }
@@ -159,43 +172,56 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
 
     // Handle map click
     map.addListener('click', (event: any) => {
-      const newLat = event.latLng.lat();
-      const newLng = event.latLng.lng();
-      
-      setLat(newLat.toString());
-      setLng(newLng.toString());
+      if (event.latLng) {
+        const newLat = event.latLng.lat();
+        const newLng = event.latLng.lng();
+        
+        setLat(newLat.toString());
+        setLng(newLng.toString());
 
-      // Update or create marker
-      if (markerRef.current) {
-        markerRef.current.setPosition({ lat: newLat, lng: newLng });
-      } else {
-        const marker = new window.google.maps.Marker({
-          position: { lat: newLat, lng: newLng },
-          map: map,
-          draggable: true,
-        });
-        markerRef.current = marker;
+        // Update or create marker
+        if (markerRef.current) {
+          markerRef.current.setPosition({ lat: newLat, lng: newLng });
+        } else {
+          const marker = new window.google.maps.Marker({
+            position: { lat: newLat, lng: newLng },
+            map: map,
+            draggable: true,
+            title: 'Studio Location'
+          });
+          markerRef.current = marker;
 
-        marker.addListener('dragend', () => {
-          const position = marker.getPosition();
-          const markerLat = position.lat();
-          const markerLng = position.lng();
-          setLat(markerLat.toString());
-          setLng(markerLng.toString());
-          reverseGeocode(markerLat, markerLng);
-        });
+          marker.addListener('dragend', () => {
+            const position = marker.getPosition();
+            if (position) {
+              const markerLat = position.lat();
+              const markerLng = position.lng();
+              setLat(markerLat.toString());
+              setLng(markerLng.toString());
+              reverseGeocode(markerLat, markerLng);
+            }
+          });
+        }
+
+        // Reverse geocode to get address
+        reverseGeocode(newLat, newLng);
       }
-
-      // Reverse geocode to get address
-      reverseGeocode(newLat, newLng);
     });
   };
 
   const reverseGeocode = (lat: number, lng: number) => {
+    if (!window.google) return;
+    
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
-      if (status === 'OK' && results[0]) {
-        setAddress(results[0].formatted_address);
+      if (status === 'OK' && results && results[0]) {
+        const newAddress = results[0].formatted_address;
+        setAddress(newAddress);
+        
+        // Also update the autocomplete input if it exists
+        if (autocompleteRef.current) {
+          autocompleteRef.current.value = newAddress;
+        }
       }
     });
   };
@@ -217,6 +243,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
 
   const handleCancel = () => {
     setIsMapOpen(false);
+    // Reset to initial values
     setAddress(initialAddress);
     setLat(initialLat);
     setLng(initialLng);
@@ -224,31 +251,14 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
 
   const handleOpenMap = () => {
     if (!apiKey) {
-      toast.error('Please enter your Google Maps API key first');
+      toast.error('Google Maps API key is not configured');
       return;
     }
     setIsMapOpen(true);
-    setIsLoading(true);
   };
 
   return (
     <>
-      {showApiKeyInput && (
-        <div className="space-y-2 mb-4 p-4 border rounded-lg bg-yellow-50">
-          <Label htmlFor="google-maps-key">Google Maps API Key</Label>
-          <Input
-            id="google-maps-key"
-            type="password"
-            placeholder="Enter your Google Maps API key"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-          />
-          <p className="text-xs text-gray-600">
-            Get your API key from: <a href="https://console.cloud.google.com/google/maps-apis" target="_blank" className="text-blue-600 underline">Google Cloud Console</a>
-          </p>
-        </div>
-      )}
-
       <Button
         type="button"
         variant="outline"
@@ -257,7 +267,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
         disabled={!apiKey}
       >
         <MapPin className="w-4 h-4" />
-        Pick on Map
+        Pick Location
       </Button>
 
       {isMapOpen && (
@@ -282,14 +292,15 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
                 <Input
                   ref={autocompleteRef}
                   id="address-search"
-                  placeholder="Search for an address..."
+                  placeholder="Search for an address or place..."
                   className="w-full"
+                  defaultValue={address}
                 />
               </div>
 
-              <div className="flex-1 relative">
+              <div className="flex-1 relative min-h-[400px]">
                 {isLoading ? (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                       <p className="mt-2 text-sm text-gray-600">Loading map...</p>
@@ -303,15 +314,17 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <Label>Address</Label>
-                  <p className="text-gray-600 truncate">{address || 'No address selected'}</p>
+                  <p className="text-gray-600 truncate text-xs mt-1">
+                    {address || 'No address selected'}
+                  </p>
                 </div>
                 <div>
                   <Label>Latitude</Label>
-                  <p className="text-gray-600">{lat || 'Not set'}</p>
+                  <p className="text-gray-600 text-xs mt-1">{lat || 'Not set'}</p>
                 </div>
                 <div>
                   <Label>Longitude</Label>
-                  <p className="text-gray-600">{lng || 'Not set'}</p>
+                  <p className="text-gray-600 text-xs mt-1">{lng || 'Not set'}</p>
                 </div>
               </div>
             </div>
