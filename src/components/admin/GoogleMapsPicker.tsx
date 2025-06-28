@@ -201,35 +201,84 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
       return;
     }
 
+    console.log('Selecting place:', { placeId, description });
+
     try {
-      const service = new window.google.maps.places.PlacesService(mapInstanceRef.current);
+      // Create a dummy div for PlacesService (required by Google Maps API)
+      const serviceDiv = document.createElement('div');
+      const service = new window.google.maps.places.PlacesService(serviceDiv);
+      
       service.getDetails(
         {
           placeId: placeId,
-          fields: ['formatted_address', 'geometry', 'name']
+          fields: ['formatted_address', 'geometry', 'name', 'place_id']
         },
         (place: any, status: any) => {
+          console.log('Place details response:', { place, status });
+          
           if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
-            const newLat = place.geometry.location.lat();
-            const newLng = place.geometry.location.lng();
-            const newAddress = place.formatted_address || place.name || description;
+            console.log('Place details successful:', place);
+            
+            if (place.geometry && place.geometry.location) {
+              const newLat = place.geometry.location.lat();
+              const newLng = place.geometry.location.lng();
+              const newAddress = place.formatted_address || place.name || description;
 
-            console.log('Place selected:', { newLat, newLng, newAddress });
-            setAddress(newAddress);
-            setSearchValue(newAddress);
-            updateLocation(newLat, newLng, newAddress, mapInstanceRef.current);
-            setShowDropdown(false);
-            setSearchResults([]);
-            toast.success('Location selected successfully!');
+              console.log('Location extracted:', { newLat, newLng, newAddress });
+              setAddress(newAddress);
+              setSearchValue(newAddress);
+              updateLocation(newLat, newLng, newAddress, mapInstanceRef.current);
+              setShowDropdown(false);
+              setSearchResults([]);
+              toast.success('Location selected successfully!');
+            } else {
+              console.error('No geometry found in place:', place);
+              toast.error('Could not get location coordinates. Please try clicking on the map instead.');
+            }
           } else {
-            toast.error('Could not get location details. Please try again.');
+            console.error('PlacesService error:', status);
+            // Fallback to geocoding
+            fallbackGeocode(description);
           }
         }
       );
     } catch (error) {
       console.error('Error getting place details:', error);
-      toast.error('Error selecting location');
+      // Fallback to geocoding
+      fallbackGeocode(description);
     }
+  };
+
+  const fallbackGeocode = (address: string) => {
+    console.log('Using fallback geocoding for:', address);
+    
+    if (!window.google || !window.google.maps) {
+      toast.error('Google Maps not loaded');
+      return;
+    }
+
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ address: address }, (results: any, status: any) => {
+      console.log('Geocoding response:', { results, status });
+      
+      if (status === 'OK' && results && results[0]) {
+        const location = results[0].geometry.location;
+        const newLat = location.lat();
+        const newLng = location.lng();
+        const newAddress = results[0].formatted_address;
+
+        console.log('Fallback geocoding successful:', { newLat, newLng, newAddress });
+        setAddress(newAddress);
+        setSearchValue(newAddress);
+        updateLocation(newLat, newLng, newAddress, mapInstanceRef.current);
+        setShowDropdown(false);
+        setSearchResults([]);
+        toast.success('Location found via geocoding!');
+      } else {
+        console.error('Geocoding failed:', status);
+        toast.error('Could not find location. Please try clicking on the map instead.');
+      }
+    });
   };
 
   const handleManualSearch = () => {
@@ -265,6 +314,8 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   };
 
   const addMarker = (lat: number, lng: number, map: any) => {
+    console.log('addMarker called with:', { lat, lng, mapExists: !!map });
+    
     // Remove existing marker
     if (markerRef.current) {
       markerRef.current.setMap(null);
@@ -279,6 +330,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
     });
 
     markerRef.current = marker;
+    console.log('Marker created and added to map');
 
     // Handle marker drag
     marker.addListener('dragend', () => {
@@ -294,6 +346,8 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   };
 
   const updateLocation = (newLat: number, newLng: number, newAddress: string, map: any) => {
+    console.log('updateLocation called with:', { newLat, newLng, newAddress, mapExists: !!map });
+    
     setLat(newLat.toString());
     setLng(newLng.toString());
     if (newAddress) {
@@ -301,11 +355,15 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
     }
 
     // Update map center and zoom
-    map.setCenter({ lat: newLat, lng: newLng });
-    map.setZoom(15);
+    if (map) {
+      map.setCenter({ lat: newLat, lng: newLng });
+      map.setZoom(15);
 
-    // Add/update marker
-    addMarker(newLat, newLng, map);
+      // Add/update marker
+      addMarker(newLat, newLng, map);
+    } else {
+      console.error('Map instance not available for updateLocation');
+    }
   };
 
   const reverseGeocode = (lat: number, lng: number) => {
