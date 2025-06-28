@@ -1,4 +1,3 @@
-
 import { ReactNode, useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { 
@@ -16,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 interface AdminLayoutProps {
   children?: ReactNode;
@@ -23,6 +23,7 @@ interface AdminLayoutProps {
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const location = useLocation();
   const { signOut, user } = useAuth();
 
@@ -40,6 +41,19 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       return location.pathname === '/admin';
     }
     return location.pathname.startsWith(path);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      setIsLoggingOut(true);
+      await signOut();
+      toast.success("Signed out successfully");
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error("Failed to sign out. Please try again.");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -109,10 +123,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={signOut}
+              onClick={handleSignOut}
+              disabled={isLoggingOut}
               className="text-gray-500 hover:text-gray-700"
             >
               <LogOut className="w-4 h-4" />
+              {isLoggingOut && <span className="ml-2 text-xs">Signing out...</span>}
             </Button>
           </div>
         </div>

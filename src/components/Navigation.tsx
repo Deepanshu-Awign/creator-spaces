@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, User, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useUserRole";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +15,7 @@ import {
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -38,7 +39,16 @@ const Navigation = () => {
   };
 
   const handleSignOut = async () => {
-    await signOut();
+    try {
+      setIsLoggingOut(true);
+      await signOut();
+      toast.success("Signed out successfully");
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error("Failed to sign out. Please try again.");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -97,9 +107,9 @@ const Navigation = () => {
                     </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
+                  <DropdownMenuItem onClick={handleSignOut} disabled={isLoggingOut}>
                     <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
+                    {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -174,9 +184,10 @@ const Navigation = () => {
                       handleSignOut();
                       setIsMenuOpen(false);
                     }}
+                    disabled={isLoggingOut}
                   >
                     <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
+                    {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
                   </Button>
                 </div>
               ) : (
