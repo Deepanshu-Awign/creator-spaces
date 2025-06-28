@@ -172,6 +172,20 @@ const StudioForm = ({ onSubmit, initialData, isLoading }: StudioFormProps) => {
     return uploadedUrls;
   };
 
+  const handleLocationSelect = (locationData: { address: string; lat: string; lng: string }) => {
+    console.log('Location selected:', locationData);
+    setAddress(locationData.address);
+    setLat(locationData.lat);
+    setLng(locationData.lng);
+    
+    // Also update the location field if it's empty
+    if (!location) {
+      setLocation(locationData.address);
+    }
+    
+    toast.success('Location selected successfully');
+  };
+
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -208,6 +222,7 @@ const StudioForm = ({ onSubmit, initialData, isLoading }: StudioFormProps) => {
         lng,
       };
       
+      console.log('Submitting studio data:', data);
       await onSubmit(data);
     } catch (e) {
       setError("An error occurred while saving the studio.");
@@ -215,18 +230,6 @@ const StudioForm = ({ onSubmit, initialData, isLoading }: StudioFormProps) => {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const handleMapClick = () => {
-    // Google Maps integration placeholder
-    // This will be implemented with Google Maps API
-    toast.info('Google Maps picker will be implemented here');
-  };
-
-  const handleLocationSelect = (location: { address: string; lat: string; lng: string }) => {
-    setAddress(location.address);
-    setLat(location.lat);
-    setLng(location.lng);
   };
 
   return (
@@ -266,23 +269,27 @@ const StudioForm = ({ onSubmit, initialData, isLoading }: StudioFormProps) => {
           id="location"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          placeholder="Enter studio location"
+          placeholder="Enter studio location (e.g., City, Area)"
           required
         />
+        <p className="text-xs text-gray-500">
+          This is the general location that will be displayed to users
+        </p>
         {errors.location && (
           <p className="text-sm text-red-500">{errors.location.message}</p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="address">Address</Label>
+        <Label>Precise Address & Map Location</Label>
         <div className="flex gap-2">
           <Input
             id="address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            placeholder="Enter full address"
+            placeholder="Full address will appear here after map selection"
             className="flex-1"
+            readOnly
           />
           <GoogleMapsPicker
             onLocationSelect={handleLocationSelect}
@@ -291,6 +298,9 @@ const StudioForm = ({ onSubmit, initialData, isLoading }: StudioFormProps) => {
             initialLng={lng}
           />
         </div>
+        <p className="text-xs text-gray-500">
+          Use the map picker to select the exact location of your studio
+        </p>
       </div>
 
       <div className="space-y-2">
