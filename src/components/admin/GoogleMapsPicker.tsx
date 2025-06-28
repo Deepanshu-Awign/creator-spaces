@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MapPin, X } from 'lucide-react';
+import { MapPin, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface GoogleMapsPickerProps {
@@ -20,6 +19,7 @@ interface GoogleMapsPickerProps {
 declare global {
   interface Window {
     google: any;
+    initGoogleMaps: () => void;
   }
 }
 
@@ -35,17 +35,28 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [apiKey, setApiKey] = useState<string>('');
+  
   const mapRef = useRef<HTMLDivElement>(null);
   const autocompleteRef = useRef<HTMLInputElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
 
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  useEffect(() => {
+    // Get API key from environment
+    const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    setApiKey(key || '');
+    
+    // Test API key if available
+    if (key) {
+      console.log('Google Maps API key found:', key.substring(0, 10) + '...');
+    } else {
+      console.error('Google Maps API key not found in environment variables');
+    }
+  }, []);
 
   const loadGoogleMaps = () => {
-    if (window.google && window.google.maps) {
-      setMapLoaded(true);
-      initializeMap();
+    if (mapLoaded) {
       return;
     }
 
@@ -61,7 +72,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
     script.defer = true;
     
     // Set up callback
-    (window as any).initGoogleMaps = () => {
+    window.initGoogleMaps = () => {
       setIsLoading(false);
       setMapLoaded(true);
       initializeMap();
@@ -104,22 +115,36 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
 
       // Initialize autocomplete
       if (autocompleteRef.current) {
-        const autocomplete = new window.google.maps.places.Autocomplete(autocompleteRef.current, {
-          types: ['establishment', 'geocode'],
-          componentRestrictions: { country: 'IN' }
-        });
+        console.log('Initializing autocomplete...');
+        try {
+          const autocomplete = new window.google.maps.places.Autocomplete(autocompleteRef.current, {
+            types: ['establishment', 'geocode'],
+            componentRestrictions: { country: 'IN' }
+          });
 
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          
-          if (place.geometry && place.geometry.location) {
-            const newLat = place.geometry.location.lat();
-            const newLng = place.geometry.location.lng();
-            const newAddress = place.formatted_address || place.name || '';
+          autocomplete.addListener('place_changed', () => {
+            console.log('Place changed event triggered');
+            const place = autocomplete.getPlace();
+            console.log('Selected place:', place);
+            
+            if (place.geometry && place.geometry.location) {
+              const newLat = place.geometry.location.lat();
+              const newLng = place.geometry.location.lng();
+              const newAddress = place.formatted_address || place.name || '';
 
-            updateLocation(newLat, newLng, newAddress, map);
-          }
-        });
+              console.log('Updating location:', { newLat, newLng, newAddress });
+              updateLocation(newLat, newLng, newAddress, map);
+            } else {
+              console.log('No geometry found for selected place');
+              toast.error('Could not get location for selected place. Please try clicking on the map instead.');
+            }
+          });
+        } catch (error) {
+          console.error('Error initializing autocomplete:', error);
+          toast.error('Address search not available. Please use map click to select location.');
+        }
+      } else {
+        console.log('Autocomplete ref not available');
       }
 
       // Handle map click
@@ -225,14 +250,17 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   };
 
   const handleOpenMap = () => {
+    console.log('Opening map, API key:', apiKey ? 'Present' : 'Missing');
     if (!apiKey) {
       toast.error('Google Maps API key is not configured');
       return;
     }
     setIsMapOpen(true);
     if (!mapLoaded) {
+      console.log('Loading Google Maps...');
       loadGoogleMaps();
     } else if (mapInstanceRef.current) {
+      console.log('Map already loaded, reinitializing...');
       // Map already loaded, just reinitialize
       setTimeout(initializeMap, 100);
     }
@@ -254,15 +282,8 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
         disabled={!apiKey}
       >
         <MapPin className="w-4 h-4" />
-        {lat && lng ? 'Update Location' : 'Pick Location'}
+        Pick on Map
       </Button>
-
-      {/* Show current location if selected */}
-      {(address || (lat && lng)) && (
-        <div className="text-xs text-gray-600 mt-1">
-          <div>📍 {address || `${lat}, ${lng}`}</div>
-        </div>
-      )}
 
       {isMapOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -286,20 +307,19 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
                 <Input
                   ref={autocompleteRef}
                   id="address-search"
-                  placeholder="Type to search for an address or place..."
+                  placeholder="Search for an address..."
                   className="w-full"
-                  defaultValue={address}
                 />
                 <p className="text-xs text-gray-500">
-                  You can also click directly on the map to select a location
+                  Type to search or click directly on the map to select a location
                 </p>
               </div>
 
-              <div className="flex-1 relative min-h-[400px]">
+              <div className="flex-1 relative">
                 {isLoading ? (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded">
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
                     <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" />
                       <p className="mt-2 text-sm text-gray-600">Loading map...</p>
                     </div>
                   </div>
@@ -311,17 +331,15 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <Label>Address</Label>
-                  <p className="text-gray-600 truncate text-xs mt-1">
-                    {address || 'No address selected'}
-                  </p>
+                  <p className="text-gray-600 truncate">{address || 'No address selected'}</p>
                 </div>
                 <div>
                   <Label>Latitude</Label>
-                  <p className="text-gray-600 text-xs mt-1">{lat || 'Not set'}</p>
+                  <p className="text-gray-600">{lat || 'Not set'}</p>
                 </div>
                 <div>
                   <Label>Longitude</Label>
-                  <p className="text-gray-600 text-xs mt-1">{lng || 'Not set'}</p>
+                  <p className="text-gray-600">{lng || 'Not set'}</p>
                 </div>
               </div>
             </div>
@@ -330,11 +348,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
               <Button variant="outline" onClick={handleCancel}>
                 Cancel
               </Button>
-              <Button 
-                onClick={handleConfirm} 
-                disabled={!lat || !lng}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
+              <Button onClick={handleConfirm} disabled={!lat || !lng}>
                 Confirm Location
               </Button>
             </div>
