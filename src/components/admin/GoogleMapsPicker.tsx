@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MapPin, X, Loader2 } from 'lucide-react';
+import { MapPin, X, Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface GoogleMapsPickerProps {
@@ -14,6 +14,15 @@ interface GoogleMapsPickerProps {
   initialAddress?: string;
   initialLat?: string;
   initialLng?: string;
+}
+
+interface PlaceResult {
+  place_id: string;
+  description: string;
+  structured_formatting: {
+    main_text: string;
+    secondary_text: string;
+  };
 }
 
 declare global {
@@ -37,12 +46,15 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [apiKey, setApiKey] = useState<string>('');
   const [searchValue, setSearchValue] = useState('');
+  const [searchResults, setSearchResults] = useState<PlaceResult[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   
   const mapRef = useRef<HTMLDivElement>(null);
-  const autocompleteRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
-  const autocompleteInstanceRef = useRef<any>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
     // Get API key from environment
@@ -115,76 +127,6 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
         addMarker(parseFloat(lat), parseFloat(lng), map);
       }
 
-      // Initialize autocomplete with better configuration
-      if (autocompleteRef.current) {
-        console.log('Initializing autocomplete...');
-        try {
-          // Clear any existing autocomplete
-          if (autocompleteInstanceRef.current) {
-            window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
-          }
-
-          const autocomplete = new window.google.maps.places.Autocomplete(autocompleteRef.current, {
-            types: ['establishment', 'geocode'],
-            componentRestrictions: { country: 'IN' },
-            fields: ['formatted_address', 'geometry', 'name', 'place_id']
-          });
-
-          autocompleteInstanceRef.current = autocomplete;
-
-          // Add event listener for place selection
-          autocomplete.addListener('place_changed', () => {
-            console.log('Place changed event triggered');
-            const place = autocomplete.getPlace();
-            console.log('Selected place:', place);
-            
-            if (place.geometry && place.geometry.location) {
-              const newLat = place.geometry.location.lat();
-              const newLng = place.geometry.location.lng();
-              const newAddress = place.formatted_address || place.name || '';
-
-              console.log('Updating location:', { newLat, newLng, newAddress });
-              setSearchValue(newAddress);
-              updateLocation(newLat, newLng, newAddress, map);
-              toast.success('Location selected successfully!');
-            } else {
-              console.log('No geometry found for selected place');
-              toast.error('Could not get location for selected place. Please try clicking on the map instead.');
-            }
-          });
-
-          // Add CSS to ensure dropdown is visible
-          const style = document.createElement('style');
-          style.textContent = `
-            .pac-container {
-              z-index: 9999 !important;
-              background: white !important;
-              border: 1px solid #ccc !important;
-              border-radius: 4px !important;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
-            }
-            .pac-item {
-              padding: 8px 12px !important;
-              cursor: pointer !important;
-              border-bottom: 1px solid #eee !important;
-            }
-            .pac-item:hover {
-              background-color: #f5f5f5 !important;
-            }
-            .pac-item-selected {
-              background-color: #e3f2fd !important;
-            }
-          `;
-          document.head.appendChild(style);
-
-        } catch (error) {
-          console.error('Error initializing autocomplete:', error);
-          toast.error('Address search not available. Please use map click to select location.');
-        }
-      } else {
-        console.log('Autocomplete ref not available');
-      }
-
       // Handle map click
       map.addListener('click', (event: any) => {
         if (event.latLng) {
@@ -201,6 +143,125 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
       console.error('Error initializing map:', error);
       toast.error('Failed to initialize map');
     }
+  };
+
+  const handleSearchInput = (value: string) => {
+    setSearchValue(value);
+    setShowDropdown(false);
+    setSearchResults([]);
+
+    if (value.length < 3) return;
+
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Debounce search
+    searchTimeoutRef.current = setTimeout(() => {
+      performSearch(value);
+    }, 300);
+  };
+
+  const performSearch = async (query: string) => {
+    if (!window.google || !window.google.maps) {
+      toast.error('Google Maps not loaded');
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const service = new window.google.maps.places.AutocompleteService();
+      service.getPlacePredictions(
+        {
+          input: query,
+          componentRestrictions: { country: 'IN' },
+          types: ['establishment', 'geocode']
+        },
+        (predictions: PlaceResult[], status: any) => {
+          setIsSearching(false);
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+            setSearchResults(predictions);
+            setShowDropdown(true);
+          } else {
+            setSearchResults([]);
+            setShowDropdown(false);
+          }
+        }
+      );
+    } catch (error) {
+      setIsSearching(false);
+      console.error('Search error:', error);
+    }
+  };
+
+  const selectPlace = async (placeId: string, description: string) => {
+    if (!window.google || !window.google.maps) {
+      toast.error('Google Maps not loaded');
+      return;
+    }
+
+    try {
+      const service = new window.google.maps.places.PlacesService(mapInstanceRef.current);
+      service.getDetails(
+        {
+          placeId: placeId,
+          fields: ['formatted_address', 'geometry', 'name']
+        },
+        (place: any, status: any) => {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+            const newLat = place.geometry.location.lat();
+            const newLng = place.geometry.location.lng();
+            const newAddress = place.formatted_address || place.name || description;
+
+            console.log('Place selected:', { newLat, newLng, newAddress });
+            setAddress(newAddress);
+            setSearchValue(newAddress);
+            updateLocation(newLat, newLng, newAddress, mapInstanceRef.current);
+            setShowDropdown(false);
+            setSearchResults([]);
+            toast.success('Location selected successfully!');
+          } else {
+            toast.error('Could not get location details. Please try again.');
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error getting place details:', error);
+      toast.error('Error selecting location');
+    }
+  };
+
+  const handleManualSearch = () => {
+    if (!searchValue.trim()) {
+      toast.error('Please enter an address to search');
+      return;
+    }
+
+    if (!window.google || !window.google.maps) {
+      toast.error('Google Maps not loaded');
+      return;
+    }
+
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ address: searchValue }, (results: any, status: any) => {
+      if (status === 'OK' && results && results[0]) {
+        const location = results[0].geometry.location;
+        const newLat = location.lat();
+        const newLng = location.lng();
+        const newAddress = results[0].formatted_address;
+
+        console.log('Manual search result:', { newLat, newLng, newAddress });
+        setAddress(newAddress);
+        setSearchValue(newAddress);
+        updateLocation(newLat, newLng, newAddress, mapInstanceRef.current);
+        setShowDropdown(false);
+        setSearchResults([]);
+        toast.success('Location found!');
+      } else {
+        toast.error('Could not find the address. Please try a different search term or click on the map.');
+      }
+    });
   };
 
   const addMarker = (lat: number, lng: number, map: any) => {
@@ -256,11 +317,6 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
         const newAddress = results[0].formatted_address;
         setAddress(newAddress);
         setSearchValue(newAddress);
-        
-        // Also update the autocomplete input
-        if (autocompleteRef.current) {
-          autocompleteRef.current.value = newAddress;
-        }
       }
     });
   };
@@ -287,6 +343,8 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
     setLat(initialLat);
     setLng(initialLng);
     setSearchValue('');
+    setShowDropdown(false);
+    setSearchResults([]);
   };
 
   const handleOpenMap = () => {
@@ -306,40 +364,25 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
     }
   };
 
-  const handleManualSearch = () => {
-    if (!searchValue.trim()) {
-      toast.error('Please enter an address to search');
-      return;
-    }
-
-    if (!window.google || !window.google.maps) {
-      toast.error('Google Maps not loaded');
-      return;
-    }
-
-    const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode({ address: searchValue }, (results: any, status: any) => {
-      if (status === 'OK' && results && results[0]) {
-        const location = results[0].geometry.location;
-        const newLat = location.lat();
-        const newLng = location.lng();
-        const newAddress = results[0].formatted_address;
-
-        console.log('Manual search result:', { newLat, newLng, newAddress });
-        setAddress(newAddress);
-        updateLocation(newLat, newLng, newAddress, mapInstanceRef.current);
-        toast.success('Location found!');
-      } else {
-        toast.error('Could not find the address. Please try a different search term or click on the map.');
-      }
-    });
-  };
-
   useEffect(() => {
     if (isMapOpen && mapLoaded && mapRef.current) {
       setTimeout(initializeMap, 100);
     }
   }, [isMapOpen, mapLoaded]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <>
@@ -373,28 +416,63 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
             <div className="flex-1 p-4 space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="address-search">Search Address</Label>
-                <div className="flex gap-2">
-                  <Input
-                    ref={autocompleteRef}
-                    id="address-search"
-                    value={searchValue}
-                    onChange={(e) => setSearchValue(e.target.value)}
-                    placeholder="Search for an address..."
-                    className="flex-1"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handleManualSearch();
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleManualSearch}
-                    disabled={!searchValue.trim()}
-                  >
-                    Search
-                  </Button>
+                <div className="relative">
+                  <div className="flex gap-2">
+                    <Input
+                      ref={searchInputRef}
+                      id="address-search"
+                      value={searchValue}
+                      onChange={(e) => handleSearchInput(e.target.value)}
+                      placeholder="Search for an address..."
+                      className="flex-1"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleManualSearch();
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleManualSearch}
+                      disabled={!searchValue.trim()}
+                    >
+                      <Search className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  
+                  {/* Custom Dropdown */}
+                  {showDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                      {isSearching ? (
+                        <div className="p-3 text-center text-gray-500">
+                          <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                          <span className="ml-2">Searching...</span>
+                        </div>
+                      ) : searchResults.length > 0 ? (
+                        searchResults.map((result) => (
+                          <button
+                            key={result.place_id}
+                            className="w-full text-left p-3 hover:bg-gray-100 border-b border-gray-100 last:border-b-0"
+                            onClick={() => selectPlace(result.place_id, result.description)}
+                          >
+                            <div className="font-medium text-sm">
+                              {result.structured_formatting?.main_text || result.description}
+                            </div>
+                            {result.structured_formatting?.secondary_text && (
+                              <div className="text-xs text-gray-500">
+                                {result.structured_formatting.secondary_text}
+                              </div>
+                            )}
+                          </button>
+                        ))
+                      ) : searchValue.length >= 3 ? (
+                        <div className="p-3 text-center text-gray-500">
+                          No results found
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs text-gray-500">
                   Type to search, press Enter, or click directly on the map to select a location
