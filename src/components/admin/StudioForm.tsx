@@ -9,21 +9,6 @@ import { toast } from "sonner";
 import GoogleMapsPicker from "./GoogleMapsPicker";
 import StudioImageUpload from "./StudioImageUpload";
 import AmenitiesChecklist from "./AmenitiesChecklist";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-const STUDIO_TAGS = [
-  { value: 'hot-selling', label: 'Hot Selling', color: 'bg-red-100 text-red-800' },
-  { value: 'featured', label: 'Featured', color: 'bg-blue-100 text-blue-800' },
-  { value: 'premium', label: 'Premium', color: 'bg-purple-100 text-purple-800' },
-  { value: 'new', label: 'New', color: 'bg-green-100 text-green-800' },
-  { value: 'popular', label: 'Popular', color: 'bg-orange-100 text-orange-800' },
-];
 
 interface StudioFormProps {
   studio?: any;
@@ -48,7 +33,6 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
     images: [] as string[],
     latitude: "",
     longitude: "",
-    tags: [] as string[],
   });
   const [loading, setLoading] = useState(false);
 
@@ -71,7 +55,6 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
         images: studioData.images || [],
         latitude: studioData.latitude?.toString() || "",
         longitude: studioData.longitude?.toString() || "",
-        tags: studioData.tags || [],
       });
     }
   }, [studioData]);
@@ -123,15 +106,6 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
     }));
   };
 
-  const handleTagToggle = (tagValue: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.includes(tagValue)
-        ? prev.tags.filter(tag => tag !== tagValue)
-        : [...prev.tags, tagValue]
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -155,7 +129,6 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
         images: formData.images,
         latitude: formData.latitude ? parseFloat(formData.latitude) : null,
         longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-        tags: formData.tags,
         host_id: user.id,
         is_active: true,
         approval_status: 'approved'
@@ -183,7 +156,6 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
         images: formData.images,
         latitude: formData.latitude ? parseFloat(formData.latitude) : null,
         longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-        tags: formData.tags,
         host_id: user.id,
         is_active: true,
         approval_status: 'approved'
@@ -263,32 +235,6 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
               placeholder="Enter hourly rate"
               required
             />
-          </div>
-
-          {/* Studio Tags */}
-          <div>
-            <Label className="mb-3 block">Studio Tags</Label>
-            <div className="flex flex-wrap gap-2">
-              {STUDIO_TAGS.map((tag) => (
-                <button
-                  key={tag.value}
-                  type="button"
-                  onClick={() => handleTagToggle(tag.value)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                    formData.tags.includes(tag.value)
-                      ? `${tag.color} border-2 border-current`
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {tag.label}
-                </button>
-              ))}
-            </div>
-            {formData.tags.length > 0 && (
-              <p className="text-sm text-gray-500 mt-2">
-                Selected: {formData.tags.map(tag => STUDIO_TAGS.find(t => t.value === tag)?.label).join(', ')}
-              </p>
-            )}
           </div>
         </div>
 

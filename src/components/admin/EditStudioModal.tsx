@@ -39,12 +39,16 @@ const EditStudioModal = ({ open, onOpenChange, studio }: EditStudioModalProps) =
       console.log('Studio updated successfully:', data);
 
       // Log the activity
-      await supabase.rpc('log_admin_activity', {
-        _action: 'Updated studio',
-        _target_type: 'studio',
-        _target_id: studio.id,
-        _details: studioData
-      });
+      try {
+        await supabase.rpc('log_admin_activity', {
+          _action: 'Updated studio',
+          _target_type: 'studio',
+          _target_id: studio.id,
+          _details: studioData
+        });
+      } catch (logError) {
+        console.warn('Failed to log admin activity:', logError);
+      }
 
       return data;
     },
@@ -65,11 +69,6 @@ const EditStudioModal = ({ open, onOpenChange, studio }: EditStudioModalProps) =
     await editStudioMutation.mutateAsync(data);
   };
 
-  const handleSuccess = () => {
-    // Don't close modal here - let the mutation success handler do it
-    // This prevents premature closing when location is selected
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -78,7 +77,6 @@ const EditStudioModal = ({ open, onOpenChange, studio }: EditStudioModalProps) =
         </DialogHeader>
         <StudioForm
           onSubmit={handleSubmit}
-          onSuccess={handleSuccess}
           initialData={studio}
           isLoading={editStudioMutation.isPending}
         />
