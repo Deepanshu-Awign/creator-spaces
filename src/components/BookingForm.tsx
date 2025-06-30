@@ -1,11 +1,9 @@
 
 import { useState } from "react";
-import { Calendar, Clock, CreditCard } from "lucide-react";
+import { CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
@@ -117,6 +115,7 @@ const BookingForm = ({ studio }: BookingFormProps) => {
           setStartTime={setStartTime}
           duration={duration}
           setDuration={setDuration}
+          studioId={studio.id}
         />
         
         {/* Special Requests */}

@@ -3,6 +3,7 @@ import { Calendar, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useBookingSlots } from "@/hooks/useBookingSlots";
 
 interface BookingFormFieldsProps {
   selectedDate: string;
@@ -11,9 +12,10 @@ interface BookingFormFieldsProps {
   setStartTime: (time: string) => void;
   duration: string;
   setDuration: (duration: string) => void;
+  studioId: string;
 }
 
-const timeSlots = [
+const allTimeSlots = [
   "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", 
   "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
 ];
@@ -32,8 +34,14 @@ export const BookingFormFields = ({
   startTime,
   setStartTime,
   duration,
-  setDuration
+  setDuration,
+  studioId
 }: BookingFormFieldsProps) => {
+  const { bookedSlots, loading } = useBookingSlots(studioId, selectedDate);
+
+  // Filter out booked time slots
+  const availableTimeSlots = allTimeSlots.filter(time => !bookedSlots.includes(time));
+
   return (
     <>
       {/* Date Selection */}
@@ -58,16 +66,25 @@ export const BookingFormFields = ({
         </Label>
         <Select value={startTime} onValueChange={setStartTime}>
           <SelectTrigger>
-            <SelectValue placeholder="Choose start time" />
+            <SelectValue placeholder={loading ? "Loading available times..." : "Choose start time"} />
           </SelectTrigger>
           <SelectContent>
-            {timeSlots.map((time) => (
-              <SelectItem key={time} value={time}>
-                {time}
+            {availableTimeSlots.length > 0 ? (
+              availableTimeSlots.map((time) => (
+                <SelectItem key={time} value={time}>
+                  {time}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="" disabled>
+                {loading ? "Loading..." : "No available time slots"}
               </SelectItem>
-            ))}
+            )}
           </SelectContent>
         </Select>
+        {selectedDate && !loading && availableTimeSlots.length === 0 && (
+          <p className="text-sm text-red-500 mt-1">All time slots are booked for this date.</p>
+        )}
       </div>
 
       {/* Duration */}

@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Search, MapPin, Calendar } from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Navigation from "@/components/Navigation";
@@ -12,9 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [areaQuery, setAreaQuery] = useState("");
   const [featuredStudios, setFeaturedStudios] = useState<any[]>([]);
-  const [availableAreas, setAvailableAreas] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [showLocationSelector, setShowLocationSelector] = useState(true);
@@ -31,7 +29,6 @@ const Index = () => {
   useEffect(() => {
     if (selectedCity && !showLocationSelector) {
       fetchFeaturedStudios();
-      fetchAvailableAreas();
     }
   }, [selectedCity, showLocationSelector]);
 
@@ -77,30 +74,6 @@ const Index = () => {
     }
   };
 
-  const fetchAvailableAreas = async () => {
-    if (!selectedCity) return;
-
-    try {
-      const { data, error } = await supabase
-        .from("studios")
-        .select("location")
-        .eq("is_active", true)
-        .eq("city", selectedCity)
-        .not("location", "is", null);
-
-      if (error) throw error;
-
-      // Extract unique areas/locations
-      const areas = [...new Set(
-        data?.map(studio => studio.location?.split(',')[0]?.trim()).filter(Boolean)
-      )].sort();
-
-      setAvailableAreas(areas);
-    } catch (error) {
-      console.error("Error fetching areas:", error);
-    }
-  };
-
   const handleCitySelect = (city: string) => {
     setSelectedCity(city);
     setShowLocationSelector(false);
@@ -109,9 +82,14 @@ const Index = () => {
     window.history.pushState({}, '', `/${city.toLowerCase().replace(/\s+/g, '-')}`);
   };
 
-  const filteredAreas = availableAreas.filter(area =>
-    area.toLowerCase().includes(areaQuery.toLowerCase())
-  );
+  const handleSearch = () => {
+    const searchParams = new URLSearchParams();
+    searchParams.set('city', selectedCity || '');
+    if (searchQuery.trim()) {
+      searchParams.set('search', searchQuery.trim());
+    }
+    window.location.href = `/studios?${searchParams.toString()}`;
+  };
 
   if (showLocationSelector) {
     return <LocationSelector onCitySelect={handleCitySelect} />;
@@ -138,56 +116,25 @@ const Index = () => {
           )}
 
           {/* Search Bar */}
-          <div className="bg-white rounded-full shadow-2xl p-2 max-w-4xl mx-auto mb-12 animate-scale-in">
-            <div className="flex flex-col md:flex-row gap-2">
+          <div className="bg-white rounded-full shadow-2xl p-2 max-w-2xl mx-auto mb-12 animate-scale-in">
+            <div className="flex gap-2">
               <div className="flex-1 flex items-center px-6 py-3">
                 <Search className="w-5 h-5 text-slate-400 mr-3" />
                 <Input
-                  placeholder="What type of studio are you looking for?"
+                  placeholder="Search for studios, equipment, or services..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="border-0 focus-visible:ring-0 text-lg"
-                />
-              </div>
-              <div className="flex items-center px-6 py-3 border-l relative">
-                <MapPin className="w-5 h-5 text-slate-400 mr-3" />
-                <div className="relative flex-1">
-                  <Input
-                    placeholder="Search areas..."
-                    value={areaQuery}
-                    onChange={(e) => setAreaQuery(e.target.value)}
-                    className="border-0 focus-visible:ring-0 text-lg"
-                  />
-                  {areaQuery && filteredAreas.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-10 max-h-40 overflow-y-auto">
-                      {filteredAreas.map((area, index) => (
-                        <div
-                          key={index}
-                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                          onClick={() => {
-                            setAreaQuery(area);
-                          }}
-                        >
-                          {area}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center px-6 py-3 border-l">
-                <Calendar className="w-5 h-5 text-slate-400 mr-3" />
-                <Input
-                  placeholder="When?"
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   className="border-0 focus-visible:ring-0 text-lg"
                 />
               </div>
               <div className="flex justify-center">
-                <Link to={`/studios?city=${selectedCity}`}>
-                  <Button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-6 rounded-full text-lg font-semibold transition-all hover:scale-105">
-                    Search Studios
-                  </Button>
-                </Link>
+                <Button 
+                  onClick={handleSearch}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-6 rounded-full text-lg font-semibold transition-all hover:scale-105"
+                >
+                  Search Studios
+                </Button>
               </div>
             </div>
           </div>
