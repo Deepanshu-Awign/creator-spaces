@@ -45,7 +45,7 @@ import AdminStudioDetails from '@/components/admin/AdminStudioDetails';
 
 const AdminStudios = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedCity, setSelectedCity] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingStudio, setEditingStudio] = useState<any>(null);
   const [viewingStudio, setViewingStudio] = useState<any>(null);
@@ -69,7 +69,7 @@ const AdminStudios = () => {
         query = query.or(`title.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%`);
       }
 
-      if (selectedCity) {
+      if (selectedCity && selectedCity !== 'all') {
         query = query.eq('city', selectedCity);
       }
 
@@ -200,7 +200,7 @@ const AdminStudios = () => {
                   <SelectValue placeholder="Filter by city" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Cities</SelectItem>
+                  <SelectItem value="all">All Cities</SelectItem>
                   {cities?.map((city) => (
                     <SelectItem key={city} value={city}>
                       {city}
