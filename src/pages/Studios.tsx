@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -181,7 +180,7 @@ const Studios = () => {
                       <SelectValue placeholder="Select state" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All States</SelectItem>
+                      <SelectItem value="all-states">All States</SelectItem>
                       {locationData?.states?.map((state) => (
                         <SelectItem key={state} value={state}>
                           {state}
@@ -201,7 +200,7 @@ const Studios = () => {
                       <SelectValue placeholder="Select price range" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Prices</SelectItem>
+                      <SelectItem value="all-prices">All Prices</SelectItem>
                       <SelectItem value="0-500">₹0 - ₹500</SelectItem>
                       <SelectItem value="500-1000">₹500 - ₹1,000</SelectItem>
                       <SelectItem value="1000-2000">₹1,000 - ₹2,000</SelectItem>
@@ -225,7 +224,7 @@ const Studios = () => {
                         />
                       </Badge>
                     )}
-                    {selectedState && (
+                    {selectedState && selectedState !== 'all-states' && (
                       <Badge variant="secondary" className="gap-1">
                         State: {selectedState}
                         <X 
@@ -234,7 +233,7 @@ const Studios = () => {
                         />
                       </Badge>
                     )}
-                    {priceRange && (
+                    {priceRange && priceRange !== 'all-prices' && (
                       <Badge variant="secondary" className="gap-1">
                         Price: ₹{priceRange.replace('-', ' - ₹')}
                         <X 

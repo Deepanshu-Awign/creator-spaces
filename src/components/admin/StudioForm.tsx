@@ -80,6 +80,9 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
       latitude: locationData.lat?.toString() || '',
       longitude: locationData.lng?.toString() || '',
     }));
+
+    // Don't call onSuccess here to prevent modal from closing
+    console.log('Location data updated in form');
   };
 
   const handleImagesChange = (images: string[]) => {

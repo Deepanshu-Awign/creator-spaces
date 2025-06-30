@@ -56,6 +56,11 @@ const EditStudioModal = ({ open, onOpenChange, studio }: EditStudioModalProps) =
     await editStudioMutation.mutateAsync(data);
   };
 
+  const handleSuccess = () => {
+    // Don't close modal here - let the mutation success handler do it
+    // This prevents premature closing when location is selected
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -64,6 +69,7 @@ const EditStudioModal = ({ open, onOpenChange, studio }: EditStudioModalProps) =
         </DialogHeader>
         <StudioForm
           onSubmit={handleSubmit}
+          onSuccess={handleSuccess}
           initialData={studio}
           isLoading={editStudioMutation.isPending}
         />
