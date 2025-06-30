@@ -1,13 +1,12 @@
 
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, LogOut, Shield, MapPin, Heart, Calendar } from "lucide-react";
+import { Menu, X, User, LogOut, Shield, MapPin, ChevronDown, Heart, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/SecureAuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useUserRole";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/secureClient";
-import { handleAPIError } from "@/utils/errorHandler";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,7 +64,7 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
 
       setAvailableCities(cities);
     } catch (error) {
-      handleAPIError(error);
+      console.error("Error fetching cities:", error);
     }
   };
 
@@ -156,10 +155,10 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="hover:bg-orange-50">
                     <User className="w-4 h-4 mr-2" />
-                    <span className="max-w-32 truncate">{user.email}</span>
+                    {user.email}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={handleProfileClick}>
                     <User className="w-4 h-4 mr-2" />
                     Profile
@@ -204,7 +203,6 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
               variant="ghost"
               size="sm"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label="Toggle menu"
             >
               {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </Button>
