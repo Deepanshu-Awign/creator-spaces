@@ -1,21 +1,10 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-
-const POPULAR_CITIES = [
-  { name: "Mumbai", state: "Maharashtra", icon: "🏙️" },
-  { name: "Delhi", state: "NCR", icon: "🏛️" },
-  { name: "Bangalore", state: "Karnataka", icon: "🌆" },
-  { name: "Hyderabad", state: "Telangana", icon: "🏢" },
-  { name: "Chennai", state: "Tamil Nadu", icon: "🏘️" },
-  { name: "Pune", state: "Maharashtra", icon: "🏪" },
-  { name: "Kolkata", state: "West Bengal", icon: "🏛️" },
-  { name: "Ahmedabad", state: "Gujarat", icon: "🏬" },
-  { name: "Kochi", state: "Kerala", icon: "🌴" },
-  { name: "Jaipur", state: "Rajasthan", icon: "🕌" }
-];
+import { supabase } from "@/integrations/supabase/client";
 
 interface LocationSelectorProps {
   onCitySelect: (city: string) => void;
@@ -23,9 +12,67 @@ interface LocationSelectorProps {
 
 const LocationSelector = ({ onCitySelect }: LocationSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [customCity, setCustomCity] = useState("");
+  const [availableCities, setAvailableCities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredCities = POPULAR_CITIES.filter(city =>
+  useEffect(() => {
+    fetchAvailableCities();
+  }, []);
+
+  const fetchAvailableCities = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("studios")
+        .select("city, state")
+        .eq("is_active", true)
+        .not("city", "is", null);
+
+      if (error) throw error;
+
+      // Group cities by state and count studios
+      const cityMap = new Map();
+      data?.forEach(studio => {
+        if (studio.city) {
+          // Clean up city name to remove "division" suffix
+          const cleanCity = studio.city.replace(/\s+division$/i, '').trim();
+          const key = `${cleanCity}-${studio.state}`;
+          if (!cityMap.has(key)) {
+            cityMap.set(key, {
+              name: cleanCity,
+              state: studio.state,
+              icon: getCityIcon(cleanCity)
+            });
+          }
+        }
+      });
+
+      setAvailableCities(Array.from(cityMap.values()));
+    } catch (error) {
+      console.error("Error fetching available cities:", error);
+      setAvailableCities([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCityIcon = (cityName: string) => {
+    const iconMap: { [key: string]: string } = {
+      "Mumbai": "🏙️",
+      "Delhi": "🏛️",
+      "Bangalore": "🌆",
+      "Hyderabad": "🏢",
+      "Chennai": "🏘️",
+      "Pune": "🏪",
+      "Kolkata": "🏛️",
+      "Ahmedabad": "🏬",
+      "Kochi": "🌴",
+      "Jaipur": "🕌"
+    };
+    return iconMap[cityName] || "🏙️";
+  };
+
+  const filteredCities = availableCities.filter(city =>
     city.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     city.state.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -34,27 +81,37 @@ const LocationSelector = ({ onCitySelect }: LocationSelectorProps) => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          // For demo purposes, we'll set to Mumbai
-          // In a real app, you'd reverse geocode the coordinates
-          onCitySelect("Mumbai");
+          // For demo purposes, we'll set to the first available city
+          if (availableCities.length > 0) {
+            onCitySelect(availableCities[0].name);
+          }
         },
         (error) => {
           console.error("Location detection failed:", error);
-          // Fallback to Mumbai
-          onCitySelect("Mumbai");
+          // Fallback to first available city
+          if (availableCities.length > 0) {
+            onCitySelect(availableCities[0].name);
+          }
         }
       );
     } else {
       // Fallback if geolocation is not supported
-      onCitySelect("Mumbai");
+      if (availableCities.length > 0) {
+        onCitySelect(availableCities[0].name);
+      }
     }
   };
 
-  const handleCustomCitySubmit = () => {
-    if (customCity.trim()) {
-      onCitySelect(customCity.trim());
-    }
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading available cities...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
@@ -90,49 +147,32 @@ const LocationSelector = ({ onCitySelect }: LocationSelectorProps) => {
           </Button>
         </div>
 
-        {/* Popular Cities */}
+        {/* Available Cities */}
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-slate-800 mb-6">Popular Cities</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {filteredCities.map((city) => (
-              <Card
-                key={city.name}
-                className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group"
-                onClick={() => onCitySelect(city.name)}
-              >
-                <CardContent className="p-4 text-center">
-                  <div className="text-2xl mb-2">{city.icon}</div>
-                  <h3 className="font-semibold text-slate-800 group-hover:text-orange-500 transition-colors">
-                    {city.name}
-                  </h3>
-                  <p className="text-sm text-slate-500">{city.state}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Other City */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">
-            Don't see your city? Enter it here:
-          </h3>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Enter your city name..."
-              value={customCity}
-              onChange={(e) => setCustomCity(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleCustomCitySubmit()}
-              className="flex-1"
-            />
-            <Button
-              onClick={handleCustomCitySubmit}
-              className="bg-orange-500 hover:bg-orange-600 text-white"
-              disabled={!customCity.trim()}
-            >
-              Go
-            </Button>
-          </div>
+          <h2 className="text-2xl font-semibold text-slate-800 mb-6">Available Cities</h2>
+          {filteredCities.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {filteredCities.map((city, index) => (
+                <Card
+                  key={`${city.name}-${index}`}
+                  className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group"
+                  onClick={() => onCitySelect(city.name)}
+                >
+                  <CardContent className="p-4 text-center">
+                    <div className="text-2xl mb-2">{city.icon}</div>
+                    <h3 className="font-semibold text-slate-800 group-hover:text-orange-500 transition-colors">
+                      {city.name}
+                    </h3>
+                    <p className="text-sm text-slate-500">{city.state}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-slate-600">No cities found matching your search.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

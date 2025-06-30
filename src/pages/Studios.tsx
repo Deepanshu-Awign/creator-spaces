@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import StudioCard from '@/components/StudioCard';
 import { Input } from '@/components/ui/input';
@@ -16,11 +16,23 @@ import {
 } from '@/components/ui/select';
 
 const Studios = () => {
+  const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedState, setSelectedState] = useState<string>('');
   const [priceRange, setPriceRange] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Get city from URL params or localStorage
+  useEffect(() => {
+    const cityFromUrl = searchParams.get('city');
+    const cityFromStorage = localStorage.getItem('selectedCity');
+    const city = cityFromUrl || cityFromStorage;
+    
+    if (city) {
+      setSelectedCity(city);
+    }
+  }, [searchParams]);
 
   // Fetch studios with enhanced filtering
   const { data: studios, isLoading } = useQuery({
@@ -40,7 +52,7 @@ const Studios = () => {
         query = query.or(`title.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,amenities.cs.{${searchTerm}}`);
       }
 
-      // Apply city filter
+      // Apply city filter - prioritize selectedCity
       if (selectedCity) {
         query = query.eq('city', selectedCity);
       }
@@ -80,8 +92,14 @@ const Studios = () => {
         .not('city', 'is', null)
         .not('state', 'is', null);
 
-      const cities = [...new Set(data?.map(item => item.city).filter(Boolean))].sort();
-      const states = [...new Set(data?.map(item => item.state).filter(Boolean))].sort();
+      // Clean up city names
+      const cleanedData = data?.map(item => ({
+        ...item,
+        city: item.city?.replace(/\s+division$/i, '').trim()
+      }));
+
+      const cities = [...new Set(cleanedData?.map(item => item.city).filter(Boolean))].sort();
+      const states = [...new Set(cleanedData?.map(item => item.state).filter(Boolean))].sort();
 
       return { cities, states };
     }
@@ -89,12 +107,12 @@ const Studios = () => {
 
   const clearFilters = () => {
     setSearchTerm('');
-    setSelectedCity('');
     setSelectedState('');
     setPriceRange('');
+    // Keep selectedCity as it comes from URL/localStorage
   };
 
-  const hasActiveFilters = searchTerm || selectedCity || selectedState || priceRange;
+  const hasActiveFilters = searchTerm || selectedState || priceRange;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -102,7 +120,7 @@ const Studios = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Find Your Perfect Studio
+            Find Your Perfect Studio {selectedCity && `in ${selectedCity}`}
           </h1>
           <p className="text-xl text-gray-600">
             Discover and book amazing studios for your next project
@@ -132,7 +150,7 @@ const Studios = () => {
               Filters
               {hasActiveFilters && (
                 <Badge variant="secondary" className="ml-2">
-                  {[searchTerm, selectedCity, selectedState, priceRange].filter(Boolean).length}
+                  {[searchTerm, selectedState, priceRange].filter(Boolean).length}
                 </Badge>
               )}
             </Button>
@@ -142,24 +160,14 @@ const Studios = () => {
           {showFilters && (
             <div className="border-t pt-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* City Filter */}
+                {/* City Filter - Show current city */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     City
                   </label>
-                  <Select value={selectedCity} onValueChange={setSelectedCity}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select city" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All Cities</SelectItem>
-                      {locationData?.cities?.map((city) => (
-                        <SelectItem key={city} value={city}>
-                          {city}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="px-3 py-2 bg-gray-100 rounded-md text-gray-700">
+                    {selectedCity || 'All Cities'}
+                  </div>
                 </div>
 
                 {/* State Filter */}
@@ -216,15 +224,6 @@ const Studios = () => {
                         />
                       </Badge>
                     )}
-                    {selectedCity && (
-                      <Badge variant="secondary" className="gap-1">
-                        City: {selectedCity}
-                        <X 
-                          className="w-3 h-3 cursor-pointer" 
-                          onClick={() => setSelectedCity('')}
-                        />
-                      </Badge>
-                    )}
                     {selectedState && (
                       <Badge variant="secondary" className="gap-1">
                         State: {selectedState}
@@ -245,7 +244,7 @@ const Studios = () => {
                     )}
                   </div>
                   <Button variant="ghost" onClick={clearFilters} className="gap-2">
-                    Clear All
+                    Clear Filters
                   </Button>
                 </div>
               )}
@@ -259,9 +258,9 @@ const Studios = () => {
             <h2 className="text-2xl font-semibold text-gray-900">
               {isLoading ? 'Loading...' : `${studios?.length || 0} Studios Found`}
             </h2>
-            {hasActiveFilters && (
+            {(hasActiveFilters || selectedCity) && (
               <p className="text-gray-600">
-                Filtered results
+                {selectedCity && `Showing results for ${selectedCity}`}
               </p>
             )}
           </div>
@@ -292,11 +291,14 @@ const Studios = () => {
               No Studios Found
             </h3>
             <p className="text-gray-600 mb-4">
-              Try adjusting your search criteria or filters
+              {selectedCity 
+                ? `No studios available in ${selectedCity} matching your criteria`
+                : 'Try adjusting your search criteria or filters'
+              }
             </p>
             {hasActiveFilters && (
               <Button onClick={clearFilters} variant="outline">
-                Clear All Filters
+                Clear Filters
               </Button>
             )}
           </div>

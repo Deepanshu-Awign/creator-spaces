@@ -1,10 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Search, MapPin, Calendar, Users, Camera, Mic, Video } from "lucide-react";
+import { Search, MapPin, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import StudioCard from "@/components/StudioCard";
 import DatabaseSeeder from "@/components/DatabaseSeeder";
@@ -13,7 +12,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [areaQuery, setAreaQuery] = useState("");
   const [featuredStudios, setFeaturedStudios] = useState<any[]>([]);
+  const [availableAreas, setAvailableAreas] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [showLocationSelector, setShowLocationSelector] = useState(true);
@@ -30,6 +31,7 @@ const Index = () => {
   useEffect(() => {
     if (selectedCity && !showLocationSelector) {
       fetchFeaturedStudios();
+      fetchAvailableAreas();
     }
   }, [selectedCity, showLocationSelector]);
 
@@ -75,6 +77,30 @@ const Index = () => {
     }
   };
 
+  const fetchAvailableAreas = async () => {
+    if (!selectedCity) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("studios")
+        .select("location")
+        .eq("is_active", true)
+        .eq("city", selectedCity)
+        .not("location", "is", null);
+
+      if (error) throw error;
+
+      // Extract unique areas/locations
+      const areas = [...new Set(
+        data?.map(studio => studio.location?.split(',')[0]?.trim()).filter(Boolean)
+      )].sort();
+
+      setAvailableAreas(areas);
+    } catch (error) {
+      console.error("Error fetching areas:", error);
+    }
+  };
+
   const handleCitySelect = (city: string) => {
     setSelectedCity(city);
     setShowLocationSelector(false);
@@ -83,12 +109,9 @@ const Index = () => {
     window.history.pushState({}, '', `/${city.toLowerCase().replace(/\s+/g, '-')}`);
   };
 
-  const categories = [
-    { icon: Mic, name: "Podcast Studios", count: "120+ Studios" },
-    { icon: Camera, name: "Photography", count: "200+ Studios" },
-    { icon: Video, name: "Video Production", count: "85+ Studios" },
-    { icon: Users, name: "Meeting Rooms", count: "150+ Studios" }
-  ];
+  const filteredAreas = availableAreas.filter(area =>
+    area.toLowerCase().includes(areaQuery.toLowerCase())
+  );
 
   if (showLocationSelector) {
     return <LocationSelector onCitySelect={handleCitySelect} />;
@@ -126,9 +149,31 @@ const Index = () => {
                   className="border-0 focus-visible:ring-0 text-lg"
                 />
               </div>
-              <div className="flex items-center px-6 py-3 border-l">
+              <div className="flex items-center px-6 py-3 border-l relative">
                 <MapPin className="w-5 h-5 text-slate-400 mr-3" />
-                <span className="text-lg text-slate-700">{selectedCity}</span>
+                <div className="relative flex-1">
+                  <Input
+                    placeholder="Search areas..."
+                    value={areaQuery}
+                    onChange={(e) => setAreaQuery(e.target.value)}
+                    className="border-0 focus-visible:ring-0 text-lg"
+                  />
+                  {areaQuery && filteredAreas.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-10 max-h-40 overflow-y-auto">
+                      {filteredAreas.map((area, index) => (
+                        <div
+                          key={index}
+                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                          onClick={() => {
+                            setAreaQuery(area);
+                          }}
+                        >
+                          {area}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex items-center px-6 py-3 border-l">
                 <Calendar className="w-5 h-5 text-slate-400 mr-3" />
@@ -145,26 +190,6 @@ const Index = () => {
                 </Link>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Categories */}
-      <section className="py-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-slate-800 text-center mb-12">Browse by Category</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {categories.map((category, index) => (
-              <Link to={`/studios?city=${selectedCity}`} key={index}>
-                <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-2 cursor-pointer group">
-                  <CardContent className="p-8 text-center">
-                    <category.icon className="w-12 h-12 text-orange-500 mx-auto mb-4 group-hover:scale-110 transition-transform" />
-                    <h3 className="text-xl font-semibold text-slate-800 mb-2">{category.name}</h3>
-                    <p className="text-slate-600">{category.count}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
           </div>
         </div>
       </section>
@@ -209,15 +234,12 @@ const Index = () => {
           <p className="text-xl mb-8 text-blue-100">
             Join thousands of creators who trust BookMyStudio for their perfect studio space.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex justify-center">
             <Link to={`/studios?city=${selectedCity}`}>
               <Button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 text-lg font-semibold">
                 Browse Studios
               </Button>
             </Link>
-            <Button variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg font-semibold">
-              List Your Studio
-            </Button>
           </div>
         </div>
       </section>

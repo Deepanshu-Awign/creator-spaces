@@ -1,11 +1,11 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, User, LogOut, Shield, MapPin, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useUserRole";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,11 +21,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const POPULAR_CITIES = [
-  "Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", 
-  "Pune", "Kolkata", "Ahmedabad", "Kochi", "Jaipur"
-];
-
 interface NavigationProps {
   selectedCity?: string | null;
   onCityChange?: (city: string) => void;
@@ -34,6 +29,7 @@ interface NavigationProps {
 const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -45,6 +41,31 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
   ];
+
+  useEffect(() => {
+    fetchAvailableCities();
+  }, []);
+
+  const fetchAvailableCities = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("studios")
+        .select("city")
+        .eq("is_active", true)
+        .not("city", "is", null);
+
+      if (error) throw error;
+
+      // Clean up city names and get unique cities
+      const cities = [...new Set(
+        data?.map(studio => studio.city?.replace(/\s+division$/i, '').trim()).filter(Boolean)
+      )].sort();
+
+      setAvailableCities(cities);
+    } catch (error) {
+      console.error("Error fetching cities:", error);
+    }
+  };
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -99,7 +120,7 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  {POPULAR_CITIES.map((city) => (
+                  {availableCities.map((city) => (
                     <SelectItem key={city} value={city}>
                       {city}
                     </SelectItem>
@@ -198,7 +219,7 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
                       </div>
                     </SelectTrigger>
                     <SelectContent>
-                      {POPULAR_CITIES.map((city) => (
+                      {availableCities.map((city) => (
                         <SelectItem key={city} value={city}>
                           {city}
                         </SelectItem>
@@ -220,6 +241,7 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
                   {item.name}
                 </Link>
               ))}
+              
               {user ? (
                 <div className="space-y-2 pt-2 border-t">
                   <Button 

@@ -1,238 +1,272 @@
 
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import GoogleMapsPicker from './GoogleMapsPicker';
-import StudioImageUpload from './StudioImageUpload';
-import AmenitiesChecklist from './AmenitiesChecklist';
-import { supabase } from '@/integrations/supabase/client';
-
-const studioSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().optional(),
-  price_per_hour: z.number().min(1, 'Price must be greater than 0'),
-  location: z.string().min(1, 'Location is required'),
-  city: z.string().min(1, 'City is required'),
-  state: z.string().min(1, 'State is required'),
-  country: z.string().default('India'),
-  pincode: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  amenities: z.array(z.string()).default([]),
-  images: z.array(z.string()).default([]),
-  host_id: z.string().optional(),
-});
-
-export type StudioFormData = z.infer<typeof studioSchema>;
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import GoogleMapsPicker from "./GoogleMapsPicker";
+import StudioImageUpload from "./StudioImageUpload";
+import AmenitiesChecklist from "./AmenitiesChecklist";
 
 interface StudioFormProps {
-  onSubmit: (data: StudioFormData) => void;
-  isLoading?: boolean;
-  initialData?: Partial<StudioFormData>;
-  submitLabel?: string;
+  studio?: any;
+  onSuccess: () => void;
 }
 
-const StudioForm: React.FC<StudioFormProps> = ({
-  onSubmit,
-  isLoading = false,
-  initialData = {},
-  submitLabel = 'Create Studio'
-}) => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    watch,
-    setValue,
-    trigger
-  } = useForm<StudioFormData>({
-    resolver: zodResolver(studioSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      price_per_hour: 0,
-      location: '',
-      city: '',
-      state: '',
-      country: 'India',
-      pincode: '',
-      latitude: undefined,
-      longitude: undefined,
-      amenities: [],
-      images: [],
-      host_id: '',
-      ...initialData
-    }
+const StudioForm = ({ studio, onSuccess }: StudioFormProps) => {
+  const { user } = useAuth();
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    location: "",
+    city: "",
+    state: "",
+    country: "India",
+    pincode: "",
+    price_per_hour: "",
+    amenities: [] as string[],
+    images: [] as string[],
+    latitude: "",
+    longitude: "",
   });
+  const [loading, setLoading] = useState(false);
 
-  const watchedAmenities = watch('amenities');
-  const watchedImages = watch('images');
-  const watchedLocation = watch('location');
-  const watchedCity = watch('city');
-  const watchedState = watch('state');
-  const watchedPincode = watch('pincode');
-  const watchedLatitude = watch('latitude');
-  const watchedLongitude = watch('longitude');
+  useEffect(() => {
+    if (studio) {
+      setFormData({
+        title: studio.title || "",
+        description: studio.description || "",
+        location: studio.location || "",
+        city: studio.city || "",
+        state: studio.state || "",
+        country: studio.country || "India",
+        pincode: studio.pincode || "",
+        price_per_hour: studio.price_per_hour?.toString() || "",
+        amenities: studio.amenities || [],
+        images: studio.images || [],
+        latitude: studio.latitude?.toString() || "",
+        longitude: studio.longitude?.toString() || "",
+      });
+    }
+  }, [studio]);
 
-  const handleLocationSelect = (locationData: any) => {
-    setValue('location', locationData.address);
-    setValue('city', locationData.city);
-    setValue('state', locationData.state);
-    setValue('country', locationData.country);
-    setValue('pincode', locationData.pincode);
-    setValue('latitude', parseFloat(locationData.lat) || undefined);
-    setValue('longitude', parseFloat(locationData.lng) || undefined);
-    
-    // Trigger validation for location fields
-    trigger(['location', 'city', 'state']);
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const handleFormSubmit = async (data: StudioFormData) => {
-    // Ensure required location data is present
-    if (!data.city || !data.state) {
-      console.error('Missing required location data');
+  const handleLocationSelect = (locationData: any) => {
+    console.log('Location selected:', locationData);
+    
+    // Clean up city name to remove "division" suffix
+    const cleanCity = locationData.city?.replace(/\s+division$/i, '').trim() || '';
+    
+    setFormData(prev => ({
+      ...prev,
+      location: locationData.address || '',
+      city: cleanCity,
+      state: locationData.state || '',
+      pincode: locationData.pincode || '',
+      latitude: locationData.lat?.toString() || '',
+      longitude: locationData.lng?.toString() || '',
+    }));
+  };
+
+  const handleImagesChange = (images: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      images
+    }));
+  };
+
+  const handleAmenitiesChange = (amenities: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      amenities
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) {
+      toast.error("You must be logged in to create a studio");
       return;
     }
-    
-    // Get current user to set as host_id
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    // Clean up the data - convert empty strings to null for UUID fields
-    const cleanedData = {
-      ...data,
-      host_id: user?.id || null,
-      pincode: data.pincode || null,
-      latitude: data.latitude || null,
-      longitude: data.longitude || null,
-    };
-    
-    console.log('Submitting studio data:', cleanedData);
-    onSubmit(cleanedData);
+
+    setLoading(true);
+
+    try {
+      // Prepare data for submission, converting empty strings to null for UUID/numeric fields
+      const submissionData = {
+        title: formData.title,
+        description: formData.description,
+        location: formData.location,
+        city: formData.city,
+        state: formData.state,
+        country: formData.country,
+        pincode: formData.pincode || null,
+        price_per_hour: parseInt(formData.price_per_hour),
+        amenities: formData.amenities,
+        images: formData.images,
+        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+        host_id: user.id, // Set host_id to current user
+        is_active: true,
+        approval_status: 'approved'
+      };
+
+      console.log('Submitting studio data:', submissionData);
+
+      let result;
+      if (studio?.id) {
+        // Update existing studio
+        result = await supabase
+          .from("studios")
+          .update(submissionData)
+          .eq("id", studio.id)
+          .select()
+          .single();
+      } else {
+        // Create new studio
+        result = await supabase
+          .from("studios")
+          .insert([submissionData])
+          .select()
+          .single();
+      }
+
+      if (result.error) {
+        console.error('Supabase error:', result.error);
+        throw result.error;
+      }
+
+      console.log('Studio saved successfully:', result.data);
+      toast.success(studio?.id ? "Studio updated successfully!" : "Studio created successfully!");
+      onSuccess();
+    } catch (error: any) {
+      console.error("Error saving studio:", error);
+      toast.error(error.message || "Failed to save studio. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-      {/* Basic Information */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Basic Information</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
           <div>
             <Label htmlFor="title">Studio Title *</Label>
             <Input
               id="title"
-              {...register('title')}
-              placeholder="Enter studio name"
+              value={formData.title}
+              onChange={(e) => handleInputChange("title", e.target.value)}
+              placeholder="Enter studio title"
+              required
             />
-            {errors.title && (
-              <p className="text-sm text-red-600 mt-1">{errors.title.message}</p>
-            )}
           </div>
 
           <div>
-            <Label htmlFor="price_per_hour">Price per Hour *</Label>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleInputChange("description", e.target.value)}
+              placeholder="Describe your studio..."
+              rows={4}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="price_per_hour">Price per Hour (₹) *</Label>
             <Input
               id="price_per_hour"
               type="number"
-              {...register('price_per_hour', { valueAsNumber: true })}
+              value={formData.price_per_hour}
+              onChange={(e) => handleInputChange("price_per_hour", e.target.value)}
               placeholder="Enter hourly rate"
+              required
             />
-            {errors.price_per_hour && (
-              <p className="text-sm text-red-600 mt-1">{errors.price_per_hour.message}</p>
-            )}
           </div>
         </div>
 
-        <div>
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            {...register('description')}
-            placeholder="Describe your studio..."
-            rows={4}
-          />
-        </div>
-      </div>
-
-      {/* Location */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Location</h3>
-        
         <div className="space-y-4">
-          <GoogleMapsPicker
-            onLocationSelect={handleLocationSelect}
-            initialLocation={{
-              address: watchedLocation,
-              city: watchedCity,
-              state: watchedState,
-              pincode: watchedPincode,
-              lat: watchedLatitude?.toString(),
-              lng: watchedLongitude?.toString()
-            }}
-          />
-          
-          {/* Display selected location details */}
-          {watchedLocation && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-              <div>
-                <Label>City</Label>
-                <p className="text-sm text-gray-700">{watchedCity}</p>
-              </div>
-              <div>
-                <Label>State</Label>
-                <p className="text-sm text-gray-700">{watchedState}</p>
-              </div>
-              <div>
-                <Label>Pincode</Label>
-                <p className="text-sm text-gray-700">{watchedPincode || 'Not available'}</p>
-              </div>
+          <div>
+            <Label>Location *</Label>
+            <GoogleMapsPicker
+              onLocationSelect={handleLocationSelect}
+              initialLocation={
+                formData.latitude && formData.longitude
+                  ? {
+                      lat: parseFloat(formData.latitude),
+                      lng: parseFloat(formData.longitude),
+                      address: formData.location
+                    }
+                  : undefined
+              }
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="city">City</Label>
+              <Input
+                id="city"
+                value={formData.city}
+                onChange={(e) => handleInputChange("city", e.target.value)}
+                placeholder="City"
+                readOnly
+              />
             </div>
-          )}
-          
-          {errors.location && (
-            <p className="text-sm text-red-600">{errors.location.message}</p>
-          )}
-          {errors.city && (
-            <p className="text-sm text-red-600">{errors.city.message}</p>
-          )}
-          {errors.state && (
-            <p className="text-sm text-red-600">{errors.state.message}</p>
-          )}
+            <div>
+              <Label htmlFor="state">State</Label>
+              <Input
+                id="state"
+                value={formData.state}
+                onChange={(e) => handleInputChange("state", e.target.value)}
+                placeholder="State"
+                readOnly
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="pincode">Pincode</Label>
+            <Input
+              id="pincode"
+              value={formData.pincode}
+              onChange={(e) => handleInputChange("pincode", e.target.value)}
+              placeholder="Pincode"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Images */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Images</h3>
+      <div>
+        <Label>Studio Images</Label>
         <StudioImageUpload
-          images={watchedImages}
-          onImagesChange={(images) => setValue('images', images)}
-          maxImages={5}
+          images={formData.images}
+          onImagesChange={handleImagesChange}
         />
       </div>
 
-      {/* Amenities */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Amenities</h3>
+      <div>
+        <Label>Amenities</Label>
         <AmenitiesChecklist
-          selectedAmenities={watchedAmenities}
-          onAmenitiesChange={(amenities) => setValue('amenities', amenities)}
+          selectedAmenities={formData.amenities}
+          onAmenitiesChange={handleAmenitiesChange}
         />
       </div>
 
-      {/* Submit Button */}
-      <div className="flex justify-end">
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="min-w-[120px]"
-        >
-          {isLoading ? 'Saving...' : submitLabel}
+      <div className="flex justify-end space-x-4">
+        <Button type="submit" disabled={loading}>
+          {loading ? "Saving..." : (studio?.id ? "Update Studio" : "Create Studio")}
         </Button>
       </div>
     </form>
