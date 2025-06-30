@@ -57,6 +57,7 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
 
   useEffect(() => {
     if (studioData) {
+      console.log('Loading studio data into form:', studioData);
       setFormData({
         title: studioData.title || "",
         description: studioData.description || "",
@@ -83,22 +84,29 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
   };
 
   const handleLocationSelect = (locationData: any) => {
-    console.log('Location selected:', locationData);
+    console.log('Location selected in form:', locationData);
     
     // Clean up city name to remove "division" suffix
     const cleanCity = locationData.city?.replace(/\s+division$/i, '').trim() || '';
     
-    setFormData(prev => ({
-      ...prev,
+    const updatedFormData = {
+      ...formData,
       location: locationData.address || '',
       city: cleanCity,
       state: locationData.state || '',
       pincode: locationData.pincode || '',
       latitude: locationData.lat?.toString() || '',
       longitude: locationData.lng?.toString() || '',
-    }));
+    };
 
-    console.log('Location data updated in form');
+    console.log('Updated form data with location:', updatedFormData);
+    setFormData(updatedFormData);
+
+    // Call onSuccess to notify parent component if needed
+    if (onSuccess) {
+      console.log('Calling onSuccess after location update');
+      onSuccess();
+    }
   };
 
   const handleImagesChange = (images: string[]) => {
@@ -153,6 +161,7 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
         approval_status: 'approved'
       };
       
+      console.log('Submitting form data:', submissionData);
       await onSubmit(submissionData);
       return;
     }
@@ -293,7 +302,10 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
                   ? {
                       lat: formData.latitude,
                       lng: formData.longitude,
-                      address: formData.location
+                      address: formData.location,
+                      city: formData.city,
+                      state: formData.state,
+                      pincode: formData.pincode
                     }
                   : undefined
               }
@@ -308,7 +320,6 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
                 value={formData.city}
                 onChange={(e) => handleInputChange("city", e.target.value)}
                 placeholder="City"
-                readOnly
               />
             </div>
             <div>
@@ -318,7 +329,6 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
                 value={formData.state}
                 onChange={(e) => handleInputChange("state", e.target.value)}
                 placeholder="State"
-                readOnly
               />
             </div>
           </div>

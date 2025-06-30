@@ -15,6 +15,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -30,21 +37,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Search, MoreHorizontal, Plus, Edit, Trash2, CheckCircle, XCircle, MapPin } from 'lucide-react';
+import { Search, MoreHorizontal, Plus, Edit, Trash2, CheckCircle, XCircle, MapPin, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import AddStudioModal from '@/components/admin/AddStudioModal';
 import EditStudioModal from '@/components/admin/EditStudioModal';
+import AdminStudioDetails from '@/components/admin/AdminStudioDetails';
 
 const AdminStudios = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingStudio, setEditingStudio] = useState<any>(null);
+  const [viewingStudio, setViewingStudio] = useState<any>(null);
   const [deletingStudio, setDeletingStudio] = useState<any>(null);
   const queryClient = useQueryClient();
 
   // Fetch studios with enhanced location data
   const { data: studios, isLoading } = useQuery({
-    queryKey: ['adminStudios', searchTerm],
+    queryKey: ['adminStudios', searchTerm, selectedCity],
     queryFn: async () => {
       let query = supabase
         .from('studios')
@@ -59,8 +69,27 @@ const AdminStudios = () => {
         query = query.or(`title.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%`);
       }
 
+      if (selectedCity) {
+        query = query.eq('city', selectedCity);
+      }
+
       const { data } = await query;
       return data || [];
+    }
+  });
+
+  // Get unique cities for filter
+  const { data: cities } = useQuery({
+    queryKey: ['studioCities'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('studios')
+        .select('city')
+        .not('city', 'is', null)
+        .not('city', 'eq', '');
+      
+      const uniqueCities = Array.from(new Set(data?.map(item => item.city).filter(Boolean))).sort();
+      return uniqueCities;
     }
   });
 
@@ -133,6 +162,20 @@ const AdminStudios = () => {
     return studio.location || 'No location';
   };
 
+  // If viewing studio details, show the details component
+  if (viewingStudio) {
+    return (
+      <AdminStudioDetails
+        studio={viewingStudio}
+        onEdit={() => {
+          setEditingStudio(viewingStudio);
+          setViewingStudio(null);
+        }}
+        onBack={() => setViewingStudio(null)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -150,14 +193,32 @@ const AdminStudios = () => {
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <CardTitle>All Studios</CardTitle>
-            <div className="relative w-full sm:w-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Search studios..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full sm:w-64"
-              />
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+              {/* City Filter */}
+              <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Filter by city" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Cities</SelectItem>
+                  {cities?.map((city) => (
+                    <SelectItem key={city} value={city}>
+                      {city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* Search */}
+              <div className="relative w-full sm:w-auto">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search studios..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-full sm:w-64"
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -178,7 +239,11 @@ const AdminStudios = () => {
               </TableHeader>
               <TableBody>
                 {studios?.map((studio) => (
-                  <TableRow key={studio.id}>
+                  <TableRow 
+                    key={studio.id}
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => setViewingStudio(studio)}
+                  >
                     <TableCell>
                       <div className="space-y-1">
                         <div className="font-medium">{studio.title}</div>
@@ -236,21 +301,37 @@ const AdminStudios = () => {
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                           <Button variant="ghost" size="sm">
                             <MoreHorizontal className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onClick={() => setEditingStudio(studio)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingStudio(studio);
+                            }}
+                            className="gap-2"
+                          >
+                            <Eye className="w-4 h-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingStudio(studio);
+                            }}
                             className="gap-2"
                           >
                             <Edit className="w-4 h-4" />
                             Edit Studio
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => toggleStatusMutation.mutate({ studioId: studio.id, isActive: studio.is_active })}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleStatusMutation.mutate({ studioId: studio.id, isActive: studio.is_active });
+                            }}
                             className="gap-2"
                           >
                             {studio.is_active ? (
@@ -266,7 +347,10 @@ const AdminStudios = () => {
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => setDeletingStudio(studio)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletingStudio(studio);
+                            }}
                             className="gap-2 text-red-600"
                           >
                             <Trash2 className="w-4 h-4" />

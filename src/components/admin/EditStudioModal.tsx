@@ -22,6 +22,8 @@ const EditStudioModal = ({ open, onOpenChange, studio }: EditStudioModalProps) =
 
   const editStudioMutation = useMutation({
     mutationFn: async (studioData: any) => {
+      console.log('Updating studio with data:', studioData);
+      
       const { data, error } = await supabase
         .from('studios')
         .update(studioData)
@@ -29,7 +31,12 @@ const EditStudioModal = ({ open, onOpenChange, studio }: EditStudioModalProps) =
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Update error:', error);
+        throw error;
+      }
+
+      console.log('Studio updated successfully:', data);
 
       // Log the activity
       await supabase.rpc('log_admin_activity', {
@@ -43,6 +50,7 @@ const EditStudioModal = ({ open, onOpenChange, studio }: EditStudioModalProps) =
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminStudios'] });
+      queryClient.invalidateQueries({ queryKey: ['studioCities'] });
       toast.success('Studio updated successfully');
       onOpenChange(false);
     },
@@ -53,6 +61,7 @@ const EditStudioModal = ({ open, onOpenChange, studio }: EditStudioModalProps) =
   });
 
   const handleSubmit = async (data: any) => {
+    console.log('Form submission data:', data);
     await editStudioMutation.mutateAsync(data);
   };
 
@@ -63,7 +72,7 @@ const EditStudioModal = ({ open, onOpenChange, studio }: EditStudioModalProps) =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Studio</DialogTitle>
         </DialogHeader>
