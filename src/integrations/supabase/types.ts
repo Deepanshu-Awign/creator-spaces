@@ -284,15 +284,21 @@ export type Database = {
           approval_status: string | null
           approved_at: string | null
           approved_by: string | null
+          city: string | null
+          country: string | null
           created_at: string
           description: string | null
           host_id: string | null
           id: string
           images: string[] | null
           is_active: boolean | null
+          latitude: number | null
           location: string
+          longitude: number | null
+          pincode: string | null
           price_per_hour: number
           rating: number | null
+          state: string | null
           title: string
           total_reviews: number | null
           updated_at: string
@@ -303,15 +309,21 @@ export type Database = {
           approval_status?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           description?: string | null
           host_id?: string | null
           id?: string
           images?: string[] | null
           is_active?: boolean | null
+          latitude?: number | null
           location: string
+          longitude?: number | null
+          pincode?: string | null
           price_per_hour: number
           rating?: number | null
+          state?: string | null
           title: string
           total_reviews?: number | null
           updated_at?: string
@@ -322,15 +334,21 @@ export type Database = {
           approval_status?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           description?: string | null
           host_id?: string | null
           id?: string
           images?: string[] | null
           is_active?: boolean | null
+          latitude?: number | null
           location?: string
+          longitude?: number | null
+          pincode?: string | null
           price_per_hour?: number
           rating?: number | null
+          state?: string | null
           title?: string
           total_reviews?: number | null
           updated_at?: string

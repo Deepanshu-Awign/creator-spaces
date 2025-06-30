@@ -30,7 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Search, MoreHorizontal, Building, Plus, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Search, MoreHorizontal, Plus, Edit, Trash2, CheckCircle, XCircle, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import AddStudioModal from '@/components/admin/AddStudioModal';
 import EditStudioModal from '@/components/admin/EditStudioModal';
@@ -42,7 +42,7 @@ const AdminStudios = () => {
   const [deletingStudio, setDeletingStudio] = useState<any>(null);
   const queryClient = useQueryClient();
 
-  // Fetch studios
+  // Fetch studios with enhanced location data
   const { data: studios, isLoading } = useQuery({
     queryKey: ['adminStudios', searchTerm],
     queryFn: async () => {
@@ -56,7 +56,7 @@ const AdminStudios = () => {
         .order('created_at', { ascending: false });
 
       if (searchTerm) {
-        query = query.or(`title.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`);
+        query = query.or(`title.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%`);
       }
 
       const { data } = await query;
@@ -126,14 +126,21 @@ const AdminStudios = () => {
     return <Badge variant="default" className="bg-green-500">Active</Badge>;
   };
 
+  const formatLocation = (studio: any) => {
+    if (studio.city && studio.state) {
+      return `${studio.city}, ${studio.state}`;
+    }
+    return studio.location || 'No location';
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Studios</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Studios</h1>
           <p className="text-gray-600 mt-2">Manage studios and their availability</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="gap-2">
+        <Button onClick={() => setShowAddModal(true)} className="gap-2 w-full sm:w-auto">
           <Plus className="w-4 h-4" />
           Add Studio
         </Button>
@@ -141,118 +148,138 @@ const AdminStudios = () => {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <CardTitle>All Studios</CardTitle>
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 placeholder="Search studios..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
+                className="pl-10 w-full sm:w-64"
               />
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Studio</TableHead>
-                <TableHead>Host</TableHead>
-                <TableHead>Price/Hour</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Bookings</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {studios?.map((studio) => (
-                <TableRow key={studio.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{studio.title}</div>
-                      <div className="text-sm text-gray-500">{studio.location}</div>
-                      {studio.amenities && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {studio.amenities.slice(0, 2).map((amenity: string) => (
-                            <Badge key={amenity} variant="outline" className="text-xs">
-                              {amenity}
-                            </Badge>
-                          ))}
-                          {studio.amenities.length > 2 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{studio.amenities.length - 2} more
-                            </Badge>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[200px]">Studio</TableHead>
+                  <TableHead className="min-w-[150px]">Host</TableHead>
+                  <TableHead>Price/Hour</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Bookings</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {studios?.map((studio) => (
+                  <TableRow key={studio.id}>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="font-medium">{studio.title}</div>
+                        <div className="text-sm text-gray-500 line-clamp-2">
+                          {studio.description}
+                        </div>
+                        {studio.amenities && studio.amenities.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {studio.amenities.slice(0, 2).map((amenity: string) => (
+                              <Badge key={amenity} variant="outline" className="text-xs">
+                                {amenity}
+                              </Badge>
+                            ))}
+                            {studio.amenities.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{studio.amenities.length - 2} more
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{studio.profiles?.full_name || 'No Host'}</div>
+                        <div className="text-sm text-gray-500">{studio.profiles?.email}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">₹{studio.price_per_hour}</div>
+                    </TableCell>
+                    <TableCell>
+                      {getStatusBadge(studio)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-start gap-1">
+                        <MapPin className="w-3 h-3 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm">
+                          <div className="font-medium">{formatLocation(studio)}</div>
+                          {studio.pincode && (
+                            <div className="text-gray-500">{studio.pincode}</div>
                           )}
                         </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{studio.profiles?.full_name || 'No Host'}</div>
-                      <div className="text-sm text-gray-500">{studio.profiles?.email}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>₹{studio.price_per_hour}</TableCell>
-                  <TableCell>{getStatusBadge(studio)}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {studio.bookings?.length || 0} bookings
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {new Date(studio.created_at).toLocaleDateString()}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => setEditingStudio(studio)}
-                          className="gap-2"
-                        >
-                          <Edit className="w-4 h-4" />
-                          Edit Studio
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => toggleStatusMutation.mutate({ studioId: studio.id, isActive: studio.is_active })}
-                          className="gap-2"
-                        >
-                          {studio.is_active ? (
-                            <>
-                              <XCircle className="w-4 h-4" />
-                              Deactivate
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="w-4 h-4" />
-                              Activate
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setDeletingStudio(studio)}
-                          className="gap-2 text-red-600"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete Studio
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {studio.bookings?.length || 0} bookings
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {new Date(studio.created_at).toLocaleDateString()}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => setEditingStudio(studio)}
+                            className="gap-2"
+                          >
+                            <Edit className="w-4 h-4" />
+                            Edit Studio
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => toggleStatusMutation.mutate({ studioId: studio.id, isActive: studio.is_active })}
+                            className="gap-2"
+                          >
+                            {studio.is_active ? (
+                              <>
+                                <XCircle className="w-4 h-4" />
+                                Deactivate
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="w-4 h-4" />
+                                Activate
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setDeletingStudio(studio)}
+                            className="gap-2 text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete Studio
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

@@ -1,376 +1,306 @@
-import { useState, useMemo, useEffect } from "react";
-import { Search, Filter, MapPin, Star, Grid, List } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
-import Navigation from "@/components/Navigation";
-import StudioCard from "@/components/StudioCard";
-import { supabase } from "@/integrations/supabase/client";
+
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import StudioCard from '@/components/StudioCard';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Search, MapPin, Filter, X } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const Studios = () => {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const DEFAULT_PRICE_RANGE = [100, 10000];
-  const [priceRange, setPriceRange] = useState(DEFAULT_PRICE_RANGE);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCity, setSelectedCity] = useState<string>('');
+  const [selectedState, setSelectedState] = useState<string>('');
+  const [priceRange, setPriceRange] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState("");
-  const [selectedStudioType, setSelectedStudioType] = useState("");
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
-  const [minRating, setMinRating] = useState<number[]>([]);
-  const [sortBy, setSortBy] = useState("");
-  const [studios, setStudios] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const amenities = [
-    "Professional Microphones",
-    "Professional Lighting",
-    "Green Screen", 
-    "4K Cameras",
-    "Editing Suite",
-    "Props Collection",
-    "High-Speed WiFi",
-    "Audio Interface",
-    "Soundproof Booth",
-    "Recording Software"
-  ];
+  // Fetch studios with enhanced filtering
+  const { data: studios, isLoading } = useQuery({
+    queryKey: ['studios', searchTerm, selectedCity, selectedState, priceRange],
+    queryFn: async () => {
+      let query = supabase
+        .from('studios')
+        .select(`
+          *,
+          profiles!studios_host_id_fkey(full_name, email)
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
-  const studioTypes = [
-    { value: "podcast", label: "Podcast Studio" },
-    { value: "photography", label: "Photography Studio" },
-    { value: "video", label: "Video Production" },
-    { value: "meeting", label: "Meeting Room" },
-    { value: "music", label: "Music Studio" },
-    { value: "content", label: "Content Creation" }
-  ];
-
-  const locations = [
-    { value: "mumbai", label: "Mumbai" },
-    { value: "bangalore", label: "Bangalore" },
-    { value: "delhi", label: "Delhi" },
-    { value: "pune", label: "Pune" },
-    { value: "chennai", label: "Chennai" },
-    { value: "hyderabad", label: "Hyderabad" }
-  ];
-
-  useEffect(() => {
-    const fetchStudios = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { data, error } = await supabase
-          .from("studios")
-          .select("*")
-          .eq("is_active", true);
-        if (error) throw error;
-        setStudios(
-          (data || []).map((studio) => {
-            // Extract city name for filtering
-            let cityName = "";
-            if (studio.location) {
-              cityName = studio.location.split(",")[0].trim();
-            }
-            return {
-              ...studio,
-              id: studio.id,
-              title: studio.title,
-              location: studio.location,
-              cityName,
-              price: `₹${studio.price_per_hour?.toLocaleString()}/hour`,
-              priceValue: studio.price_per_hour,
-              rating: studio.rating || 0,
-              reviewCount: studio.total_reviews || 0,
-              image: studio.images?.[0] || "/placeholder.svg",
-              tags: [],
-              amenities: studio.amenities || [],
-              type: (studio as any).type || ""
-            };
-          })
-        );
-      } catch (err: any) {
-        setError(err.message || "Failed to load studios.");
-      } finally {
-        setLoading(false);
+      // Apply search filter
+      if (searchTerm) {
+        query = query.or(`title.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,amenities.cs.{${searchTerm}}`);
       }
-    };
-    fetchStudios();
-  }, []);
 
-  const handleAmenityChange = (amenity: string, checked: boolean) => {
-    if (checked) {
-      setSelectedAmenities(prev => [...prev, amenity]);
-    } else {
-      setSelectedAmenities(prev => prev.filter(a => a !== amenity));
+      // Apply city filter
+      if (selectedCity) {
+        query = query.eq('city', selectedCity);
+      }
+
+      // Apply state filter
+      if (selectedState) {
+        query = query.eq('state', selectedState);
+      }
+
+      // Apply price range filter
+      if (priceRange) {
+        const [min, max] = priceRange.split('-').map(Number);
+        if (max) {
+          query = query.gte('price_per_hour', min).lte('price_per_hour', max);
+        } else {
+          query = query.gte('price_per_hour', min);
+        }
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.error('Error fetching studios:', error);
+        return [];
+      }
+      return data || [];
     }
-  };
+  });
 
-  const handleRatingChange = (rating: number, checked: boolean) => {
-    if (checked) {
-      setMinRating(prev => [...prev, rating]);
-    } else {
-      setMinRating(prev => prev.filter(r => r !== rating));
-    }
-  };
+  // Fetch unique cities and states for filters
+  const { data: locationData } = useQuery({
+    queryKey: ['studio-locations'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('studios')
+        .select('city, state')
+        .eq('is_active', true)
+        .not('city', 'is', null)
+        .not('state', 'is', null);
 
-  const filteredStudios = useMemo(() => {
-    let filtered = studios.filter(studio => {
-      // Debug: log price values
-      console.log(`Studio: ${studio.title}, Price: ${studio.priceValue}`);
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        if (!studio.title.toLowerCase().includes(query) &&
-            !studio.location.toLowerCase().includes(query) &&
-            !studio.type.toLowerCase().includes(query)) {
-          return false;
-        }
-      }
-      // Location filter (match city name, case-insensitive)
-      if (selectedLocation) {
-        const filterCity = selectedLocation.toLowerCase();
-        const studioCity = (studio.cityName || "").toLowerCase();
-        console.log(`Filtering by city: ${filterCity}, Studio city: ${studioCity}`);
-        if (!studioCity.includes(filterCity)) {
-          return false;
-        }
-      }
-      // Studio type filter
-      if (selectedStudioType) {
-        if (studio.type !== selectedStudioType) {
-          return false;
-        }
-      }
-      // Price range filter
-      if (studio.priceValue < priceRange[0] || studio.priceValue > priceRange[1]) {
-        console.log(`Filtered out by price: ${studio.priceValue}`);
-        return false;
-      }
-      // Amenities filter
-      if (selectedAmenities.length > 0) {
-        if (!selectedAmenities.some(amenity => studio.amenities.includes(amenity))) {
-          return false;
-        }
-      }
-      // Rating filter
-      if (minRating.length > 0) {
-        const maxRequiredRating = Math.max(...minRating);
-        if (studio.rating < maxRequiredRating) {
-          return false;
-        }
-      }
-      return true;
-    });
-    console.log(`Filtered studios count: ${filtered.length}`);
-    // Sort filtered results
-    if (sortBy) {
-      filtered.sort((a, b) => {
-        switch (sortBy) {
-          case "price-low":
-            return a.priceValue - b.priceValue;
-          case "price-high":
-            return b.priceValue - a.priceValue;
-          case "rating":
-            return b.rating - a.rating;
-          case "popular":
-            return b.reviewCount - a.reviewCount;
-          default:
-            return 0;
-        }
-      });
+      const cities = [...new Set(data?.map(item => item.city).filter(Boolean))].sort();
+      const states = [...new Set(data?.map(item => item.state).filter(Boolean))].sort();
+
+      return { cities, states };
     }
-    return filtered;
-  }, [studios, searchQuery, selectedLocation, selectedStudioType, priceRange, selectedAmenities, minRating, sortBy]);
+  });
 
   const clearFilters = () => {
-    setSearchQuery("");
-    setSelectedLocation("");
-    setSelectedStudioType("");
-    setPriceRange(DEFAULT_PRICE_RANGE);
-    setSelectedAmenities([]);
-    setMinRating([]);
-    setSortBy("");
+    setSearchTerm('');
+    setSelectedCity('');
+    setSelectedState('');
+    setPriceRange('');
   };
 
+  const hasActiveFilters = searchTerm || selectedCity || selectedState || priceRange;
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Navigation />
-      <div className="pt-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-800 mb-4">Discover Studios</h1>
-            <p className="text-slate-600">Find the perfect space for your creative needs</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Find Your Perfect Studio
+          </h1>
+          <p className="text-xl text-gray-600">
+            Discover and book amazing studios for your next project
+          </p>
+        </div>
+
+        {/* Search and Filters */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          {/* Main Search */}
+          <div className="flex flex-col md:flex-row gap-4 mb-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Input
+                type="text"
+                placeholder="Search studios, locations, or amenities..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-12 text-lg"
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="h-12 gap-2"
+            >
+              <Filter className="w-4 h-4" />
+              Filters
+              {hasActiveFilters && (
+                <Badge variant="secondary" className="ml-2">
+                  {[searchTerm, selectedCity, selectedState, priceRange].filter(Boolean).length}
+                </Badge>
+              )}
+            </Button>
           </div>
-          
-          {/* Search and View Controls */}
-          <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-            <div className="flex flex-col lg:flex-row gap-4 items-center">
-              <div className="flex-1 flex items-center relative">
-                <Search className="absolute left-3 w-5 h-5 text-slate-400" />
-                <Input
-                  placeholder="Search studios by name, location, or type..."
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locations.map((location) => (
-                      <SelectItem key={location.value} value={location.value}>
-                        {location.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-2"
-                >
-                  <Filter className="w-4 h-4" />
-                  Filters
-                </Button>
-                <div className="flex border rounded-lg">
-                  <Button
-                    variant={viewMode === "grid" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("grid")}
-                    className="rounded-r-none"
-                  >
-                    <Grid className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === "list" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                    className="rounded-l-none"
-                  >
-                    <List className="w-4 h-4" />
-                  </Button>
+
+          {/* Expanded Filters */}
+          {showFilters && (
+            <div className="border-t pt-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* City Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    City
+                  </label>
+                  <Select value={selectedCity} onValueChange={setSelectedCity}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select city" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Cities</SelectItem>
+                      {locationData?.cities?.map((city) => (
+                        <SelectItem key={city} value={city}>
+                          {city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* State Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    State
+                  </label>
+                  <Select value={selectedState} onValueChange={setSelectedState}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All States</SelectItem>
+                      {locationData?.states?.map((state) => (
+                        <SelectItem key={state} value={state}>
+                          {state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Price Range Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Price Range (₹/hour)
+                  </label>
+                  <Select value={priceRange} onValueChange={setPriceRange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select price range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Prices</SelectItem>
+                      <SelectItem value="0-500">₹0 - ₹500</SelectItem>
+                      <SelectItem value="500-1000">₹500 - ₹1,000</SelectItem>
+                      <SelectItem value="1000-2000">₹1,000 - ₹2,000</SelectItem>
+                      <SelectItem value="2000-5000">₹2,000 - ₹5,000</SelectItem>
+                      <SelectItem value="5000">₹5,000+</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            </div>
-          </div>
-          
-          <div className="flex gap-6">
-            {/* Filters Sidebar */}
-            {showFilters && (
-              <div className="w-80 bg-white rounded-lg shadow-sm p-6 h-fit">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-semibold text-lg">Filters</h3>
-                  <Button variant="ghost" size="sm" onClick={clearFilters}>
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <div className="flex justify-between items-center pt-4 border-t">
+                  <div className="flex flex-wrap gap-2">
+                    {searchTerm && (
+                      <Badge variant="secondary" className="gap-1">
+                        Search: {searchTerm}
+                        <X 
+                          className="w-3 h-3 cursor-pointer" 
+                          onClick={() => setSearchTerm('')}
+                        />
+                      </Badge>
+                    )}
+                    {selectedCity && (
+                      <Badge variant="secondary" className="gap-1">
+                        City: {selectedCity}
+                        <X 
+                          className="w-3 h-3 cursor-pointer" 
+                          onClick={() => setSelectedCity('')}
+                        />
+                      </Badge>
+                    )}
+                    {selectedState && (
+                      <Badge variant="secondary" className="gap-1">
+                        State: {selectedState}
+                        <X 
+                          className="w-3 h-3 cursor-pointer" 
+                          onClick={() => setSelectedState('')}
+                        />
+                      </Badge>
+                    )}
+                    {priceRange && (
+                      <Badge variant="secondary" className="gap-1">
+                        Price: ₹{priceRange.replace('-', ' - ₹')}
+                        <X 
+                          className="w-3 h-3 cursor-pointer" 
+                          onClick={() => setPriceRange('')}
+                        />
+                      </Badge>
+                    )}
+                  </div>
+                  <Button variant="ghost" onClick={clearFilters} className="gap-2">
                     Clear All
                   </Button>
                 </div>
-                {/* Price Range */}
-                <div className="mb-6">
-                  <h4 className="font-medium mb-3">Price Range (per hour)</h4>
-                  <Slider
-                    value={priceRange}
-                    onValueChange={setPriceRange}
-                    max={10000}
-                    min={100}
-                    step={100}
-                    className="mb-2"
-                  />
-                  <div className="flex justify-between text-sm text-slate-600">
-                    <span>₹{priceRange[0]}</span>
-                    <span>₹{priceRange[1]}</span>
-                  </div>
-                </div>
-                {/* Rating */}
-                <div className="mb-6">
-                  <h4 className="font-medium mb-3">Minimum Rating</h4>
-                  <div className="space-y-2">
-                    {[4.5, 4.0, 3.5, 3.0].map((rating) => (
-                      <div key={rating} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`rating-${rating}`}
-                          checked={minRating.includes(rating)}
-                          onCheckedChange={(checked) => handleRatingChange(rating, !!checked)}
-                        />
-                        <label htmlFor={`rating-${rating}`} className="text-sm flex items-center">
-                          <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-                          {rating}+ stars
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {/* Amenities */}
-                <div className="mb-6">
-                  <h4 className="font-medium mb-3">Amenities</h4>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {amenities.map((amenity) => (
-                      <div key={amenity} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={amenity}
-                          checked={selectedAmenities.includes(amenity)}
-                          onCheckedChange={(checked) => handleAmenityChange(amenity, !!checked)}
-                        />
-                        <label htmlFor={amenity} className="text-sm">
-                          {amenity}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Studios Grid/List */}
-            <div className="flex-1">
-              <div className="mb-4 flex justify-between items-center">
-                <p className="text-slate-600">
-                  {loading ? "Loading studios..." : error ? error : `Showing ${filteredStudios.length} studios`}
-                </p>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="popular">Most Popular</SelectItem>
-                    <SelectItem value="price-low">Price: Low to High</SelectItem>
-                    <SelectItem value="price-high">Price: High to Low</SelectItem>
-                    <SelectItem value="rating">Highest Rated</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {loading ? (
-                <div className="text-center py-12 text-slate-500">Loading studios...</div>
-              ) : error ? (
-                <div className="text-center py-12 text-red-500">{error}</div>
-              ) : (
-                <div className={
-                  viewMode === "grid"
-                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                    : "space-y-4"
-                }>
-                  {filteredStudios.map((studio) => (
-                    <StudioCard key={studio.id} studio={studio} />
-                  ))}
-                </div>
-              )}
-              
-              {!loading && !error && filteredStudios.length === 0 && (
-                <div className="text-center py-12">
-                  <p className="text-slate-500 text-lg">No studios found matching your criteria</p>
-                  <Button variant="outline" onClick={clearFilters} className="mt-4">
-                    Clear Filters
-                  </Button>
-                </div>
               )}
             </div>
+          )}
+        </div>
+
+        {/* Results */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              {isLoading ? 'Loading...' : `${studios?.length || 0} Studios Found`}
+            </h2>
+            {hasActiveFilters && (
+              <p className="text-gray-600">
+                Filtered results
+              </p>
+            )}
           </div>
         </div>
+
+        {/* Studios Grid */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white rounded-lg shadow-md p-6 animate-pulse">
+                <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
+                <div className="h-6 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              </div>
+            ))}
+          </div>
+        ) : studios && studios.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {studios.map((studio) => (
+              <StudioCard key={studio.id} studio={studio} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              No Studios Found
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Try adjusting your search criteria or filters
+            </p>
+            {hasActiveFilters && (
+              <Button onClick={clearFilters} variant="outline">
+                Clear All Filters
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
