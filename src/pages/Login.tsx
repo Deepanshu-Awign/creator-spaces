@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Mail, ArrowRight, Check } from "lucide-react";
+import { Mail, ArrowRight, Check, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +14,9 @@ import { supabase } from "@/integrations/supabase/client";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState<"email" | "otp-sent">("email");
+  const [fullName, setFullName] = useState("");
+  const [step, setStep] = useState<"auth" | "otp-sent">("auth");
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [isLoading, setIsLoading] = useState(false);
   
   const { toast } = useToast();
@@ -30,10 +32,35 @@ const Login = () => {
     setIsLoading(true);
     
     try {
+      if (authMode === "signup") {
+        // For signup, we need to create the account first
+        const { error } = await supabase.auth.signUp({
+          email,
+          password: Math.random().toString(36).substring(2, 15), // Random password since we're using OTP
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              full_name: fullName,
+            }
+          }
+        });
+        
+        if (error) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: error.message || "Failed to create account. Please try again.",
+          });
+          return;
+        }
+      }
+
+      // Send OTP for both signin and signup
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
+          shouldCreateUser: authMode === "signup"
         }
       });
       
@@ -69,7 +96,7 @@ const Login = () => {
       const { error } = await supabase.auth.verifyOtp({
         email,
         token: otp,
-        type: "email" as const,
+        type: "email"
       });
       
       if (error) {
@@ -81,7 +108,7 @@ const Login = () => {
       } else {
         toast({
           title: "Success!",
-          description: "You have been logged in successfully.",
+          description: authMode === "signup" ? "Account created successfully!" : "You have been logged in successfully.",
         });
         window.location.href = '/';
       }
@@ -96,6 +123,13 @@ const Login = () => {
     }
   };
 
+  const switchAuthMode = () => {
+    setAuthMode(authMode === "signin" ? "signup" : "signin");
+    setStep("auth");
+    setOtp("");
+    setFullName("");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <Navigation />
@@ -107,19 +141,47 @@ const Login = () => {
               Welcome to BookMyStudio
             </h1>
             <p className="text-slate-600">
-              {step === "otp-sent" ? "Enter the 6-digit code sent to your email" : "Sign in with your email to get started"}
+              {step === "otp-sent" 
+                ? "Enter the 6-digit code sent to your email" 
+                : authMode === "signin" 
+                  ? "Sign in with your email to get started"
+                  : "Create your account to get started"
+              }
             </p>
           </div>
 
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="text-center">
-                {step === "otp-sent" ? "Verify Email" : "Sign In"}
+                {step === "otp-sent" 
+                  ? "Verify Email" 
+                  : authMode === "signin" 
+                    ? "Sign In" 
+                    : "Create Account"
+                }
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {step === "email" ? (
+              {step === "auth" ? (
                 <form onSubmit={handleSendOTP} className="space-y-4">
+                  {authMode === "signup" && (
+                    <div>
+                      <Label htmlFor="fullName">Full Name</Label>
+                      <div className="relative mt-2">
+                        <UserPlus className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <Input
+                          id="fullName"
+                          type="text"
+                          placeholder="Enter your full name"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <Label htmlFor="email">Email Address</Label>
                     <div className="relative mt-2">
@@ -139,15 +201,29 @@ const Login = () => {
                   <Button
                     type="submit"
                     className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3"
-                    disabled={isLoading || !email}
+                    disabled={isLoading || !email || (authMode === "signup" && !fullName)}
                   >
                     {isLoading ? "Sending OTP..." : (
                       <>
-                        Send Verification Code
+                        {authMode === "signin" ? "Send Verification Code" : "Create Account & Send Code"}
                         <ArrowRight className="w-5 h-5 ml-2" />
                       </>
                     )}
                   </Button>
+
+                  <div className="text-center">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={switchAuthMode}
+                      className="text-orange-500 hover:text-orange-600"
+                    >
+                      {authMode === "signin" 
+                        ? "Don't have an account? Sign up" 
+                        : "Already have an account? Sign in"
+                      }
+                    </Button>
+                  </div>
 
                   <p className="text-xs text-slate-500 text-center">
                     We'll send you a 6-digit verification code to your email.
@@ -206,10 +282,10 @@ const Login = () => {
                     <Button
                       type="button"
                       variant="ghost"
-                      onClick={() => setStep("email")}
+                      onClick={() => setStep("auth")}
                       className="text-slate-500 hover:text-slate-600"
                     >
-                      Back to Email
+                      Back to {authMode === "signin" ? "Sign In" : "Sign Up"}
                     </Button>
                   </div>
                 </div>
