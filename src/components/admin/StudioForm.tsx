@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import GoogleMapsPicker from './GoogleMapsPicker';
 import StudioImageUpload from './StudioImageUpload';
 import AmenitiesChecklist from './AmenitiesChecklist';
+import { supabase } from '@/integrations/supabase/client';
 
 const studioSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -91,14 +92,27 @@ const StudioForm: React.FC<StudioFormProps> = ({
     trigger(['location', 'city', 'state']);
   };
 
-  const handleFormSubmit = (data: StudioFormData) => {
+  const handleFormSubmit = async (data: StudioFormData) => {
     // Ensure required location data is present
     if (!data.city || !data.state) {
       console.error('Missing required location data');
       return;
     }
     
-    onSubmit(data);
+    // Get current user to set as host_id
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // Clean up the data - convert empty strings to null for UUID fields
+    const cleanedData = {
+      ...data,
+      host_id: user?.id || null,
+      pincode: data.pincode || null,
+      latitude: data.latitude || null,
+      longitude: data.longitude || null,
+    };
+    
+    console.log('Submitting studio data:', cleanedData);
+    onSubmit(cleanedData);
   };
 
   return (
