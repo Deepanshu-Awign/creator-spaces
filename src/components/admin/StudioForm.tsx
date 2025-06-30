@@ -85,11 +85,8 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
     console.log('Updated form data with location:', updatedFormData);
     setFormData(updatedFormData);
 
-    // Call onSuccess to notify parent component if needed
-    if (onSuccess) {
-      console.log('Calling onSuccess after location update');
-      onSuccess();
-    }
+    // Don't call onSuccess here - this was causing the automatic form submission
+    // onSuccess should only be called after successful form submission
   };
 
   const handleImagesChange = (images: string[]) => {
