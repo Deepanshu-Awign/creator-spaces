@@ -6,6 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useFavorites } from "@/hooks/useFavorites";
 
+const STUDIO_TAGS = [
+  { value: 'hot-selling', label: 'Hot Selling', color: 'bg-red-100 text-red-800' },
+  { value: 'featured', label: 'Featured', color: 'bg-blue-100 text-blue-800' },
+  { value: 'premium', label: 'Premium', color: 'bg-purple-100 text-purple-800' },
+  { value: 'new', label: 'New', color: 'bg-green-100 text-green-800' },
+  { value: 'popular', label: 'Popular', color: 'bg-orange-100 text-orange-800' },
+];
+
 interface Studio {
   id: string;
   title: string;
@@ -18,6 +26,7 @@ interface Studio {
   images?: string[];
   amenities?: string[];
   description?: string;
+  tags?: string[];
   profiles?: {
     full_name: string;
     email: string;
@@ -73,12 +82,15 @@ const StudioCard = ({ studio }: StudioCardProps) => {
         >
           <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
         </Button>
-        <div className="absolute top-3 left-3 flex gap-1">
-          {studio.rating && studio.rating >= 4.5 && (
-            <Badge variant="destructive" className="text-xs">
-              Hot Selling
-            </Badge>
-          )}
+        <div className="absolute top-3 left-3 flex flex-col gap-1">
+          {studio.tags?.map((tagValue) => {
+            const tag = STUDIO_TAGS.find(t => t.value === tagValue);
+            return tag ? (
+              <Badge key={tagValue} className={`text-xs ${tag.color} border-none font-medium`}>
+                {tag.label}
+              </Badge>
+            ) : null;
+          })}
         </div>
       </div>
       

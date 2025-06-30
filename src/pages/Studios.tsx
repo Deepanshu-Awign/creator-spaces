@@ -1,26 +1,53 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import StudioCard from '@/components/StudioCard';
+import Navigation from '@/components/Navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, MapPin, Filter, X } from 'lucide-react';
+import { Search, Filter, X, Star } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+
+const AVAILABLE_AMENITIES = [
+  'WiFi',
+  'Air Conditioning',
+  'Parking',
+  'Security Camera',
+  'Sound System',
+  '24x7 Access',
+  'Lighting Equipment',
+  'Backdrop',
+  'Makeup Room',
+  'Waiting Area',
+  'Refreshments',
+  'Equipment Storage',
+  'Wheelchair Accessible',
+  'Bathroom Facilities',
+  'Kitchen/Pantry',
+  'Reception Area',
+  'Conference Table',
+  'Projector',
+  'Whiteboard',
+  'Natural Light'
+];
 
 const Studios = () => {
   const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCity, setSelectedCity] = useState<string>('');
-  const [selectedState, setSelectedState] = useState<string>('');
-  const [priceRange, setPriceRange] = useState<string>('');
+  const [priceRange, setPriceRange] = useState<number[]>([0, 10000]);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [minRating, setMinRating] = useState<number>(0);
   const [showFilters, setShowFilters] = useState(false);
 
   // Get city from URL params or localStorage
@@ -36,7 +63,7 @@ const Studios = () => {
 
   // Fetch studios with enhanced filtering
   const { data: studios = [], isLoading } = useQuery({
-    queryKey: ['studios', searchTerm, selectedCity, selectedState, priceRange],
+    queryKey: ['studios', searchTerm, selectedCity, priceRange, selectedAmenities, minRating],
     queryFn: async () => {
       let query = supabase
         .from('studios')
@@ -52,24 +79,17 @@ const Studios = () => {
         query = query.or(`title.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,amenities.cs.{${searchTerm}}`);
       }
 
-      // Apply city filter - prioritize selectedCity
+      // Apply city filter
       if (selectedCity) {
         query = query.eq('city', selectedCity);
       }
 
-      // Apply state filter
-      if (selectedState) {
-        query = query.eq('state', selectedState);
-      }
-
       // Apply price range filter
-      if (priceRange) {
-        const [min, max] = priceRange.split('-').map(Number);
-        if (max) {
-          query = query.gte('price_per_hour', min).lte('price_per_hour', max);
-        } else {
-          query = query.gte('price_per_hour', min);
-        }
+      query = query.gte('price_per_hour', priceRange[0]).lte('price_per_hour', priceRange[1]);
+
+      // Apply rating filter
+      if (minRating > 0) {
+        query = query.gte('rating', minRating);
       }
 
       const { data, error } = await query;
@@ -77,46 +97,50 @@ const Studios = () => {
         console.error('Error fetching studios:', error);
         return [];
       }
-      return data || [];
+
+      // Filter by amenities on the client side since PostgreSQL array filtering is complex
+      let filteredData = data || [];
+      if (selectedAmenities.length > 0) {
+        filteredData = filteredData.filter(studio => {
+          if (!studio.amenities) return false;
+          return selectedAmenities.every(amenity => studio.amenities.includes(amenity));
+        });
+      }
+
+      return filteredData;
     }
   });
 
-  // Fetch unique cities and states for filters
-  const { data: locationData } = useQuery({
-    queryKey: ['studio-locations'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('studios')
-        .select('city, state')
-        .eq('is_active', true)
-        .not('city', 'is', null)
-        .not('state', 'is', null);
+  const handleCityChange = (city: string) => {
+    setSelectedCity(city);
+    localStorage.setItem('selectedCity', city);
+    // Update URL with city
+    window.history.pushState({}, '', `/studios?city=${encodeURIComponent(city)}`);
+  };
 
-      // Clean up city names
-      const cleanedData = data?.map(item => ({
-        ...item,
-        city: item.city?.replace(/\s+division$/i, '').trim()
-      }));
-
-      const cities = [...new Set(cleanedData?.map(item => item.city).filter(Boolean))].sort();
-      const states = [...new Set(cleanedData?.map(item => item.state).filter(Boolean))].sort();
-
-      return { cities, states };
+  const handleAmenityToggle = (amenity: string, checked: boolean) => {
+    if (checked) {
+      setSelectedAmenities(prev => [...prev, amenity]);
+    } else {
+      setSelectedAmenities(prev => prev.filter(a => a !== amenity));
     }
-  });
+  };
 
   const clearFilters = () => {
     setSearchTerm('');
-    setSelectedState('');
-    setPriceRange('');
-    // Keep selectedCity as it comes from URL/localStorage
+    setPriceRange([0, 10000]);
+    setSelectedAmenities([]);
+    setMinRating(0);
   };
 
-  const hasActiveFilters = searchTerm || selectedState || priceRange;
+  const hasActiveFilters = searchTerm || priceRange[0] > 0 || priceRange[1] < 10000 || selectedAmenities.length > 0 || minRating > 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* Navigation with city selector */}
+      <Navigation selectedCity={selectedCity} onCityChange={handleCityChange} />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-16">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -150,7 +174,7 @@ const Studios = () => {
               Filters
               {hasActiveFilters && (
                 <Badge variant="secondary" className="ml-2">
-                  {[searchTerm, selectedState, priceRange].filter(Boolean).length}
+                  {[searchTerm, priceRange[0] > 0 || priceRange[1] < 10000, selectedAmenities.length > 0, minRating > 0].filter(Boolean).length}
                 </Badge>
               )}
             </Button>
@@ -158,60 +182,79 @@ const Studios = () => {
 
           {/* Expanded Filters */}
           {showFilters && (
-            <div className="border-t pt-4 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* City Filter - Show current city */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    City
-                  </label>
-                  <div className="px-3 py-2 bg-gray-100 rounded-md text-gray-700">
-                    {selectedCity || 'All Cities'}
-                  </div>
-                </div>
+            <div className="border-t pt-6 space-y-6">
+              {/* Price Range Filter */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Price Range (₹/hour): ₹{priceRange[0]} - ₹{priceRange[1]}
+                </Label>
+                <Slider
+                  value={priceRange}
+                  onValueChange={setPriceRange}
+                  max={10000}
+                  min={0}
+                  step={100}
+                  className="w-full"
+                />
+              </div>
 
-                {/* State Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    State
-                  </label>
-                  <Select value={selectedState} onValueChange={setSelectedState}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select state" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all-states">All States</SelectItem>
-                      {locationData?.states?.map((state) => (
-                        <SelectItem key={state} value={state}>
-                          {state}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Price Range Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Price Range (₹/hour)
-                  </label>
-                  <Select value={priceRange} onValueChange={setPriceRange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select price range" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all-prices">All Prices</SelectItem>
-                      <SelectItem value="0-500">₹0 - ₹500</SelectItem>
-                      <SelectItem value="500-1000">₹500 - ₹1,000</SelectItem>
-                      <SelectItem value="1000-2000">₹1,000 - ₹2,000</SelectItem>
-                      <SelectItem value="2000-5000">₹2,000 - ₹5,000</SelectItem>
-                      <SelectItem value="5000">₹5,000+</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* Rating Filter */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Minimum Rating
+                </Label>
+                <div className="flex gap-2">
+                  {[0, 1, 2, 3, 4, 5].map((rating) => (
+                    <Button
+                      key={rating}
+                      variant={minRating === rating ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setMinRating(rating)}
+                      className="gap-1"
+                    >
+                      {rating === 0 ? 'Any' : (
+                        <>
+                          {rating}
+                          <Star className="w-3 h-3 fill-current" />
+                        </>
+                      )}
+                    </Button>
+                  ))}
                 </div>
               </div>
 
-              {/* Clear Filters */}
+              {/* Amenities Filter */}
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-between p-0 h-auto">
+                    <Label className="text-sm font-medium text-gray-700 cursor-pointer">
+                      Amenities {selectedAmenities.length > 0 && `(${selectedAmenities.length} selected)`}
+                    </Label>
+                    <Filter className="w-4 h-4" />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-48 overflow-y-auto">
+                    {AVAILABLE_AMENITIES.map((amenity) => (
+                      <div key={amenity} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`amenity-${amenity}`}
+                          checked={selectedAmenities.includes(amenity)}
+                          onCheckedChange={(checked) => handleAmenityToggle(amenity, checked as boolean)}
+                        />
+                        <Label
+                          htmlFor={`amenity-${amenity}`}
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {amenity}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Active Filters Display */}
               {hasActiveFilters && (
                 <div className="flex justify-between items-center pt-4 border-t">
                   <div className="flex flex-wrap gap-2">
@@ -224,27 +267,36 @@ const Studios = () => {
                         />
                       </Badge>
                     )}
-                    {selectedState && selectedState !== 'all-states' && (
+                    {(priceRange[0] > 0 || priceRange[1] < 10000) && (
                       <Badge variant="secondary" className="gap-1">
-                        State: {selectedState}
+                        Price: ₹{priceRange[0]} - ₹{priceRange[1]}
                         <X 
                           className="w-3 h-3 cursor-pointer" 
-                          onClick={() => setSelectedState('')}
+                          onClick={() => setPriceRange([0, 10000])}
                         />
                       </Badge>
                     )}
-                    {priceRange && priceRange !== 'all-prices' && (
-                      <Badge variant="secondary" className="gap-1">
-                        Price: ₹{priceRange.replace('-', ' - ₹')}
+                    {selectedAmenities.map((amenity) => (
+                      <Badge key={amenity} variant="secondary" className="gap-1">
+                        {amenity}
                         <X 
                           className="w-3 h-3 cursor-pointer" 
-                          onClick={() => setPriceRange('')}
+                          onClick={() => handleAmenityToggle(amenity, false)}
+                        />
+                      </Badge>
+                    ))}
+                    {minRating > 0 && (
+                      <Badge variant="secondary" className="gap-1">
+                        {minRating}+ stars
+                        <X 
+                          className="w-3 h-3 cursor-pointer" 
+                          onClick={() => setMinRating(0)}
                         />
                       </Badge>
                     )}
                   </div>
                   <Button variant="ghost" onClick={clearFilters} className="gap-2">
-                    Clear Filters
+                    Clear All Filters
                   </Button>
                 </div>
               )}
@@ -258,9 +310,9 @@ const Studios = () => {
             <h2 className="text-2xl font-semibold text-gray-900">
               {isLoading ? 'Loading...' : `${studios.length} Studios Found`}
             </h2>
-            {(hasActiveFilters || selectedCity) && (
+            {selectedCity && (
               <p className="text-gray-600">
-                {selectedCity && `Showing results for ${selectedCity}`}
+                Showing results for {selectedCity}
               </p>
             )}
           </div>
@@ -286,7 +338,9 @@ const Studios = () => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <Search className="w-8 h-8 text-gray-400" />
+            </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               No Studios Found
             </h3>
