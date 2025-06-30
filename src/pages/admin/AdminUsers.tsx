@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,34 +39,67 @@ const AdminUsers = () => {
   const [deletingUser, setDeletingUser] = useState<any>(null);
   const queryClient = useQueryClient();
 
-  // Fetch users with their roles
+  // Fetch users with their roles using separate queries
   const { data: users, isLoading, error } = useQuery({
     queryKey: ['adminUsers', searchTerm],
     queryFn: async () => {
       console.log('Fetching users...');
       
-      let query = supabase
+      // First get profiles
+      let profileQuery = supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles(role),
-          bookings(id)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (searchTerm) {
-        query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        profileQuery = profileQuery.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
       }
 
-      const { data, error } = await query;
+      const { data: profiles, error: profilesError } = await profileQuery;
       
-      if (error) {
-        console.error('Error fetching users:', error);
-        throw error;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
       }
 
-      console.log('Users fetched:', data);
-      return data || [];
+      if (!profiles || profiles.length === 0) {
+        return [];
+      }
+
+      // Get user roles for all users
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', profiles.map(p => p.id));
+
+      if (rolesError) {
+        console.error('Error fetching user roles:', rolesError);
+      }
+
+      // Get booking counts for all users
+      const { data: bookingCounts, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('user_id')
+        .in('user_id', profiles.map(p => p.id));
+
+      if (bookingsError) {
+        console.error('Error fetching bookings:', bookingsError);
+      }
+
+      // Combine the data
+      const usersWithRolesAndBookings = profiles.map(profile => {
+        const userRole = userRoles?.find(role => role.user_id === profile.id);
+        const userBookings = bookingCounts?.filter(booking => booking.user_id === profile.id) || [];
+        
+        return {
+          ...profile,
+          user_roles: userRole ? [{ role: userRole.role }] : [],
+          bookings: userBookings
+        };
+      });
+
+      console.log('Users fetched:', usersWithRolesAndBookings);
+      return usersWithRolesAndBookings;
     }
   });
 
