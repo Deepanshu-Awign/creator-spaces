@@ -6,15 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBookings } from "@/hooks/useBookings";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import type { RazorpayOptions, RazorpayResponse } from "@/types/razorpay";
-
-const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
+import { BookingFormHeader } from "./booking/BookingFormHeader";
+import { BookingFormFields } from "./booking/BookingFormFields";
+import { BookingPricing } from "./booking/BookingPricing";
+import { useBookingPayment } from "@/hooks/useBookingPayment";
 
 interface Studio {
   id: string;
@@ -28,14 +29,17 @@ interface BookingFormProps {
 
 const BookingForm = ({ studio }: BookingFormProps) => {
   const { user } = useAuth();
-  const { createBooking } = useBookings();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [duration, setDuration] = useState("1");
+  const [specialRequests, setSpecialRequests] = useState("");
   const [isBooking, setIsBooking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { createBooking } = useBookings();
+  const { launchRazorpay } = useBookingPayment();
 
   // Ensure price_per_hour is a valid number with fallback
   const hourlyPrice = studio?.price_per_hour || 0;
@@ -55,97 +59,6 @@ const BookingForm = ({ studio }: BookingFormProps) => {
 
   const pricing = calculateTotal();
 
-  const timeSlots = [
-    "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", 
-    "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
-  ];
-
-  const durationOptions = [
-    { value: "1", label: "1 hr" },
-    { value: "2", label: "2 hrs" },
-    { value: "3", label: "3 hrs" },
-    { value: "4", label: "4 hrs" },
-    { value: "8", label: "Full Day (8 hrs)" }
-  ];
-
-  // Enhanced Razorpay payment handler
-  const launchRazorpay = (bookingId: string, amount: number) => {
-    const options: RazorpayOptions = {
-      key: RAZORPAY_KEY_ID,
-      amount: amount * 100, // in paise
-      currency: "INR",
-      name: "BookMyStudio",
-      description: `Booking for ${studio?.title || 'Studio'}`,
-      handler: async (response: RazorpayResponse) => {
-        try {
-          // Update booking/payment status in Supabase
-          const { error } = await supabase
-            .from("bookings")
-            .update({ 
-              payment_status: "paid", 
-              status: "confirmed", 
-              payment_id: response.razorpay_payment_id 
-            })
-            .eq("id", bookingId);
-
-          if (error) throw error;
-
-          toast({
-            title: "Payment Successful!",
-            description: "Your booking has been confirmed."
-          });
-          
-          navigate("/profile");
-        } catch (err) {
-          console.error("Payment confirmation error:", err);
-          toast({
-            variant: "destructive",
-            title: "Payment Error",
-            description: "Payment was successful but confirmation failed. Please contact support."
-          });
-        }
-      },
-      prefill: {
-        email: user?.email,
-      },
-      theme: {
-        color: "#ff6600"
-      },
-      modal: {
-        ondismiss: () => {
-          // Delete the booking if payment is cancelled/failed
-          supabase
-            .from("bookings")
-            .delete()
-            .eq("id", bookingId)
-            .then(() => {
-              toast({
-                title: "Payment Cancelled",
-                description: "Your booking has been cancelled."
-              });
-            });
-        }
-      }
-    };
-
-    const rzp = new window.Razorpay(options);
-    rzp.on('payment.failed', async () => {
-      // Delete the booking if payment fails
-      await supabase
-        .from("bookings")
-        .delete()
-        .eq("id", bookingId);
-      
-      toast({
-        variant: "destructive",
-        title: "Payment Failed",
-        description: "Your booking has been cancelled due to payment failure."
-      });
-    });
-    
-    rzp.open();
-  };
-
   const handleBookNow = async () => {
     setError(null);
     if (!user) {
@@ -157,64 +70,20 @@ const BookingForm = ({ studio }: BookingFormProps) => {
       return;
     }
     setIsBooking(true);
+    
     try {
-      // Conflict prevention: check for existing booking
-      const { data: existing, error: conflictError } = await supabase
-        .from('bookings')
-        .select('id')
-        .eq('studio_id', studio.id)
-        .eq('booking_date', selectedDate)
-        .eq('start_time', startTime)
-        .single();
-      
-      if (existing) {
-        setError("This time slot is already booked. Please choose another.");
-        setIsBooking(false);
-        return;
-      }
-      
-      if (conflictError && conflictError.code !== 'PGRST116') {
-        setError("Error checking availability. Please try again.");
-        setIsBooking(false);
-        return;
-      }
-      
-      // Create booking with pending payment
       const booking = await createBooking({
         studioId: studio.id,
         date: selectedDate,
         startTime: startTime,
         duration: parseInt(duration),
-        guestCount: 1, // Default to 1 since we're not asking for guest count
-        totalPrice: pricing.total
+        guestCount: 1,
+        totalPrice: pricing.total,
+        specialRequests: specialRequests.trim() || undefined
       });
       
-      if (booking && RAZORPAY_KEY_ID) {
-        // Load Razorpay script if not already loaded
-        if (!window.Razorpay) {
-          const script = document.createElement('script');
-          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-          script.onload = () => launchRazorpay(booking.id, pricing.total);
-          script.onerror = () => {
-            // Delete booking if script fails to load
-            supabase.from("bookings").delete().eq("id", booking.id);
-            toast({
-              variant: "destructive",
-              title: "Payment Error",
-              description: "Failed to load payment gateway. Please try again."
-            });
-            setIsBooking(false);
-          };
-          document.body.appendChild(script);
-        } else {
-          launchRazorpay(booking.id, pricing.total);
-        }
-      } else if (booking) {
-        toast({
-          title: "Booking Created",
-          description: "Your booking has been created successfully."
-        });
-        navigate('/profile');
+      if (booking) {
+        launchRazorpay(booking.id, pricing.total, studio.title);
       }
     } catch (err: any) {
       console.error("Booking error:", err);
@@ -239,86 +108,39 @@ const BookingForm = ({ studio }: BookingFormProps) => {
 
   return (
     <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Book this studio</span>
-          <span className="text-2xl font-bold text-orange-500">
-            ₹{hourlyPrice.toLocaleString()}/hour
-          </span>
-        </CardTitle>
-      </CardHeader>
+      <BookingFormHeader hourlyPrice={hourlyPrice} />
       <CardContent className="space-y-6">
-        {/* Date Selection */}
+        <BookingFormFields
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          startTime={startTime}
+          setStartTime={setStartTime}
+          duration={duration}
+          setDuration={setDuration}
+        />
+        
+        {/* Special Requests */}
         <div>
-          <Label className="flex items-center mb-2">
-            <Calendar className="w-4 h-4 mr-2" />
-            Select Date
+          <Label htmlFor="special-requests" className="mb-2 block">
+            Special Requests (Optional)
           </Label>
-          <Input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
+          <Textarea
+            id="special-requests"
+            placeholder="Any special requirements or requests for your booking..."
+            value={specialRequests}
+            onChange={(e) => setSpecialRequests(e.target.value)}
+            rows={3}
           />
         </div>
-        {/* Time Selection */}
-        <div>
-          <Label className="flex items-center mb-2">
-            <Clock className="w-4 h-4 mr-2" />
-            Start Time
-          </Label>
-          <Select value={startTime} onValueChange={setStartTime}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose start time" />
-            </SelectTrigger>
-            <SelectContent>
-              {timeSlots.map((time) => (
-                <SelectItem key={time} value={time}>
-                  {time}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        {/* Duration */}
-        <div>
-          <Label className="flex items-center mb-2">
-            Duration
-          </Label>
-          <Select value={duration} onValueChange={setDuration}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {durationOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+
         <Separator />
-        {/* Price Breakdown */}
-        <div className="space-y-3">
-          <div className="flex justify-between">
-            <span>₹{hourlyPrice.toLocaleString()} × {duration} {parseInt(duration) === 8 ? 'hrs (Full Day)' : parseInt(duration) > 1 ? 'hrs' : 'hr'}</span>
-            <span>₹{pricing.basePrice.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between text-sm text-slate-600">
-            <span>Service fee</span>
-            <span>₹{pricing.serviceFee.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between text-sm text-slate-600">
-            <span>Taxes (18%)</span>
-            <span>₹{pricing.taxes.toLocaleString()}</span>
-          </div>
-          <Separator />
-          <div className="flex justify-between font-semibold text-lg">
-            <span>Total</span>
-            <span>₹{pricing.total.toLocaleString()}</span>
-          </div>
-        </div>
+        
+        <BookingPricing 
+          hourlyPrice={hourlyPrice}
+          duration={duration}
+          pricing={pricing}
+        />
+
         {/* Booking Button */}
         <Button 
           className="w-full bg-orange-500 hover:bg-orange-600 text-white py-6 text-lg font-semibold"

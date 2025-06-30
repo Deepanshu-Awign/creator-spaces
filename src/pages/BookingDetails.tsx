@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,6 +40,7 @@ const BookingDetails = () => {
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
   const [rescheduleData, setRescheduleData] = useState({
     date: '',
     time: ''
@@ -79,6 +79,18 @@ const BookingDetails = () => {
       }
 
       setBooking(data);
+
+      // Check if user has already reviewed this booking
+      if (data.status === 'completed' && !isAdmin) {
+        const { data: reviewData } = await supabase
+          .from('reviews')
+          .select('id')
+          .eq('booking_id', id)
+          .eq('user_id', user?.id)
+          .single();
+        
+        setHasReviewed(!!reviewData);
+      }
     } catch (error) {
       console.error('Error fetching booking:', error);
       toast.error('Failed to load booking details');
@@ -163,7 +175,7 @@ const BookingDetails = () => {
 
       toast.success('Review submitted successfully');
       setIsReviewing(false);
-      fetchBookingDetails();
+      setHasReviewed(true);
     } catch (error) {
       console.error('Error submitting review:', error);
       toast.error('Failed to submit review');
@@ -187,7 +199,7 @@ const BookingDetails = () => {
 
   const canReschedule = booking?.status === 'confirmed' || booking?.status === 'pending';
   const canCancel = booking?.status !== 'cancelled' && booking?.status !== 'completed';
-  const canReview = booking?.status === 'completed' && !isAdmin;
+  const canReview = booking?.status === 'completed' && !isAdmin && !hasReviewed;
 
   if (loading) {
     return (
@@ -509,6 +521,12 @@ const BookingDetails = () => {
                         </div>
                       </DialogContent>
                     </Dialog>
+                  )}
+
+                  {hasReviewed && (
+                    <div className="text-center text-sm text-gray-500 py-2">
+                      ✓ Review submitted
+                    </div>
                   )}
                 </CardContent>
               </Card>

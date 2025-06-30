@@ -70,6 +70,7 @@ export const useBookings = () => {
     duration: number;
     guestCount: number;
     totalPrice: number;
+    specialRequests?: string;
   }) => {
     if (!user) {
       toast({
@@ -81,6 +82,23 @@ export const useBookings = () => {
     }
 
     try {
+      // Check for existing booking conflict
+      const { data: existing, error: conflictError } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('studio_id', bookingData.studioId)
+        .eq('booking_date', bookingData.date)
+        .eq('start_time', bookingData.startTime)
+        .single();
+      
+      if (existing) {
+        throw new Error("This time slot is already booked. Please choose another.");
+      }
+      
+      if (conflictError && conflictError.code !== 'PGRST116') {
+        throw new Error("Error checking availability. Please try again.");
+      }
+
       const { data, error } = await supabase
         .from('bookings')
         .insert({
@@ -91,6 +109,7 @@ export const useBookings = () => {
           duration_hours: bookingData.duration,
           guest_count: bookingData.guestCount,
           total_price: bookingData.totalPrice,
+          special_requests: bookingData.specialRequests,
           status: 'pending',
           payment_status: 'pending'
         })
@@ -106,14 +125,9 @@ export const useBookings = () => {
 
       await fetchBookings();
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating booking:', error);
-      toast({
-        variant: "destructive",
-        title: "Booking failed",
-        description: "Failed to create booking. Please try again."
-      });
-      return null;
+      throw error;
     }
   };
 
