@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +12,13 @@ import AmenitiesChecklist from "./AmenitiesChecklist";
 
 interface StudioFormProps {
   studio?: any;
-  onSuccess: () => void;
+  onSuccess?: () => void;
+  onSubmit?: (data: any) => Promise<void>;
+  initialData?: any;
+  isLoading?: boolean;
 }
 
-const StudioForm = ({ studio, onSuccess }: StudioFormProps) => {
+const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: externalLoading }: StudioFormProps) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: "",
@@ -34,24 +36,27 @@ const StudioForm = ({ studio, onSuccess }: StudioFormProps) => {
   });
   const [loading, setLoading] = useState(false);
 
+  // Use the studio prop or initialData for backward compatibility
+  const studioData = studio || initialData;
+
   useEffect(() => {
-    if (studio) {
+    if (studioData) {
       setFormData({
-        title: studio.title || "",
-        description: studio.description || "",
-        location: studio.location || "",
-        city: studio.city || "",
-        state: studio.state || "",
-        country: studio.country || "India",
-        pincode: studio.pincode || "",
-        price_per_hour: studio.price_per_hour?.toString() || "",
-        amenities: studio.amenities || [],
-        images: studio.images || [],
-        latitude: studio.latitude?.toString() || "",
-        longitude: studio.longitude?.toString() || "",
+        title: studioData.title || "",
+        description: studioData.description || "",
+        location: studioData.location || "",
+        city: studioData.city || "",
+        state: studioData.state || "",
+        country: studioData.country || "India",
+        pincode: studioData.pincode || "",
+        price_per_hour: studioData.price_per_hour?.toString() || "",
+        amenities: studioData.amenities || [],
+        images: studioData.images || [],
+        latitude: studioData.latitude?.toString() || "",
+        longitude: studioData.longitude?.toString() || "",
       });
     }
-  }, [studio]);
+  }, [studioData]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -99,6 +104,31 @@ const StudioForm = ({ studio, onSuccess }: StudioFormProps) => {
       return;
     }
 
+    // If external onSubmit is provided, use it (for modal usage)
+    if (onSubmit) {
+      const submissionData = {
+        title: formData.title,
+        description: formData.description,
+        location: formData.location,
+        city: formData.city,
+        state: formData.state,
+        country: formData.country,
+        pincode: formData.pincode || null,
+        price_per_hour: parseInt(formData.price_per_hour),
+        amenities: formData.amenities,
+        images: formData.images,
+        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+        host_id: user.id,
+        is_active: true,
+        approval_status: 'approved'
+      };
+      
+      await onSubmit(submissionData);
+      return;
+    }
+
+    // Otherwise use the original logic
     setLoading(true);
 
     try {
@@ -116,7 +146,7 @@ const StudioForm = ({ studio, onSuccess }: StudioFormProps) => {
         images: formData.images,
         latitude: formData.latitude ? parseFloat(formData.latitude) : null,
         longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-        host_id: user.id, // Set host_id to current user
+        host_id: user.id,
         is_active: true,
         approval_status: 'approved'
       };
@@ -124,12 +154,12 @@ const StudioForm = ({ studio, onSuccess }: StudioFormProps) => {
       console.log('Submitting studio data:', submissionData);
 
       let result;
-      if (studio?.id) {
+      if (studioData?.id) {
         // Update existing studio
         result = await supabase
           .from("studios")
           .update(submissionData)
-          .eq("id", studio.id)
+          .eq("id", studioData.id)
           .select()
           .single();
       } else {
@@ -147,8 +177,8 @@ const StudioForm = ({ studio, onSuccess }: StudioFormProps) => {
       }
 
       console.log('Studio saved successfully:', result.data);
-      toast.success(studio?.id ? "Studio updated successfully!" : "Studio created successfully!");
-      onSuccess();
+      toast.success(studioData?.id ? "Studio updated successfully!" : "Studio created successfully!");
+      if (onSuccess) onSuccess();
     } catch (error: any) {
       console.error("Error saving studio:", error);
       toast.error(error.message || "Failed to save studio. Please try again.");
@@ -156,6 +186,8 @@ const StudioForm = ({ studio, onSuccess }: StudioFormProps) => {
       setLoading(false);
     }
   };
+
+  const isSubmitting = externalLoading || loading;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -204,8 +236,8 @@ const StudioForm = ({ studio, onSuccess }: StudioFormProps) => {
               initialLocation={
                 formData.latitude && formData.longitude
                   ? {
-                      lat: parseFloat(formData.latitude),
-                      lng: parseFloat(formData.longitude),
+                      lat: formData.latitude,
+                      lng: formData.longitude,
                       address: formData.location
                     }
                   : undefined
@@ -265,8 +297,8 @@ const StudioForm = ({ studio, onSuccess }: StudioFormProps) => {
       </div>
 
       <div className="flex justify-end space-x-4">
-        <Button type="submit" disabled={loading}>
-          {loading ? "Saving..." : (studio?.id ? "Update Studio" : "Create Studio")}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Saving..." : (studioData?.id ? "Update Studio" : "Create Studio")}
         </Button>
       </div>
     </form>
