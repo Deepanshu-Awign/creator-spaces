@@ -278,7 +278,7 @@ const StudioDetail = () => {
               <img
                 src={studio.image}
                 alt={studio.title}
-                className="w-full h-96 lg:h-[500px] object-cover rounded-lg"
+                className="w-full h-96 lg:h-[500px] object-contain bg-gray-100 rounded-lg"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "/placeholder.svg";
                 }}
@@ -290,7 +290,7 @@ const StudioDetail = () => {
                   key={index}
                   src={image}
                   alt={`${studio.title} ${index + 1}`}
-                  className={`w-full h-20 lg:h-24 object-cover rounded-lg cursor-pointer transition-all`}
+                  className={`w-full h-20 lg:h-24 object-contain bg-gray-100 rounded-lg cursor-pointer transition-all`}
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = "/placeholder.svg";
                   }}

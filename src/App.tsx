@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Studios from "./pages/Studios";
 import StudioDetail from "./pages/StudioDetail";
 import Profile from "./pages/Profile";
+import Favorites from "./pages/Favorites";
 import Login from "./pages/Login";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -42,7 +43,7 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/bookings" element={<Profile />} />
             <Route path="/booking/:id" element={<BookingDetails />} />
-            <Route path="/favorites" element={<Profile />} />
+            <Route path="/favorites" element={<Favorites />} />
             <Route path="/login" element={<Login />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />

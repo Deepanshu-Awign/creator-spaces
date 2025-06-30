@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, LogOut, Shield, MapPin, ChevronDown } from "lucide-react";
+import { Menu, X, User, LogOut, Shield, MapPin, ChevronDown, Heart, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useUserRole";
@@ -161,9 +161,11 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
                     Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/bookings")}>
+                    <Calendar className="w-4 h-4 mr-2" />
                     My Bookings
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/favorites")}>
+                    <Heart className="w-4 h-4 mr-2" />
                     Favorites
                   </DropdownMenuItem>
                   {isAdmin && (
@@ -254,6 +256,28 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
                   >
                     <User className="w-4 h-4 mr-2" />
                     Profile
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      navigate("/bookings");
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    My Bookings
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      navigate("/favorites");
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <Heart className="w-4 h-4 mr-2" />
+                    Favorites
                   </Button>
                   {isAdmin && (
                     <Button 
