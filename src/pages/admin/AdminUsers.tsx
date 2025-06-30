@@ -41,14 +41,16 @@ const AdminUsers = () => {
   const queryClient = useQueryClient();
 
   // Fetch users with their roles
-  const { data: users, isLoading } = useQuery({
+  const { data: users, isLoading, error } = useQuery({
     queryKey: ['adminUsers', searchTerm],
     queryFn: async () => {
+      console.log('Fetching users...');
+      
       let query = supabase
         .from('profiles')
         .select(`
           *,
-          user_roles!left(role),
+          user_roles(role),
           bookings(id)
         `)
         .order('created_at', { ascending: false });
@@ -58,10 +60,13 @@ const AdminUsers = () => {
       }
 
       const { data, error } = await query;
+      
       if (error) {
         console.error('Error fetching users:', error);
-        return [];
+        throw error;
       }
+
+      console.log('Users fetched:', data);
       return data || [];
     }
   });
@@ -85,11 +90,15 @@ const AdminUsers = () => {
       }
 
       // Log the activity
-      await supabase.rpc('log_admin_activity', {
-        _action: `Assigned ${role} role`,
-        _target_type: 'user',
-        _target_id: userId
-      });
+      try {
+        await supabase.rpc('log_admin_activity', {
+          _action: `Assigned ${role} role`,
+          _target_type: 'user',
+          _target_id: userId
+        });
+      } catch (logError) {
+        console.warn('Failed to log admin activity:', logError);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
@@ -112,11 +121,15 @@ const AdminUsers = () => {
       if (error) throw error;
 
       // Log the activity
-      await supabase.rpc('log_admin_activity', {
-        _action: 'Deleted user',
-        _target_type: 'user',
-        _target_id: userId
-      });
+      try {
+        await supabase.rpc('log_admin_activity', {
+          _action: 'Deleted user',
+          _target_type: 'user',
+          _target_id: userId
+        });
+      } catch (logError) {
+        console.warn('Failed to log admin activity:', logError);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
@@ -130,7 +143,10 @@ const AdminUsers = () => {
   });
 
   const getUserRole = (user: any): string => {
-    return user.user_roles?.[0]?.role || 'user';
+    if (user.user_roles && user.user_roles.length > 0) {
+      return user.user_roles[0].role;
+    }
+    return 'user';
   };
 
   const getUserRoleBadge = (role: string) => {
@@ -143,6 +159,27 @@ const AdminUsers = () => {
         return <Badge variant="outline">User</Badge>;
     }
   };
+
+  if (error) {
+    console.error('Error in AdminUsers:', error);
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Platform Users</h1>
+            <p className="text-gray-600 mt-2">Manage registered users and assign admin roles</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center text-red-500">
+              Error loading users: {error.message}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -171,7 +208,7 @@ const AdminUsers = () => {
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8">Loading users...</div>
-          ) : users?.length === 0 ? (
+          ) : !users || users.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               No users found. Users will appear here when they register on the platform.
             </div>
@@ -187,7 +224,7 @@ const AdminUsers = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users?.map((user) => (
+                {users.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       <div>

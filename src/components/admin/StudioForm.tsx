@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,21 +76,17 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
     // Clean up city name to remove "division" suffix
     const cleanCity = locationData.city?.replace(/\s+division$/i, '').trim() || '';
     
-    const updatedFormData = {
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       location: locationData.address || '',
       city: cleanCity,
       state: locationData.state || '',
       pincode: locationData.pincode || '',
       latitude: locationData.lat?.toString() || '',
       longitude: locationData.lng?.toString() || '',
-    };
+    }));
 
-    console.log('Updated form data with location:', updatedFormData);
-    setFormData(updatedFormData);
-
-    // Show success message to user
-    toast.success('Location updated successfully! Please review and click Update Studio to save.');
+    toast.success('Location updated successfully!');
   };
 
   const handleImagesChange = (images: string[]) => {
@@ -299,7 +294,7 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
             />
             {formData.location && (
               <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
-                <strong>Current Location:</strong> {formData.location}
+                <strong>Selected Location:</strong> {formData.location}
                 <br />
                 <strong>City:</strong> {formData.city}, <strong>State:</strong> {formData.state}
                 {formData.pincode && <><br /><strong>Pincode:</strong> {formData.pincode}</>}
@@ -363,14 +358,6 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
           {isSubmitting ? "Saving..." : (studioData?.id ? "Update Studio" : "Create Studio")}
         </Button>
       </div>
-
-      {/* Debug info in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-4 p-4 bg-gray-100 rounded text-xs">
-          <strong>Form Data (Debug):</strong>
-          <pre>{JSON.stringify(formData, null, 2)}</pre>
-        </div>
-      )}
     </form>
   );
 };
