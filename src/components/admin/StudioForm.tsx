@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +43,7 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
   useEffect(() => {
     if (studioData) {
       console.log('Loading studio data into form:', studioData);
-      setFormData({
+      const loadedData = {
         title: studioData.title || "",
         description: studioData.description || "",
         location: studioData.location || "",
@@ -55,11 +56,15 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
         images: studioData.images || [],
         latitude: studioData.latitude?.toString() || "",
         longitude: studioData.longitude?.toString() || "",
-      });
+      };
+      
+      console.log('Setting form data to:', loadedData);
+      setFormData(loadedData);
     }
   }, [studioData]);
 
   const handleInputChange = (field: string, value: string) => {
+    console.log(`Updating field ${field} to:`, value);
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -85,11 +90,12 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
     console.log('Updated form data with location:', updatedFormData);
     setFormData(updatedFormData);
 
-    // Don't call onSuccess here - this was causing the automatic form submission
-    // onSuccess should only be called after successful form submission
+    // Show success message to user
+    toast.success('Location updated successfully! Please review and click Update Studio to save.');
   };
 
   const handleImagesChange = (images: string[]) => {
+    console.log('Images updated:', images);
     setFormData(prev => ({
       ...prev,
       images
@@ -97,17 +103,55 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
   };
 
   const handleAmenitiesChange = (amenities: string[]) => {
+    console.log('Amenities updated:', amenities);
     setFormData(prev => ({
       ...prev,
       amenities
     }));
   };
 
+  const validateFormData = () => {
+    console.log('Validating form data:', formData);
+
+    if (!formData.title.trim()) {
+      toast.error('Studio title is required');
+      return false;
+    }
+
+    if (!formData.price_per_hour || parseInt(formData.price_per_hour) <= 0) {
+      toast.error('Valid price per hour is required');
+      return false;
+    }
+
+    if (!formData.location.trim()) {
+      toast.error('Location is required. Please select a location from the map.');
+      return false;
+    }
+
+    if (!formData.city.trim() || !formData.state.trim()) {
+      toast.error('City and state are required. Please select a complete location.');
+      return false;
+    }
+
+    if (!formData.latitude || !formData.longitude) {
+      toast.error('Coordinates are required. Please select a location from the map.');
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Form submission started with data:', formData);
+    
     if (!user) {
       toast.error("You must be logged in to create a studio");
+      return;
+    }
+
+    if (!validateFormData()) {
       return;
     }
 
@@ -131,7 +175,7 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
         approval_status: 'approved'
       };
       
-      console.log('Submitting form data:', submissionData);
+      console.log('Submitting form data via external onSubmit:', submissionData);
       await onSubmit(submissionData);
       return;
     }
@@ -253,25 +297,35 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
                   : undefined
               }
             />
+            {formData.location && (
+              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
+                <strong>Current Location:</strong> {formData.location}
+                <br />
+                <strong>City:</strong> {formData.city}, <strong>State:</strong> {formData.state}
+                {formData.pincode && <><br /><strong>Pincode:</strong> {formData.pincode}</>}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="city">City</Label>
+              <Label htmlFor="city">City *</Label>
               <Input
                 id="city"
                 value={formData.city}
                 onChange={(e) => handleInputChange("city", e.target.value)}
                 placeholder="City"
+                required
               />
             </div>
             <div>
-              <Label htmlFor="state">State</Label>
+              <Label htmlFor="state">State *</Label>
               <Input
                 id="state"
                 value={formData.state}
                 onChange={(e) => handleInputChange("state", e.target.value)}
                 placeholder="State"
+                required
               />
             </div>
           </div>
@@ -309,6 +363,14 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
           {isSubmitting ? "Saving..." : (studioData?.id ? "Update Studio" : "Create Studio")}
         </Button>
       </div>
+
+      {/* Debug info in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-4 p-4 bg-gray-100 rounded text-xs">
+          <strong>Form Data (Debug):</strong>
+          <pre>{JSON.stringify(formData, null, 2)}</pre>
+        </div>
+      )}
     </form>
   );
 };

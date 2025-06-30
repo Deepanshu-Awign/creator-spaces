@@ -59,6 +59,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   const [searchResults, setSearchResults] = useState<PlaceResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [pendingLocationData, setPendingLocationData] = useState<LocationData | null>(null);
   
   const mapRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -66,6 +67,15 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   const markerRef = useRef<any>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Sync pending location data with display when modal opens
+  useEffect(() => {
+    if (isMapOpen && pendingLocationData) {
+      console.log('Syncing pending location data:', pendingLocationData);
+      setLocationData(pendingLocationData);
+      setSearchValue(pendingLocationData.address);
+    }
+  }, [isMapOpen, pendingLocationData]);
 
   useEffect(() => {
     const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -99,7 +109,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
       }
     });
 
-    return {
+    const extractedData = {
       address: place.formatted_address || place.name || '',
       city,
       state,
@@ -108,6 +118,9 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
       lat: place.geometry?.location?.lat()?.toString() || '',
       lng: place.geometry?.location?.lng()?.toString() || ''
     };
+
+    console.log('Extracted location data:', extractedData);
+    return extractedData;
   };
 
   const loadGoogleMaps = () => {
@@ -158,6 +171,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
         if (event.latLng) {
           const lat = event.latLng.lat();
           const lng = event.latLng.lng();
+          console.log('Map clicked at:', { lat, lng });
           reverseGeocode(lat, lng);
         }
       });
@@ -186,6 +200,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
       if (position) {
         const markerLat = position.lat();
         const markerLng = position.lng();
+        console.log('Marker dragged to:', { lat: markerLat, lng: markerLng });
         reverseGeocode(markerLat, markerLng);
       }
     });
@@ -207,7 +222,11 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
       });
 
       const newLocationData = extractLocationData(response);
+      console.log('Reverse geocoded location data:', newLocationData);
+      
+      // Update both current and pending location data
       setLocationData(newLocationData);
+      setPendingLocationData(newLocationData);
       setSearchValue(newLocationData.address);
       
       if (mapInstanceRef.current) {
@@ -280,7 +299,11 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
         (place: any, status: any) => {
           if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
             const newLocationData = extractLocationData(place);
+            console.log('Selected place location data:', newLocationData);
+            
+            // Update both current and pending location data
             setLocationData(newLocationData);
+            setPendingLocationData(newLocationData);
             setSearchValue(newLocationData.address);
             
             if (mapInstanceRef.current && place.geometry?.location) {
@@ -304,6 +327,8 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   };
 
   const handleConfirm = () => {
+    console.log('Confirm button clicked with location data:', locationData);
+    
     if (!locationData.lat || !locationData.lng) {
       toast.error('Please select a location on the map');
       return;
@@ -314,14 +339,35 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
       return;
     }
 
+    // Validate that we have complete location data
+    const isDataComplete = locationData.lat && 
+                          locationData.lng && 
+                          locationData.city && 
+                          locationData.state && 
+                          locationData.address;
+
+    if (!isDataComplete) {
+      toast.error('Incomplete location data. Please select a valid location.');
+      return;
+    }
+
+    console.log('Calling onLocationSelect with validated data:', locationData);
+    
+    // Call the parent callback with the current location data
     onLocationSelect(locationData);
+    
+    // Clear pending data since we've confirmed
+    setPendingLocationData(null);
     setIsMapOpen(false);
+    
     toast.success('Location confirmed successfully');
   };
 
   const handleCancel = () => {
-    setIsMapOpen(false);
-    setLocationData({
+    console.log('Cancel button clicked');
+    
+    // Reset to initial location data
+    const resetData = {
       address: initialLocation.address || '',
       city: initialLocation.city || '',
       state: initialLocation.state || '',
@@ -329,7 +375,11 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
       pincode: initialLocation.pincode || '',
       lat: initialLocation.lat || '',
       lng: initialLocation.lng || ''
-    });
+    };
+    
+    setLocationData(resetData);
+    setPendingLocationData(null);
+    setIsMapOpen(false);
     setSearchValue('');
     setShowDropdown(false);
     setSearchResults([]);
@@ -340,7 +390,23 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
       toast.error('Google Maps configuration is missing. Please contact administrator.');
       return;
     }
+    
+    console.log('Opening map with initial location:', initialLocation);
+    
+    // Set pending location data to current form values
+    const currentData = {
+      address: initialLocation.address || '',
+      city: initialLocation.city || '',
+      state: initialLocation.state || '',
+      country: initialLocation.country || 'India',
+      pincode: initialLocation.pincode || '',
+      lat: initialLocation.lat || '',
+      lng: initialLocation.lng || ''
+    };
+    
+    setPendingLocationData(currentData);
     setIsMapOpen(true);
+    
     if (!mapLoaded) {
       loadGoogleMaps();
     } else {
@@ -370,15 +436,15 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
         disabled={!apiKey}
       >
         <MapPin className="w-4 h-4" />
-        {locationData.address ? 'Change Location' : 'Pick Location'}
+        {initialLocation.address ? 'Change Location' : 'Pick Location'}
       </Button>
 
-      {locationData.address && (
+      {initialLocation.address && (
         <div className="mt-2 p-3 bg-gray-50 rounded-md">
-          <p className="text-sm text-gray-700">{locationData.address}</p>
-          {locationData.city && (
+          <p className="text-sm text-gray-700">{initialLocation.address}</p>
+          {initialLocation.city && (
             <p className="text-xs text-gray-500 mt-1">
-              {locationData.city}, {locationData.state} {locationData.pincode}
+              {initialLocation.city}, {initialLocation.state} {initialLocation.pincode}
             </p>
           )}
         </div>
