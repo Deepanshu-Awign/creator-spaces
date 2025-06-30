@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -27,7 +28,7 @@ const Studios = () => {
   useEffect(() => {
     const cityFromUrl = searchParams.get('city');
     const cityFromStorage = localStorage.getItem('selectedCity');
-    const city = cityFromUrl || cityFromStorage;
+    const city = cityFromUrl || cityFromStorage || '';
     
     if (city) {
       setSelectedCity(city);
@@ -35,7 +36,7 @@ const Studios = () => {
   }, [searchParams]);
 
   // Fetch studios with enhanced filtering
-  const { data: studios, isLoading } = useQuery({
+  const { data: studios = [], isLoading } = useQuery({
     queryKey: ['studios', searchTerm, selectedCity, selectedState, priceRange],
     queryFn: async () => {
       let query = supabase
@@ -256,7 +257,7 @@ const Studios = () => {
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-gray-900">
-              {isLoading ? 'Loading...' : `${studios?.length || 0} Studios Found`}
+              {isLoading ? 'Loading...' : `${studios.length} Studios Found`}
             </h2>
             {(hasActiveFilters || selectedCity) && (
               <p className="text-gray-600">
@@ -278,7 +279,7 @@ const Studios = () => {
               </div>
             ))}
           </div>
-        ) : studios && studios.length > 0 ? (
+        ) : studios.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {studios.map((studio) => (
               <StudioCard key={studio.id} studio={studio} />
