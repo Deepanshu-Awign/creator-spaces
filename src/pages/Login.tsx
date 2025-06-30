@@ -161,11 +161,19 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.verifyOtp({
-        [otpType]: otpType === "email" ? email : phone,
-        token: otp,
-        type: otpType === "email" ? "email" : "sms",
-      });
+      const verifyParams = otpType === "email" 
+        ? {
+            email,
+            token: otp,
+            type: "email" as const,
+          }
+        : {
+            phone,
+            token: otp,
+            type: "sms" as const,
+          };
+
+      const { error } = await supabase.auth.verifyOtp(verifyParams);
       
       if (error) {
         toast({
