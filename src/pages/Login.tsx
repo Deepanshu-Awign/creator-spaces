@@ -33,8 +33,8 @@ const Login = () => {
     
     try {
       if (authMode === "signup") {
-        // For signup, we need to create the account first
-        const { error } = await supabase.auth.signUp({
+        // For signup, we create the account first
+        const { error: signUpError } = await supabase.auth.signUp({
           email,
           password: Math.random().toString(36).substring(2, 15), // Random password since we're using OTP
           options: {
@@ -45,22 +45,22 @@ const Login = () => {
           }
         });
         
-        if (error) {
+        if (signUpError) {
           toast({
             variant: "destructive",
             title: "Error",
-            description: error.message || "Failed to create account. Please try again.",
+            description: signUpError.message || "Failed to create account. Please try again.",
           });
           return;
         }
       }
 
-      // Send OTP for both signin and signup
+      // Send OTP (this should send a 6-digit code, not a magic link)
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          shouldCreateUser: authMode === "signup"
+          shouldCreateUser: authMode === "signup",
+          data: authMode === "signup" ? { full_name: fullName } : undefined
         }
       });
       
@@ -110,6 +110,7 @@ const Login = () => {
           title: "Success!",
           description: authMode === "signup" ? "Account created successfully!" : "You have been logged in successfully.",
         });
+        // Force page reload to ensure clean state
         window.location.href = '/';
       }
     } catch (error) {

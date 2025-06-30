@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, User, LogOut, Shield, MapPin, ChevronDown, Heart, Calendar } from "lucide-react";
@@ -103,15 +104,12 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
     <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm shadow-sm z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center space-x-3">
+          <Link to="/" className="flex items-center">
             <img 
               src="/lovable-uploads/9d2aa32d-c2f5-4ff8-b94e-180758e8e0aa.png" 
               alt="BookMyStudio Logo" 
-              className="h-8 w-auto"
+              className="h-10 w-auto"
             />
-            <span className="text-2xl font-bold text-slate-800">
-              Book<span className="text-orange-500">MyStudio</span>
-            </span>
           </Link>
 
           {/* City Selector */}
