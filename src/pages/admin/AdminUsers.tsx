@@ -30,14 +30,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Search, MoreHorizontal, UserPlus, Shield, ShieldCheck, Edit, Trash2, UserX, UserCheck } from 'lucide-react';
+import { Search, MoreHorizontal, Shield, ShieldCheck, Edit, Trash2, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import AddUserModal from '@/components/admin/AddUserModal';
 import EditUserModal from '@/components/admin/EditUserModal';
 
 const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [deletingUser, setDeletingUser] = useState<any>(null);
   const queryClient = useQueryClient();
@@ -59,7 +57,11 @@ const AdminUsers = () => {
         query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
       }
 
-      const { data } = await query;
+      const { data, error } = await query;
+      if (error) {
+        console.error('Error fetching users:', error);
+        return [];
+      }
       return data || [];
     }
   });
@@ -146,19 +148,15 @@ const AdminUsers = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Users</h1>
-          <p className="text-gray-600 mt-2">Manage users and their roles</p>
+          <h1 className="text-3xl font-bold text-gray-900">Platform Users</h1>
+          <p className="text-gray-600 mt-2">Manage registered users and assign admin roles</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="gap-2">
-          <UserPlus className="w-4 h-4" />
-          Add User
-        </Button>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>All Users</CardTitle>
+            <CardTitle>All Registered Users</CardTitle>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
@@ -171,97 +169,99 @@ const AdminUsers = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Bookings</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users?.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{user.full_name || 'No name'}</div>
-                      <div className="text-sm text-gray-500">{user.email}</div>
-                      <div className="text-xs text-gray-400">{user.location || 'No location'}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {getUserRoleBadge(getUserRole(user))}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {user.bookings?.length || 0} bookings
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => setEditingUser(user)}
-                          className="gap-2"
-                        >
-                          <Edit className="w-4 h-4" />
-                          Edit User
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => assignRoleMutation.mutate({ userId: user.id, role: 'admin' })}
-                          className="gap-2"
-                        >
-                          <Shield className="w-4 h-4" />
-                          Make Admin
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => assignRoleMutation.mutate({ userId: user.id, role: 'manager' })}
-                          className="gap-2"
-                        >
-                          <ShieldCheck className="w-4 h-4" />
-                          Make Manager
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => assignRoleMutation.mutate({ userId: user.id, role: 'user' })}
-                          className="gap-2"
-                        >
-                          <UserCheck className="w-4 h-4" />
-                          Make User
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setDeletingUser(user)}
-                          className="gap-2 text-red-600"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete User
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+          {isLoading ? (
+            <div className="text-center py-8">Loading users...</div>
+          ) : users?.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No users found. Users will appear here when they register on the platform.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Bookings</TableHead>
+                  <TableHead>Joined</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {users?.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{user.full_name || 'No name'}</div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                        <div className="text-xs text-gray-400">{user.location || 'No location'}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {getUserRoleBadge(getUserRole(user))}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {user.bookings?.length || 0} bookings
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {new Date(user.created_at).toLocaleDateString()}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => setEditingUser(user)}
+                            className="gap-2"
+                          >
+                            <Edit className="w-4 h-4" />
+                            Edit User
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => assignRoleMutation.mutate({ userId: user.id, role: 'admin' })}
+                            className="gap-2"
+                          >
+                            <Shield className="w-4 h-4" />
+                            Make Admin
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => assignRoleMutation.mutate({ userId: user.id, role: 'manager' })}
+                            className="gap-2"
+                          >
+                            <ShieldCheck className="w-4 h-4" />
+                            Make Manager
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => assignRoleMutation.mutate({ userId: user.id, role: 'user' })}
+                            className="gap-2"
+                          >
+                            <UserCheck className="w-4 h-4" />
+                            Make User
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setDeletingUser(user)}
+                            className="gap-2 text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete User
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
-
-      {/* Add User Modal */}
-      <AddUserModal
-        open={showAddModal}
-        onOpenChange={setShowAddModal}
-      />
 
       {/* Edit User Modal */}
       {editingUser && (

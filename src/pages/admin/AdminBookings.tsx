@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,19 +27,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, MoreHorizontal, Calendar, CheckCircle, XCircle, Eye, RefreshCw } from 'lucide-react';
+import { Search, MoreHorizontal, Calendar, CheckCircle, XCircle, Eye, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 const AdminBookings = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  // Fetch bookings
+  // Fetch bookings with filters
   const { data: bookings, isLoading } = useQuery({
-    queryKey: ['adminBookings', searchTerm, statusFilter],
+    queryKey: ['adminBookings', searchTerm, statusFilter, dateFilter, startDate, endDate],
     queryFn: async () => {
       let query = supabase
         .from('bookings')
@@ -57,7 +61,34 @@ const AdminBookings = () => {
         query = query.eq('status', statusFilter);
       }
 
-      const { data } = await query;
+      // Apply date filters
+      if (dateFilter === 'today') {
+        const today = new Date().toISOString().split('T')[0];
+        query = query.eq('booking_date', today);
+      } else if (dateFilter === 'this_week') {
+        const startOfWeek = new Date();
+        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(endOfWeek.getDate() + 6);
+        query = query.gte('booking_date', startOfWeek.toISOString().split('T')[0])
+                    .lte('booking_date', endOfWeek.toISOString().split('T')[0]);
+      } else if (dateFilter === 'this_month') {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        const endOfMonth = new Date(startOfMonth);
+        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+        endOfMonth.setDate(0);
+        query = query.gte('booking_date', startOfMonth.toISOString().split('T')[0])
+                    .lte('booking_date', endOfMonth.toISOString().split('T')[0]);
+      } else if (dateFilter === 'custom' && startDate && endDate) {
+        query = query.gte('booking_date', startDate).lte('booking_date', endDate);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.error('Error fetching bookings:', error);
+        return [];
+      }
       return data || [];
     }
   });
@@ -69,7 +100,7 @@ const AdminBookings = () => {
         .from('bookings')
         .update({ 
           status,
-          ...(status === 'approved' && { approved_at: new Date().toISOString() })
+          ...(status === 'confirmed' && { approved_at: new Date().toISOString() })
         })
         .eq('id', bookingId);
 
@@ -120,20 +151,112 @@ const AdminBookings = () => {
     }
   };
 
+  const pendingBookings = bookings?.filter(booking => booking.status === 'pending') || [];
+  const totalRevenue = bookings?.reduce((sum, booking) => 
+    booking.payment_status === 'paid' ? sum + booking.total_price : sum, 0) || 0;
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Bookings</h1>
-          <p className="text-gray-600 mt-2">Manage all studio bookings</p>
+          <h1 className="text-3xl font-bold text-gray-900">Bookings Management</h1>
+          <p className="text-gray-600 mt-2">Manage all studio bookings and track revenue</p>
+        </div>
+        <div className="flex gap-4 items-center">
+          <Badge variant="outline" className="text-lg px-4 py-2">
+            Total Revenue: ₹{totalRevenue.toLocaleString()}
+          </Badge>
+          {pendingBookings.length > 0 && (
+            <Badge variant="secondary" className="text-lg px-4 py-2">
+              {pendingBookings.length} Pending Approvals
+            </Badge>
+          )}
         </div>
       </div>
+
+      {/* Quick Actions for Pending Bookings */}
+      {pendingBookings.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Pending Bookings - Quick Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {pendingBookings.slice(0, 5).map((booking) => (
+                <div key={booking.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium">{booking.studios?.title}</div>
+                    <div className="text-sm text-gray-600">
+                      {booking.profiles?.full_name} • {new Date(booking.booking_date).toLocaleDateString()} • ₹{booking.total_price}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="bg-green-500 hover:bg-green-600"
+                      onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: 'confirmed' })}
+                    >
+                      <CheckCircle className="w-4 h-4 mr-1" />
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: 'cancelled' })}
+                    >
+                      <XCircle className="w-4 h-4 mr-1" />
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>All Bookings</CardTitle>
             <div className="flex gap-4">
+              {/* Date Filter */}
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger className="w-40">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Date filter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Dates</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="this_week">This Week</SelectItem>
+                  <SelectItem value="this_month">This Month</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Custom Date Range */}
+              {dateFilter === 'custom' && (
+                <>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-40"
+                  />
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-40"
+                  />
+                </>
+              )}
+
+              {/* Status Filter */}
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Filter by status" />
@@ -146,6 +269,8 @@ const AdminBookings = () => {
                   <SelectItem value="completed">Completed</SelectItem>
                 </SelectContent>
               </Select>
+
+              {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -159,108 +284,110 @@ const AdminBookings = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Booking Details</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Studio</TableHead>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {bookings?.map((booking) => (
-                <TableRow key={booking.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">#{booking.id.slice(0, 8)}</div>
-                      <div className="text-sm text-gray-500">
-                        {booking.duration_hours}h • {booking.guest_count} guests
+          {isLoading ? (
+            <div className="text-center py-8">Loading bookings...</div>
+          ) : bookings?.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">No bookings found.</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Booking Details</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Studio</TableHead>
+                  <TableHead>Date & Time</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {bookings?.map((booking) => (
+                  <TableRow key={booking.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">#{booking.id.slice(0, 8)}</div>
+                        <div className="text-sm text-gray-500">
+                          {booking.duration_hours}h • {booking.guest_count} guests
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{booking.profiles?.full_name}</div>
-                      <div className="text-sm text-gray-500">{booking.profiles?.email}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{booking.studios?.title}</div>
-                      <div className="text-sm text-gray-500">{booking.studios?.location}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">
-                        {new Date(booking.booking_date).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{booking.profiles?.full_name}</div>
+                        <div className="text-sm text-gray-500">{booking.profiles?.email}</div>
                       </div>
-                      <div className="text-sm text-gray-500">{booking.start_time}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">₹{booking.total_price}</div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(booking.status)}</TableCell>
-                  <TableCell>{getPaymentStatusBadge(booking.payment_status)}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem 
-                          onClick={() => navigate(`/booking/${booking.id}`)}
-                          className="gap-2"
-                        >
-                          <Eye className="w-4 h-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        {booking.status === 'pending' && (
-                          <>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{booking.studios?.title}</div>
+                        <div className="text-sm text-gray-500">{booking.studios?.location}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">
+                          {new Date(booking.booking_date).toLocaleDateString()}
+                        </div>
+                        <div className="text-sm text-gray-500">{booking.start_time}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">₹{booking.total_price}</div>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                    <TableCell>{getPaymentStatusBadge(booking.payment_status)}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem 
+                            onClick={() => navigate(`/booking/${booking.id}`)}
+                            className="gap-2"
+                          >
+                            <Eye className="w-4 h-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          {booking.status === 'pending' && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: 'confirmed' })}
+                                className="gap-2"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                                Approve
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: 'cancelled' })}
+                                className="gap-2 text-red-600"
+                              >
+                                <XCircle className="w-4 h-4" />
+                                Cancel
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {booking.status === 'confirmed' && (
                             <DropdownMenuItem
-                              onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: 'confirmed' })}
+                              onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: 'completed' })}
                               className="gap-2"
                             >
                               <CheckCircle className="w-4 h-4" />
-                              Approve
+                              Mark Complete
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: 'cancelled' })}
-                              className="gap-2 text-red-600"
-                            >
-                              <XCircle className="w-4 h-4" />
-                              Cancel
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                        {booking.status === 'confirmed' && (
-                          <DropdownMenuItem
-                            onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: 'completed' })}
-                            className="gap-2"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                            Mark Complete
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem className="gap-2">
-                          <RefreshCw className="w-4 h-4" />
-                          Process Refund
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
