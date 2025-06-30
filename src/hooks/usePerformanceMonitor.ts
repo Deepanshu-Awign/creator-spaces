@@ -7,12 +7,6 @@ interface PerformanceMetrics {
   timestamp: number;
 }
 
-// Type definition for Layout Shift Entry
-interface LayoutShiftEntry extends PerformanceEntry {
-  value: number;
-  hadRecentInput: boolean;
-}
-
 export const usePerformanceMonitor = (componentName: string) => {
   const renderStartTime = useRef<number>(0);
   const mountTime = useRef<number>(0);
@@ -69,13 +63,12 @@ const logPerformanceIssue = (metrics: PerformanceMetrics) => {
 // Web Vitals monitoring
 export const initializeWebVitals = () => {
   if (typeof window !== 'undefined' && 'performance' in window) {
-    // Monitor Cumulative Layout Shift with proper typing
+    // Monitor Cumulative Layout Shift
     let cls = 0;
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
-        const layoutShiftEntry = entry as LayoutShiftEntry;
-        if (!layoutShiftEntry.hadRecentInput) {
-          cls += layoutShiftEntry.value;
+        if (!entry.hadRecentInput) {
+          cls += (entry as any).value;
         }
       }
       
