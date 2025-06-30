@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Calendar, Clock, Users, CreditCard } from "lucide-react";
+import { Calendar, Clock, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,6 @@ const BookingForm = ({ studio }: BookingFormProps) => {
   const [selectedDate, setSelectedDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [duration, setDuration] = useState("1");
-  const [guests, setGuests] = useState("1");
   const [isBooking, setIsBooking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,6 +58,14 @@ const BookingForm = ({ studio }: BookingFormProps) => {
   const timeSlots = [
     "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", 
     "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
+  ];
+
+  const durationOptions = [
+    { value: "1", label: "1 hr" },
+    { value: "2", label: "2 hrs" },
+    { value: "3", label: "3 hrs" },
+    { value: "4", label: "4 hrs" },
+    { value: "8", label: "Full Day (8 hrs)" }
   ];
 
   // Enhanced Razorpay payment handler
@@ -106,15 +113,36 @@ const BookingForm = ({ studio }: BookingFormProps) => {
       },
       modal: {
         ondismiss: () => {
-          toast({
-            title: "Payment Cancelled",
-            description: "Your booking is still pending. Complete payment to confirm."
-          });
+          // Delete the booking if payment is cancelled/failed
+          supabase
+            .from("bookings")
+            .delete()
+            .eq("id", bookingId)
+            .then(() => {
+              toast({
+                title: "Payment Cancelled",
+                description: "Your booking has been cancelled."
+              });
+            });
         }
       }
     };
 
     const rzp = new window.Razorpay(options);
+    rzp.on('payment.failed', async () => {
+      // Delete the booking if payment fails
+      await supabase
+        .from("bookings")
+        .delete()
+        .eq("id", bookingId);
+      
+      toast({
+        variant: "destructive",
+        title: "Payment Failed",
+        description: "Your booking has been cancelled due to payment failure."
+      });
+    });
+    
     rzp.open();
   };
 
@@ -157,7 +185,7 @@ const BookingForm = ({ studio }: BookingFormProps) => {
         date: selectedDate,
         startTime: startTime,
         duration: parseInt(duration),
-        guestCount: parseInt(guests),
+        guestCount: 1, // Default to 1 since we're not asking for guest count
         totalPrice: pricing.total
       });
       
@@ -168,6 +196,8 @@ const BookingForm = ({ studio }: BookingFormProps) => {
           script.src = 'https://checkout.razorpay.com/v1/checkout.js';
           script.onload = () => launchRazorpay(booking.id, pricing.total);
           script.onerror = () => {
+            // Delete booking if script fails to load
+            supabase.from("bookings").delete().eq("id", booking.id);
             toast({
               variant: "destructive",
               title: "Payment Error",
@@ -253,35 +283,16 @@ const BookingForm = ({ studio }: BookingFormProps) => {
         {/* Duration */}
         <div>
           <Label className="flex items-center mb-2">
-            Duration (hours)
+            Duration
           </Label>
           <Select value={duration} onValueChange={setDuration}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {[1, 2, 3, 4, 5, 6, 8].map((hours) => (
-                <SelectItem key={hours} value={hours.toString()}>
-                  {hours} hour{hours > 1 ? 's' : ''}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        {/* Guests */}
-        <div>
-          <Label className="flex items-center mb-2">
-            <Users className="w-4 h-4 mr-2" />
-            Number of Guests
-          </Label>
-          <Select value={guests} onValueChange={setGuests}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[1, 2, 3, 4].map((count) => (
-                <SelectItem key={count} value={count.toString()}>
-                  {count} guest{count > 1 ? 's' : ''}
+              {durationOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -291,7 +302,7 @@ const BookingForm = ({ studio }: BookingFormProps) => {
         {/* Price Breakdown */}
         <div className="space-y-3">
           <div className="flex justify-between">
-            <span>₹{hourlyPrice.toLocaleString()} × {duration} hour{parseInt(duration) > 1 ? 's' : ''}</span>
+            <span>₹{hourlyPrice.toLocaleString()} × {duration} {parseInt(duration) === 8 ? 'hrs (Full Day)' : parseInt(duration) > 1 ? 'hrs' : 'hr'}</span>
             <span>₹{pricing.basePrice.toLocaleString()}</span>
           </div>
           <div className="flex justify-between text-sm text-slate-600">
