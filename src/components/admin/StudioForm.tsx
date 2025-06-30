@@ -7,10 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { X, Plus } from 'lucide-react';
 import GoogleMapsPicker from './GoogleMapsPicker';
 import StudioImageUpload from './StudioImageUpload';
+import AmenitiesChecklist from './AmenitiesChecklist';
 
 const studioSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -43,8 +42,6 @@ const StudioForm: React.FC<StudioFormProps> = ({
   initialData = {},
   submitLabel = 'Create Studio'
 }) => {
-  const [newAmenity, setNewAmenity] = React.useState('');
-
   const {
     register,
     handleSubmit,
@@ -92,24 +89,6 @@ const StudioForm: React.FC<StudioFormProps> = ({
     
     // Trigger validation for location fields
     trigger(['location', 'city', 'state']);
-  };
-
-  const addAmenity = () => {
-    if (newAmenity.trim() && !watchedAmenities.includes(newAmenity.trim())) {
-      setValue('amenities', [...watchedAmenities, newAmenity.trim()]);
-      setNewAmenity('');
-    }
-  };
-
-  const removeAmenity = (amenity: string) => {
-    setValue('amenities', watchedAmenities.filter(a => a !== amenity));
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addAmenity();
-    }
   };
 
   const handleFormSubmit = (data: StudioFormData) => {
@@ -226,41 +205,10 @@ const StudioForm: React.FC<StudioFormProps> = ({
       {/* Amenities */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Amenities</h3>
-        
-        <div className="flex gap-2">
-          <Input
-            value={newAmenity}
-            onChange={(e) => setNewAmenity(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Add amenity (e.g., WiFi, Parking, AC)"
-            className="flex-1"
-          />
-          <Button
-            type="button"
-            onClick={addAmenity}
-            disabled={!newAmenity.trim()}
-            variant="outline"
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
-        </div>
-
-        {watchedAmenities.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {watchedAmenities.map((amenity, index) => (
-              <Badge key={index} variant="secondary" className="gap-1">
-                {amenity}
-                <button
-                  type="button"
-                  onClick={() => removeAmenity(amenity)}
-                  className="ml-1 hover:text-red-600"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </Badge>
-            ))}
-          </div>
-        )}
+        <AmenitiesChecklist
+          selectedAmenities={watchedAmenities}
+          onAmenitiesChange={(amenities) => setValue('amenities', amenities)}
+        />
       </div>
 
       {/* Submit Button */}

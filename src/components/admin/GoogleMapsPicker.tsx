@@ -65,6 +65,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -110,12 +111,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   };
 
   const loadGoogleMaps = () => {
-    if (mapLoaded) return;
-
-    if (!apiKey) {
-      toast.error('Google Maps API key is not configured');
-      return;
-    }
+    if (mapLoaded || !apiKey) return;
 
     setIsLoading(true);
     const script = document.createElement('script');
@@ -126,7 +122,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
     window.initGoogleMaps = () => {
       setIsLoading(false);
       setMapLoaded(true);
-      initializeMap();
+      setTimeout(initializeMap, 100);
     };
     
     script.onerror = () => {
@@ -214,7 +210,6 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
       setLocationData(newLocationData);
       setSearchValue(newLocationData.address);
       
-      // Update map
       if (mapInstanceRef.current) {
         mapInstanceRef.current.setCenter({ lat, lng });
         mapInstanceRef.current.setZoom(15);
@@ -243,7 +238,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
   };
 
   const performSearch = async (query: string) => {
-    if (!window.google?.maps) return;
+    if (!window.google?.maps?.places) return;
 
     setIsSearching(true);
     try {
@@ -271,8 +266,8 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
     }
   };
 
-  const selectPlace = async (placeId: string) => {
-    if (!window.google?.maps) return;
+  const selectPlace = async (placeId: string, description: string) => {
+    if (!window.google?.maps?.places) return;
 
     try {
       const service = new window.google.maps.places.PlacesService(document.createElement('div'));
@@ -342,7 +337,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
 
   const handleOpenMap = () => {
     if (!apiKey) {
-      toast.error('Google Maps API key is not configured');
+      toast.error('Google Maps configuration is missing. Please contact administrator.');
       return;
     }
     setIsMapOpen(true);
@@ -353,15 +348,10 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
     }
   };
 
-  useEffect(() => {
-    if (isMapOpen && mapLoaded && mapRef.current) {
-      setTimeout(initializeMap, 100);
-    }
-  }, [isMapOpen, mapLoaded]);
-
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowDropdown(false);
       }
     };
@@ -407,7 +397,7 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
             <div className="flex-1 p-4 space-y-4">
               <div className="space-y-2">
                 <Label>Search Address</Label>
-                <div className="relative">
+                <div className="relative" ref={dropdownRef}>
                   <div className="flex gap-2">
                     <Input
                       ref={searchInputRef}
@@ -415,13 +405,23 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
                       onChange={(e) => handleSearchInput(e.target.value)}
                       placeholder="Search for an address..."
                       className="flex-1"
+                      onFocus={() => {
+                        if (searchResults.length > 0) {
+                          setShowDropdown(true);
+                        }
+                      }}
                     />
                     <Button
                       type="button"
                       variant="outline"
-                      disabled={!searchValue.trim()}
+                      disabled={!searchValue.trim() || isSearching}
+                      onClick={() => performSearch(searchValue)}
                     >
-                      <Search className="w-4 h-4" />
+                      {isSearching ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Search className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
                   
@@ -429,15 +429,15 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
                       {isSearching ? (
                         <div className="p-3 text-center text-gray-500">
-                          <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                          <span className="ml-2">Searching...</span>
+                          <Loader2 className="w-4 h-4 animate-spin mx-auto mb-2" />
+                          <span>Searching...</span>
                         </div>
                       ) : searchResults.length > 0 ? (
                         searchResults.map((result) => (
                           <button
                             key={result.place_id}
-                            className="w-full text-left p-3 hover:bg-gray-100 border-b border-gray-100 last:border-b-0"
-                            onClick={() => selectPlace(result.place_id)}
+                            className="w-full text-left p-3 hover:bg-gray-100 border-b border-gray-100 last:border-b-0 focus:bg-gray-100 focus:outline-none"
+                            onClick={() => selectPlace(result.place_id, result.description)}
                           >
                             <div className="font-medium text-sm">
                               {result.structured_formatting?.main_text || result.description}
