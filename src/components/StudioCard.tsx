@@ -1,3 +1,4 @@
+
 import { Heart, Star, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,12 +10,18 @@ interface Studio {
   id: string;
   title: string;
   location: string;
-  price: string;
-  rating: number;
-  reviewCount: number;
-  image: string;
-  tags: string[];
-  amenities: string[];
+  city?: string;
+  state?: string;
+  price_per_hour: number;
+  rating?: number;
+  total_reviews?: number;
+  images?: string[];
+  amenities?: string[];
+  description?: string;
+  profiles?: {
+    full_name: string;
+    email: string;
+  };
 }
 
 interface StudioCardProps {
@@ -40,11 +47,21 @@ const StudioCard = ({ studio }: StudioCardProps) => {
     toggleFavorite(studio.id);
   };
 
+  // Get the first image or use placeholder
+  const displayImage = studio.images && studio.images.length > 0 
+    ? studio.images[0] 
+    : "/placeholder.svg";
+
+  // Format location display
+  const locationDisplay = studio.city && studio.state 
+    ? `${studio.city}, ${studio.state}`
+    : studio.location;
+
   return (
     <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
       <div className="relative" onClick={handleCardClick}>
         <img
-          src={studio.image}
+          src={displayImage}
           alt={studio.title}
           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
         />
@@ -57,15 +74,11 @@ const StudioCard = ({ studio }: StudioCardProps) => {
           <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
         </Button>
         <div className="absolute top-3 left-3 flex gap-1">
-          {studio.tags.map((tag) => (
-            <Badge
-              key={tag}
-              variant={tag === "Hot Selling" ? "destructive" : "secondary"}
-              className="text-xs"
-            >
-              {tag}
+          {studio.rating && studio.rating >= 4.5 && (
+            <Badge variant="destructive" className="text-xs">
+              Hot Selling
             </Badge>
-          ))}
+          )}
         </div>
       </div>
       
@@ -76,17 +89,17 @@ const StudioCard = ({ studio }: StudioCardProps) => {
         
         <div className="flex items-center text-sm text-slate-600 mb-2">
           <MapPin className="w-4 h-4 mr-1" />
-          {studio.location}
+          {locationDisplay}
         </div>
         
         <div className="flex items-center mb-3">
           <Star className="w-4 h-4 text-yellow-400 fill-current" />
-          <span className="text-sm font-medium ml-1">{studio.rating}</span>
-          <span className="text-sm text-slate-500 ml-1">({studio.reviewCount} reviews)</span>
+          <span className="text-sm font-medium ml-1">{studio.rating || 0}</span>
+          <span className="text-sm text-slate-500 ml-1">({studio.total_reviews || 0} reviews)</span>
         </div>
         
         <div className="flex flex-wrap gap-1 mb-3">
-          {studio.amenities.slice(0, 2).map((amenity, index) => (
+          {studio.amenities?.slice(0, 2).map((amenity, index) => (
             <span
               key={index}
               className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded"
@@ -94,7 +107,7 @@ const StudioCard = ({ studio }: StudioCardProps) => {
               {amenity}
             </span>
           ))}
-          {studio.amenities.length > 2 && (
+          {studio.amenities && studio.amenities.length > 2 && (
             <span className="text-xs text-slate-500">
               +{studio.amenities.length - 2} more
             </span>
@@ -103,7 +116,7 @@ const StudioCard = ({ studio }: StudioCardProps) => {
         
         <div className="flex justify-between items-center">
           <div>
-            <span className="text-lg font-bold text-slate-800">{studio.price}</span>
+            <span className="text-lg font-bold text-slate-800">₹{studio.price_per_hour}/hr</span>
           </div>
           <Button
             size="sm"
