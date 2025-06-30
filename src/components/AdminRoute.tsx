@@ -2,7 +2,7 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIsAdmin } from '@/hooks/useUserRole';
+import { useIsManager } from '@/hooks/useUserRole';
 import { Loader2 } from 'lucide-react';
 
 interface AdminRouteProps {
@@ -11,7 +11,7 @@ interface AdminRouteProps {
 
 const AdminRoute = ({ children }: AdminRouteProps) => {
   const { user, loading } = useAuth();
-  const isAdmin = useIsAdmin();
+  const isManagerOrAdmin = useIsManager();
 
   if (loading) {
     return (
@@ -25,7 +25,7 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (!isAdmin) {
+  if (!isManagerOrAdmin) {
     return <Navigate to="/" replace />;
   }
 
