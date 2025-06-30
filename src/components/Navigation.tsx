@@ -1,6 +1,7 @@
+
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, LogOut, Shield } from "lucide-react";
+import { Menu, X, User, LogOut, Shield, MapPin, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useUserRole";
@@ -12,8 +13,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const Navigation = () => {
+const POPULAR_CITIES = [
+  "Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", 
+  "Pune", "Kolkata", "Ahmedabad", "Kochi", "Jaipur"
+];
+
+interface NavigationProps {
+  selectedCity?: string | null;
+  onCityChange?: (city: string) => void;
+}
+
+const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const location = useLocation();
@@ -51,6 +69,15 @@ const Navigation = () => {
     }
   };
 
+  const handleCityChange = (city: string) => {
+    if (onCityChange) {
+      onCityChange(city);
+      localStorage.setItem('selectedCity', city);
+      // Update URL with city
+      window.history.pushState({}, '', `/${city.toLowerCase().replace(/\s+/g, '-')}`);
+    }
+  };
+
   return (
     <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm shadow-sm z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -60,6 +87,27 @@ const Navigation = () => {
               Book<span className="text-orange-500">MyStudio</span>
             </span>
           </Link>
+
+          {/* City Selector */}
+          {selectedCity && (
+            <div className="hidden md:flex items-center">
+              <Select value={selectedCity} onValueChange={handleCityChange}>
+                <SelectTrigger className="w-40 border-orange-200 focus:border-orange-500">
+                  <div className="flex items-center">
+                    <MapPin className="w-4 h-4 text-orange-500 mr-2" />
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {POPULAR_CITIES.map((city) => (
+                    <SelectItem key={city} value={city}>
+                      {city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
@@ -139,6 +187,27 @@ const Navigation = () => {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t">
+              {/* Mobile City Selector */}
+              {selectedCity && (
+                <div className="px-3 py-2 border-b">
+                  <Select value={selectedCity} onValueChange={handleCityChange}>
+                    <SelectTrigger className="w-full border-orange-200">
+                      <div className="flex items-center">
+                        <MapPin className="w-4 h-4 text-orange-500 mr-2" />
+                        <SelectValue />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {POPULAR_CITIES.map((city) => (
+                        <SelectItem key={city} value={city}>
+                          {city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
               {navigation.map((item) => (
                 <Link
                   key={item.name}

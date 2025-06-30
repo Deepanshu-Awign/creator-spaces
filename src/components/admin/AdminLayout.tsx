@@ -1,3 +1,4 @@
+
 import { ReactNode, useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { 
@@ -57,7 +58,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
@@ -84,7 +85,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           </Button>
         </div>
 
-        <nav className="mt-6">
+        <nav className="mt-6 flex-1">
           <div className="px-3">
             {navigation.map((item) => {
               const Icon = item.icon;
@@ -107,17 +108,17 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           </div>
         </nav>
 
-        <div className="absolute bottom-0 w-full p-4 border-t">
+        <div className="p-4 border-t">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+            <div className="flex items-center min-w-0">
+              <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-sm font-medium">
                   {user?.email?.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <div className="ml-3">
+              <div className="ml-3 min-w-0">
                 <p className="text-sm font-medium text-gray-700">Admin</p>
-                <p className="text-xs text-gray-500">{user?.email}</p>
+                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
               </div>
             </div>
             <Button
@@ -125,19 +126,18 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               size="sm"
               onClick={handleSignOut}
               disabled={isLoggingOut}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-500 hover:text-gray-700 flex-shrink-0"
             >
               <LogOut className="w-4 h-4" />
-              {isLoggingOut && <span className="ml-2 text-xs">Signing out...</span>}
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="lg:pl-64">
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Top header */}
-        <header className="bg-white shadow-sm border-b">
+        <header className="bg-white shadow-sm border-b flex-shrink-0">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center">
               <Button
@@ -167,7 +167,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </header>
 
         {/* Page content */}
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
           {children || <Outlet />}
         </main>
       </div>
