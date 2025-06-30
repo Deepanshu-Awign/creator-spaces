@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft, Heart, Share, Star, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Navigation from "@/components/Navigation";
 import BookingForm from "@/components/BookingForm";
@@ -101,6 +103,7 @@ const StudioDetail = () => {
           images: data.images || ["/placeholder.svg"],
           image: (data.images && data.images[0]) || "/placeholder.svg",
           amenities: data.amenities || [],
+          tags: data.tags || [],
           features: [],
           host: {
             full_name: data.profiles?.full_name || "Host",
@@ -328,6 +331,18 @@ const StudioDetail = () => {
                     </Button>
                   </div>
                 </div>
+                
+                {/* Tags */}
+                {studio.tags && studio.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {studio.tags.map((tag: string, index: number) => (
+                      <Badge key={index} variant="secondary" className="bg-orange-100 text-orange-700">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                
                 <div className="flex items-center gap-4">
                   <div className="flex items-center">
                     <Star className="w-5 h-5 text-yellow-400 fill-current" />

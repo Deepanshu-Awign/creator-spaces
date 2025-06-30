@@ -10,7 +10,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  sendMagicLink: (email: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -104,23 +103,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const sendMagicLink = async (email: string) => {
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-        }
-      });
-      
-      if (error) throw error;
-      return { error: null };
-    } catch (error) {
-      console.error('Magic link send error:', error);
-      return { error };
-    }
-  };
-
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut({ scope: 'global' });
@@ -142,7 +124,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signIn,
     signUp,
     signOut,
-    sendMagicLink,
   };
 
   return (

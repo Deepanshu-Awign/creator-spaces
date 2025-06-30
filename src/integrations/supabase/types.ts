@@ -299,6 +299,7 @@ export type Database = {
           price_per_hour: number
           rating: number | null
           state: string | null
+          tags: string[] | null
           title: string
           total_reviews: number | null
           updated_at: string
@@ -324,6 +325,7 @@ export type Database = {
           price_per_hour: number
           rating?: number | null
           state?: string | null
+          tags?: string[] | null
           title: string
           total_reviews?: number | null
           updated_at?: string
@@ -349,6 +351,7 @@ export type Database = {
           price_per_hour?: number
           rating?: number | null
           state?: string | null
+          tags?: string[] | null
           title?: string
           total_reviews?: number | null
           updated_at?: string
