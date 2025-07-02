@@ -37,10 +37,9 @@ const AppContent = () => {
     <div className="min-h-screen bg-white">
       {/* Main content with safe area handling */}
       <div 
-        className="min-h-screen" 
+        className="min-h-screen pb-20 md:pb-0" 
         style={{ 
           paddingTop: `${safeArea.top}px`,
-          paddingBottom: `${safeArea.bottom + 80}px`, // 80px for bottom nav
           paddingLeft: `${safeArea.left}px`,
           paddingRight: `${safeArea.right}px`
         }}
@@ -76,17 +75,8 @@ const AppContent = () => {
         </Routes>
       </div>
       
-      {/* Mobile bottom navigation with safe area handling */}
-      <div 
-        className="fixed bottom-0 left-0 right-0"
-        style={{ 
-          paddingBottom: `${safeArea.bottom}px`,
-          paddingLeft: `${safeArea.left}px`,
-          paddingRight: `${safeArea.right}px`
-        }}
-      >
-        <MobileBottomNav />
-      </div>
+      {/* Mobile bottom navigation - now properly floating at bottom of viewport */}
+      <MobileBottomNav />
     </div>
   );
 };
