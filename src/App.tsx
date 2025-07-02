@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import { useSafeArea } from "@/hooks/useSafeArea";
 import Index from "./pages/Index";
 import Studios from "./pages/Studios";
 import StudioDetail from "./pages/StudioDetail";
@@ -29,6 +30,67 @@ import AdminSettings from "./pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
+const AppContent = () => {
+  const safeArea = useSafeArea();
+  
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Main content with safe area handling */}
+      <div 
+        className="min-h-screen" 
+        style={{ 
+          paddingTop: `${safeArea.top}px`,
+          paddingBottom: `${safeArea.bottom + 80}px`, // 80px for bottom nav
+          paddingLeft: `${safeArea.left}px`,
+          paddingRight: `${safeArea.right}px`
+        }}
+      >
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/:city" element={<Index />} />
+          <Route path="/studios" element={<Studios />} />
+          <Route path="/studio/:id" element={<StudioDetail />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/bookings" element={<Profile />} />
+          <Route path="/booking/:id" element={<BookingDetails />} />
+          <Route path="/favorites" element={<Favorites />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin" element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="bookings" element={<AdminBookings />} />
+            <Route path="studios" element={<AdminStudios />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
+            <Route path="settings" element={<AdminSettings />} />
+          </Route>
+          
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </div>
+      
+      {/* Mobile bottom navigation with safe area handling */}
+      <div 
+        className="fixed bottom-0 left-0 right-0"
+        style={{ 
+          paddingBottom: `${safeArea.bottom}px`,
+          paddingLeft: `${safeArea.left}px`,
+          paddingRight: `${safeArea.right}px`
+        }}
+      >
+        <MobileBottomNav />
+      </div>
+    </div>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -36,55 +98,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="min-h-screen bg-white">
-            {/* Main content with safe area handling */}
-            <div className="min-h-screen" style={{ 
-              paddingTop: 'env(safe-area-inset-top)',
-              paddingBottom: 'calc(env(safe-area-inset-bottom) + 5rem)'
-            }}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/:city" element={<Index />} />
-                <Route path="/studios" element={<Studios />} />
-                <Route path="/studio/:id" element={<StudioDetail />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/bookings" element={<Profile />} />
-                <Route path="/booking/:id" element={<BookingDetails />} />
-                <Route path="/favorites" element={<Favorites />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                
-                {/* Admin Routes */}
-                <Route path="/admin" element={
-                  <AdminRoute>
-                    <AdminLayout />
-                  </AdminRoute>
-                }>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="users" element={<AdminUsers />} />
-                  <Route path="bookings" element={<AdminBookings />} />
-                  <Route path="studios" element={<AdminStudios />} />
-                  <Route path="analytics" element={<AdminAnalytics />} />
-                  <Route path="settings" element={<AdminSettings />} />
-                </Route>
-                
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
-            
-            {/* Mobile bottom navigation with safe area handling */}
-            <div style={{ 
-              paddingBottom: 'env(safe-area-inset-bottom)',
-              position: 'fixed',
-              bottom: 0,
-              left: 0,
-              right: 0
-            }}>
-              <MobileBottomNav />
-            </div>
-          </div>
+          <AppContent />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

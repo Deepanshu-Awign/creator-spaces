@@ -21,14 +21,17 @@ const config: CapacitorConfig = {
     },
     StatusBar: {
       style: 'default',
-      backgroundColor: '#ffffff'
+      backgroundColor: '#ffffff',
+      overlaysWebView: false
     }
   },
   ios: {
     contentInset: 'automatic'
   },
   android: {
-    allowMixedContent: true
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: true
   }
 };
 
