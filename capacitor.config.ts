@@ -2,7 +2,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.4fc8c40fa0ed44bc9d508e968c6452eb',
+  appId: 'com.lovable.studiobookings',
   appName: 'studio-stage-bookings',
   webDir: 'dist',
   server: {
