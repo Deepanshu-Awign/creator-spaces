@@ -1,0 +1,44 @@
+
+import { useState, useEffect } from "react";
+import { Progress } from "@/components/ui/progress";
+
+const LoadingScreen = () => {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setProgress((oldProgress) => {
+        const diff = Math.random() * 10;
+        return Math.min(oldProgress + diff, 95);
+      });
+    }, 200);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
+          <img 
+            src="/lovable-uploads/63c25b0c-9e71-4bbb-b0e3-4529c6c44ecf.png" 
+            alt="BookMyStudio" 
+            className="w-10 h-10"
+          />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">BookMyStudio</h1>
+        <p className="text-gray-600">Loading your creative space...</p>
+      </div>
+      
+      <div className="w-64 mb-4">
+        <Progress value={progress} className="h-2" />
+      </div>
+      
+      <p className="text-sm text-gray-500">{Math.round(progress)}%</p>
+    </div>
+  );
+};
+
+export default LoadingScreen;

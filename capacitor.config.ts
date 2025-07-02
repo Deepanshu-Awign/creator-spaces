@@ -26,12 +26,23 @@ const config: CapacitorConfig = {
     }
   },
   ios: {
-    contentInset: 'automatic'
+    contentInset: 'automatic',
+    // Enable better caching and performance
+    preferredContentMode: 'mobile',
+    allowsLinkPreview: false
   },
   android: {
     allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: true
+    webContentsDebuggingEnabled: true,
+    // Enable better caching and performance
+    appendUserAgent: 'BookMyStudio',
+    overrideUserAgent: undefined,
+    backgroundColor: '#ffffff',
+    // Enable hardware acceleration
+    mixedContentMode: 'compatibility',
+    // Improve loading performance
+    loggingBehavior: 'none'
   }
 };
 
