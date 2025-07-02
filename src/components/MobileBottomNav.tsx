@@ -23,9 +23,11 @@ const MobileBottomNav = () => {
     <nav 
       className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 md:hidden shadow-lg"
       style={{ 
-        paddingBottom: `${safeArea.bottom}px`,
-        paddingLeft: `${safeArea.left}px`,
-        paddingRight: `${safeArea.right}px`
+        paddingBottom: `max(${safeArea.bottom}px, env(safe-area-inset-bottom, 0px))`,
+        paddingLeft: `max(${safeArea.left}px, env(safe-area-inset-left, 0px))`,
+        paddingRight: `max(${safeArea.right}px, env(safe-area-inset-right, 0px))`,
+        marginBottom: 0,
+        bottom: 0
       }}
     >
       <div className="flex justify-around items-center py-2">
