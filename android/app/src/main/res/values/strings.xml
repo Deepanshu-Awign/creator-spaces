@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">studio-stage-bookings</string>
+    <string name="title_activity_main">studio-stage-bookings</string>
+    <string name="package_name">com.lovable.studiobookings</string>
+    <string name="custom_url_scheme">com.lovable.studiobookings</string>
+</resources>
