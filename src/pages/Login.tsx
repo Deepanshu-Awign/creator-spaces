@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Mail, ArrowRight, Check, UserPlus } from "lucide-react";
+import { Mail, ArrowRight, Check, UserPlus, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,19 +13,77 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [fullName, setFullName] = useState("");
   const [step, setStep] = useState<"auth" | "otp-sent">("auth");
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
+  const [signInType, setSignInType] = useState<"password" | "otp">("password");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, signIn, signUp } = useAuth();
 
   // Redirect if already authenticated
   if (user) {
     return <Navigate to="/" replace />;
   }
+
+  const handlePasswordSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      const { error } = await signIn(email, password);
+      
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message || "Failed to sign in. Please try again.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePasswordSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      const { error } = await signUp(email, password, fullName);
+      
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message || "Failed to create account. Please try again.",
+        });
+      } else {
+        toast({
+          title: "Account Created!",
+          description: "Please check your email to verify your account.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,6 +187,7 @@ const Login = () => {
     setStep("auth");
     setOtp("");
     setFullName("");
+    setPassword("");
   };
 
   return (
@@ -145,7 +204,7 @@ const Login = () => {
               {step === "otp-sent" 
                 ? "Enter the 6-digit code sent to your email" 
                 : authMode === "signin" 
-                  ? "Sign in with your email to get started"
+                  ? "Sign in to your account"
                   : "Create your account to get started"
               }
             </p>
@@ -164,72 +223,124 @@ const Login = () => {
             </CardHeader>
             <CardContent>
               {step === "auth" ? (
-                <form onSubmit={handleSendOTP} className="space-y-4">
-                  {authMode === "signup" && (
+                <>
+                  {authMode === "signin" && (
+                    <div className="flex gap-2 mb-4">
+                      <Button
+                        type="button"
+                        variant={signInType === "password" ? "default" : "outline"}
+                        onClick={() => setSignInType("password")}
+                        className="flex-1"
+                      >
+                        Password
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={signInType === "otp" ? "default" : "outline"}
+                        onClick={() => setSignInType("otp")}
+                        className="flex-1"
+                      >
+                        Email Code
+                      </Button>
+                    </div>
+                  )}
+
+                  <form onSubmit={signInType === "password" ? (authMode === "signin" ? handlePasswordSignIn : handlePasswordSignUp) : handleSendOTP} className="space-y-4">
+                    {authMode === "signup" && (
+                      <div>
+                        <Label htmlFor="fullName">Full Name</Label>
+                        <div className="relative mt-2">
+                          <UserPlus className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                          <Input
+                            id="fullName"
+                            type="text"
+                            placeholder="Enter your full name"
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            className="pl-10"
+                            required
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     <div>
-                      <Label htmlFor="fullName">Full Name</Label>
+                      <Label htmlFor="email">Email Address</Label>
                       <div className="relative mt-2">
-                        <UserPlus className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                         <Input
-                          id="fullName"
-                          type="text"
-                          placeholder="Enter your full name"
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
+                          id="email"
+                          type="email"
+                          placeholder="Enter your email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
                           className="pl-10"
                           required
                         />
                       </div>
                     </div>
-                  )}
 
-                  <div>
-                    <Label htmlFor="email">Email Address</Label>
-                    <div className="relative mt-2">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="Enter your email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3"
-                    disabled={isLoading || !email || (authMode === "signup" && !fullName)}
-                  >
-                    {isLoading ? "Sending OTP..." : (
-                      <>
-                        {authMode === "signin" ? "Send Verification Code" : "Create Account & Send Code"}
-                        <ArrowRight className="w-5 h-5 ml-2" />
-                      </>
+                    {signInType === "password" && (
+                      <div>
+                        <Label htmlFor="password">Password</Label>
+                        <div className="relative mt-2">
+                          <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="pr-10"
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          >
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                        </div>
+                      </div>
                     )}
-                  </Button>
 
-                  <div className="text-center">
                     <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={switchAuthMode}
-                      className="text-orange-500 hover:text-orange-600"
+                      type="submit"
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3"
+                      disabled={isLoading || !email || (signInType === "password" && !password) || (authMode === "signup" && !fullName)}
                     >
-                      {authMode === "signin" 
-                        ? "Don't have an account? Sign up" 
-                        : "Already have an account? Sign in"
-                      }
+                      {isLoading ? "Please wait..." : (
+                        <>
+                          {signInType === "password" 
+                            ? (authMode === "signin" ? "Sign In" : "Create Account")
+                            : (authMode === "signin" ? "Send Verification Code" : "Create Account & Send Code")
+                          }
+                          <ArrowRight className="w-5 h-5 ml-2" />
+                        </>
+                      )}
                     </Button>
-                  </div>
 
-                  <p className="text-xs text-slate-500 text-center">
-                    We'll send you a 6-digit verification code to your email.
-                  </p>
-                </form>
+                    <div className="text-center">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={switchAuthMode}
+                        className="text-orange-500 hover:text-orange-600"
+                      >
+                        {authMode === "signin" 
+                          ? "Don't have an account? Sign up" 
+                          : "Already have an account? Sign in"
+                        }
+                      </Button>
+                    </div>
+
+                    {signInType === "otp" && (
+                      <p className="text-xs text-slate-500 text-center">
+                        We'll send you a 6-digit verification code to your email.
+                      </p>
+                    )}
+                  </form>
+                </>
               ) : (
                 <div className="space-y-6">
                   <div className="text-center">

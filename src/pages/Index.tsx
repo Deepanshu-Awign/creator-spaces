@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search } from "lucide-react";
@@ -102,11 +101,11 @@ const Index = () => {
       {/* Hero Section */}
       <section className="relative pt-20 pb-16 px-4">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl md:text-7xl font-bold text-slate-800 mb-6 animate-fade-in">
+          <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-slate-800 mb-6 animate-fade-in">
             Book Your Perfect
             <span className="text-orange-500 block">Creative Space</span>
           </h1>
-          <p className="text-xl text-slate-600 mb-12 max-w-2xl mx-auto animate-fade-in">
+          <p className="text-lg md:text-xl text-slate-600 mb-12 max-w-2xl mx-auto animate-fade-in">
             Discover and book professional studios for podcasting, photography, video production, and more in {selectedCity}.
           </p>
 
@@ -115,23 +114,23 @@ const Index = () => {
             <DatabaseSeeder />
           )}
 
-          {/* Search Bar */}
-          <div className="bg-white rounded-full shadow-2xl p-2 max-w-2xl mx-auto mb-12 animate-scale-in">
-            <div className="flex gap-2">
-              <div className="flex-1 flex items-center px-6 py-3">
-                <Search className="w-5 h-5 text-slate-400 mr-3" />
+          {/* Responsive Search Bar */}
+          <div className="bg-white rounded-2xl shadow-2xl p-3 md:p-4 max-w-4xl mx-auto mb-12 animate-scale-in">
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+              <div className="flex-1 flex items-center px-4 md:px-6 py-3 md:py-4">
+                <Search className="w-5 h-5 text-slate-400 mr-3 flex-shrink-0" />
                 <Input
                   placeholder="Search for studios, equipment, or services..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="border-0 focus-visible:ring-0 text-lg"
+                  className="border-0 focus-visible:ring-0 text-base md:text-lg bg-transparent p-0"
                 />
               </div>
-              <div className="flex justify-center">
+              <div className="flex justify-center md:justify-end">
                 <Button 
                   onClick={handleSearch}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-6 rounded-full text-lg font-semibold transition-all hover:scale-105"
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl md:rounded-full text-base md:text-lg font-semibold transition-all hover:scale-105 w-full md:w-auto"
                 >
                   Search Studios
                 </Button>
@@ -144,10 +143,10 @@ const Index = () => {
       {/* Featured Studios */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-800">Hot Selling Studios in {selectedCity}</h2>
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-12 gap-4">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Hot Selling Studios in {selectedCity}</h2>
             <Link to={`/studios?city=${selectedCity}`}>
-              <Button variant="outline" className="hover:bg-orange-50 hover:border-orange-300">
+              <Button variant="outline" className="hover:bg-orange-50 hover:border-orange-300 w-full md:w-auto">
                 View All Studios
               </Button>
             </Link>
@@ -177,13 +176,13 @@ const Index = () => {
       {/* CTA Section */}
       <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-6">Ready to Create Something Amazing?</h2>
-          <p className="text-xl mb-8 text-blue-100">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Create Something Amazing?</h2>
+          <p className="text-lg md:text-xl mb-8 text-blue-100">
             Join thousands of creators who trust BookMyStudio for their perfect studio space.
           </p>
           <div className="flex justify-center">
             <Link to={`/studios?city=${selectedCity}`}>
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 text-lg font-semibold">
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white px-6 md:px-8 py-3 md:py-4 text-lg font-semibold">
                 Browse Studios
               </Button>
             </Link>
