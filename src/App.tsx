@@ -37,39 +37,53 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <div className="min-h-screen bg-white">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/:city" element={<Index />} />
-              <Route path="/studios" element={<Studios />} />
-              <Route path="/studio/:id" element={<StudioDetail />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/bookings" element={<Profile />} />
-              <Route path="/booking/:id" element={<BookingDetails />} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              
-              {/* Admin Routes */}
-              <Route path="/admin" element={
-                <AdminRoute>
-                  <AdminLayout />
-                </AdminRoute>
-              }>
-                <Route index element={<AdminDashboard />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="bookings" element={<AdminBookings />} />
-                <Route path="studios" element={<AdminStudios />} />
-                <Route path="analytics" element={<AdminAnalytics />} />
-                <Route path="settings" element={<AdminSettings />} />
-              </Route>
-              
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <MobileBottomNav />
-            {/* Add padding bottom to prevent content from being hidden behind bottom nav */}
-            <div className="h-20 md:hidden" />
+            {/* Main content with safe area handling */}
+            <div className="min-h-screen" style={{ 
+              paddingTop: 'env(safe-area-inset-top)',
+              paddingBottom: 'calc(env(safe-area-inset-bottom) + 5rem)'
+            }}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/:city" element={<Index />} />
+                <Route path="/studios" element={<Studios />} />
+                <Route path="/studio/:id" element={<StudioDetail />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/bookings" element={<Profile />} />
+                <Route path="/booking/:id" element={<BookingDetails />} />
+                <Route path="/favorites" element={<Favorites />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                
+                {/* Admin Routes */}
+                <Route path="/admin" element={
+                  <AdminRoute>
+                    <AdminLayout />
+                  </AdminRoute>
+                }>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="bookings" element={<AdminBookings />} />
+                  <Route path="studios" element={<AdminStudios />} />
+                  <Route path="analytics" element={<AdminAnalytics />} />
+                  <Route path="settings" element={<AdminSettings />} />
+                </Route>
+                
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </div>
+            
+            {/* Mobile bottom navigation with safe area handling */}
+            <div style={{ 
+              paddingBottom: 'env(safe-area-inset-bottom)',
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0
+            }}>
+              <MobileBottomNav />
+            </div>
           </div>
         </BrowserRouter>
       </TooltipProvider>

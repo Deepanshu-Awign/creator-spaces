@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -97,7 +98,41 @@
     @apply border-border;
   }
 
+  html {
+    /* Improve scrolling performance */
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
+    /* Handle safe areas for mobile devices */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    
+    /* Improve scrolling performance */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
+
+  /* Mobile-specific optimizations */
+  @media (max-width: 768px) {
+    body {
+      /* Add extra padding for mobile bottom navigation */
+      padding-bottom: calc(env(safe-area-inset-bottom) + 5rem);
+    }
+  }
+}
+
+/* Smooth scrolling for all scrollable elements */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Optimize performance for transformed elements */
+.transform {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
