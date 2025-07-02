@@ -1,17 +1,18 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import StudioCard from '@/components/StudioCard';
+import MobileStudioCard from '@/components/MobileStudioCard';
 import Navigation from '@/components/Navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, X, Star } from 'lucide-react';
+import { Search, Filter, X, Star, MapPin } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { useMobileLocation } from '@/hooks/useMobileLocation';
 import {
   Collapsible,
   CollapsibleContent,
@@ -49,6 +50,7 @@ const Studios = () => {
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [minRating, setMinRating] = useState<number>(0);
   const [showFilters, setShowFilters] = useState(false);
+  const { getCurrentLocation, location } = useMobileLocation();
 
   // Get city from URL params or localStorage
   useEffect(() => {
@@ -135,24 +137,44 @@ const Studios = () => {
 
   const hasActiveFilters = searchTerm || priceRange[0] > 0 || priceRange[1] < 10000 || selectedAmenities.length > 0 || minRating > 0;
 
+  const handleLocationSearch = async () => {
+    await getCurrentLocation();
+  };
+
+  const isMobile = window.innerWidth < 768;
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
       {/* Navigation with city selector */}
       <Navigation selectedCity={selectedCity} onCityChange={handleCityChange} />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-16">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-4">
             Find Your Perfect Studio {selectedCity && `in ${selectedCity}`}
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-lg text-gray-600">
             Discover and book amazing studios for your next project
           </p>
         </div>
 
+        {/* Mobile Location Button */}
+        {isMobile && (
+          <div className="mb-4">
+            <Button
+              onClick={handleLocationSearch}
+              variant="outline"
+              className="w-full mb-4 text-orange-600 border-orange-300 hover:bg-orange-50"
+            >
+              <MapPin className="w-4 h-4 mr-2" />
+              Find studios near me
+            </Button>
+          </div>
+        )}
+
         {/* Search and Filters */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-8">
           {/* Main Search */}
           <div className="flex flex-col md:flex-row gap-4 mb-4">
             <div className="flex-1 relative">
@@ -307,11 +329,11 @@ const Studios = () => {
         {/* Results */}
         <div className="mb-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-gray-900">
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
               {isLoading ? 'Loading...' : `${studios.length} Studios Found`}
             </h2>
             {selectedCity && (
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-sm md:text-base">
                 Showing results for {selectedCity}
               </p>
             )}
@@ -320,7 +342,7 @@ const Studios = () => {
 
         {/* Studios Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-white rounded-lg shadow-md p-6 animate-pulse">
                 <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
@@ -331,9 +353,13 @@ const Studios = () => {
             ))}
           </div>
         ) : studios.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className={isMobile ? "space-y-4" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"}>
             {studios.map((studio) => (
-              <StudioCard key={studio.id} studio={studio} />
+              isMobile ? (
+                <MobileStudioCard key={studio.id} studio={studio} />
+              ) : (
+                <StudioCard key={studio.id} studio={studio} />
+              )
             ))}
           </div>
         ) : (

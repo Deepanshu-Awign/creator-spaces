@@ -1,0 +1,31 @@
+
+import { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'app.lovable.4fc8c40fa0ed44bc9d508e968c6452eb',
+  appName: 'studio-stage-bookings',
+  webDir: 'dist',
+  server: {
+    url: 'https://4fc8c40f-a0ed-44bc-9d50-8e968c6452eb.lovableproject.com?forceHideBadge=true',
+    cleartext: true
+  },
+  plugins: {
+    Camera: {
+      permissions: ['camera', 'photos']
+    },
+    Geolocation: {
+      permissions: ['location']
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert']
+    }
+  },
+  ios: {
+    contentInset: 'automatic'
+  },
+  android: {
+    allowMixedContent: true
+  }
+};
+
+export default config;
