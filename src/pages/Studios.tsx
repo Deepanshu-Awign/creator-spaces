@@ -18,6 +18,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import OfflineBookingQueue from '@/components/OfflineBookingQueue';
+import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 
 const AVAILABLE_AMENITIES = [
   'WiFi',
@@ -51,6 +53,7 @@ const Studios = () => {
   const [minRating, setMinRating] = useState<number>(0);
   const [showFilters, setShowFilters] = useState(false);
   const { getCurrentLocation, location } = useMobileLocation();
+  const { offlineData, isOnline, cacheData } = useOfflineStorage();
 
   // Get city from URL params or localStorage
   useEffect(() => {
@@ -63,10 +66,16 @@ const Studios = () => {
     }
   }, [searchParams]);
 
-  // Fetch studios with enhanced filtering
+  // Enhanced fetch studios with offline support
   const { data: studios = [], isLoading } = useQuery({
     queryKey: ['studios', searchTerm, selectedCity, priceRange, selectedAmenities, minRating],
     queryFn: async () => {
+      // If offline, return cached data
+      if (!isOnline && offlineData.studios.length > 0) {
+        console.log('Using cached studios data (offline)');
+        return filterOfflineStudios(offlineData.studios);
+      }
+
       let query = supabase
         .from('studios')
         .select(`
@@ -97,7 +106,8 @@ const Studios = () => {
       const { data, error } = await query;
       if (error) {
         console.error('Error fetching studios:', error);
-        return [];
+        // If online fetch fails, fallback to cached data
+        return filterOfflineStudios(offlineData.studios);
       }
 
       // Filter by amenities on the client side since PostgreSQL array filtering is complex
@@ -109,9 +119,59 @@ const Studios = () => {
         });
       }
 
+      // Cache the fetched data when online
+      if (isOnline && filteredData.length > 0) {
+        await cacheData('studios', filteredData);
+      }
+
       return filteredData;
-    }
+    },
+    // Enable cached data when offline
+    enabled: isOnline || offlineData.studios.length > 0,
+    staleTime: isOnline ? 5 * 60 * 1000 : Infinity, // Longer stale time when offline
   });
+
+  const filterOfflineStudios = (cachedStudios: any[]) => {
+    let filtered = cachedStudios;
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(studio => 
+        studio.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        studio.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        studio.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        studio.amenities?.some((amenity: string) => 
+          amenity.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+    }
+
+    // Apply city filter
+    if (selectedCity) {
+      filtered = filtered.filter(studio => studio.city === selectedCity);
+    }
+
+    // Apply price range filter
+    filtered = filtered.filter(studio => 
+      studio.price_per_hour >= priceRange[0] && 
+      studio.price_per_hour <= priceRange[1]
+    );
+
+    // Apply rating filter
+    if (minRating > 0) {
+      filtered = filtered.filter(studio => (studio.rating || 0) >= minRating);
+    }
+
+    // Apply amenities filter
+    if (selectedAmenities.length > 0) {
+      filtered = filtered.filter(studio => {
+        if (!studio.amenities) return false;
+        return selectedAmenities.every(amenity => studio.amenities.includes(amenity));
+      });
+    }
+
+    return filtered;
+  };
 
   const handleCityChange = (city: string) => {
     setSelectedCity(city);
@@ -148,7 +208,12 @@ const Studios = () => {
       {/* Navigation with city selector */}
       <Navigation selectedCity={selectedCity} onCityChange={handleCityChange} />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-16">
+      {/* Offline Booking Queue */}
+      <div className="pt-16">
+        <OfflineBookingQueue />
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-0">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -326,11 +391,16 @@ const Studios = () => {
           )}
         </div>
 
-        {/* Results */}
+        {/* Results with offline indicator */}
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
               {isLoading ? 'Loading...' : `${studios.length} Studios Found`}
+              {!isOnline && (
+                <span className="ml-2 text-sm text-orange-600 font-normal">
+                  (Cached Results)
+                </span>
+              )}
             </h2>
             {selectedCity && (
               <p className="text-gray-600 text-sm md:text-base">

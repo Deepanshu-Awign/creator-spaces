@@ -8,7 +8,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import LoadingScreen from "@/components/LoadingScreen";
 import LazyWrapper from "@/components/LazyWrapper";
+import NetworkStatusBar from "@/components/NetworkStatusBar";
 import { useSafeArea } from "@/hooks/useSafeArea";
+import { useOfflineStorage } from "@/hooks/useOfflineStorage";
 import { lazy, useState, useEffect } from "react";
 
 // Lazy load all pages for better performance
@@ -47,9 +49,13 @@ const queryClient = new QueryClient({
 
 const AppContent = () => {
   const safeArea = useSafeArea();
+  const { isOnline } = useOfflineStorage();
   
   return (
     <div className="min-h-screen bg-white">
+      {/* Network Status Bar */}
+      <NetworkStatusBar />
+      
       {/* Main content with safe area handling and bottom nav space */}
       <div 
         className="min-h-screen" 
@@ -103,9 +109,29 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate app initialization and cache loading
+    // Register service worker for offline functionality
+    const registerServiceWorker = async () => {
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.register('/sw.js');
+          console.log('Service Worker registered successfully:', registration);
+          
+          // Listen for updates
+          registration.addEventListener('updatefound', () => {
+            console.log('New service worker version available');
+          });
+        } catch (error) {
+          console.error('Service Worker registration failed:', error);
+        }
+      }
+    };
+
+    // Initialize app
     const initializeApp = async () => {
       try {
+        // Register service worker first
+        await registerServiceWorker();
+        
         // Preload critical resources
         const preloadPromises = [
           // Preload logo image
@@ -121,7 +147,7 @@ const App = () => {
 
         await Promise.all(preloadPromises);
       } catch (error) {
-        console.log("Preload error:", error);
+        console.log("App initialization error:", error);
       } finally {
         setIsLoading(false);
       }

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { User, Mail, Phone, MapPin, Calendar, Heart, Star, Edit, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useBookings } from "@/hooks/useBookings";
+import OfflineBookingQueue from '@/components/OfflineBookingQueue';
 
 interface UserProfile {
   id: string;
@@ -175,6 +175,9 @@ const Profile = () => {
       <Navigation />
       
       <div className="pt-20 px-4">
+        {/* Offline Booking Queue */}
+        <OfflineBookingQueue />
+        
         <div className="max-w-4xl mx-auto">
           {/* Profile Header */}
           <Card className="mb-8">
