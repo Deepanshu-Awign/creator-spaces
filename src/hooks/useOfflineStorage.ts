@@ -161,8 +161,8 @@ export const useOfflineStorage = () => {
       // Register background sync if supported
       if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
         const registration = await navigator.serviceWorker.ready;
-        await registration.sync.register('sync-bookings');
-        await registration.sync.register('sync-favorites');
+        await (registration as any).sync.register('sync-bookings');
+        await (registration as any).sync.register('sync-favorites');
       }
       
       // Update last sync time

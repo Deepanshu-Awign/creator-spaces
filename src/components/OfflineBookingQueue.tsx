@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Wifi, WifiOff, Sync } from 'lucide-react';
+import { Clock, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 interface QueuedBooking {
@@ -63,9 +63,9 @@ const OfflineBookingQueue = () => {
     if (!isOnline) return;
     
     try {
-      if ('serviceWorker' in navigator) {
+      if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
         const registration = await navigator.serviceWorker.ready;
-        await registration.sync.register('sync-bookings');
+        await (registration as any).sync.register('sync-bookings');
       }
     } catch (error) {
       console.error('Failed to trigger sync:', error);
@@ -114,7 +114,7 @@ const OfflineBookingQueue = () => {
             size="sm" 
             className="w-full mt-3 bg-blue-500 hover:bg-blue-600"
           >
-            <Sync className="w-4 h-4 mr-2" />
+            <RefreshCw className="w-4 h-4 mr-2" />
             Sync Now
           </Button>
         )}
