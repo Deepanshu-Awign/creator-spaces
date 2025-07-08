@@ -56,14 +56,13 @@ const AppContent = () => {
       {/* Network Status Bar */}
       <NetworkStatusBar />
       
-      {/* Main content with safe area handling and bottom nav space */}
+      {/* Main content with safe area handling - no bottom padding for fixed nav */}
       <div 
         className="min-h-screen" 
         style={{ 
           paddingTop: `${safeArea.top}px`,
           paddingLeft: `${safeArea.left}px`,
           paddingRight: `${safeArea.right}px`,
-          paddingBottom: `calc(80px + ${safeArea.bottom}px)` // Bottom nav height + safe area
         }}
       >
         <Routes>

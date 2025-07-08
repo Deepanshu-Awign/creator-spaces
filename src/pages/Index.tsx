@@ -95,7 +95,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-24 md:pb-0">
       <Navigation selectedCity={selectedCity} onCityChange={handleCitySelect} />
       
       {/* Hero Section */}

@@ -145,8 +145,8 @@ const Profile = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50">
+  return (
+    <div className="min-h-screen bg-slate-50 pb-24 md:pb-0">
         <Navigation />
         <div className="pt-20 px-4">
           <div className="max-w-4xl mx-auto">
