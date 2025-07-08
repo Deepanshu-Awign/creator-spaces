@@ -5,10 +5,11 @@ const config: CapacitorConfig = {
   appId: 'com.lovable.studiobookings',
   appName: 'studio-stage-bookings',
   webDir: 'dist',
-  server: {
-    url: 'https://4fc8c40f-a0ed-44bc-9d50-8e968c6452eb.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  },
+  // Comment out server config for local development
+  // server: {
+  //   url: 'https://4fc8c40f-a0ed-44bc-9d50-8e968c6452eb.lovableproject.com?forceHideBadge=true',
+  //   cleartext: true
+  // },
   plugins: {
     Camera: {
       permissions: ['camera', 'photos']
