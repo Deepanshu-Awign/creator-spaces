@@ -52,17 +52,18 @@ const AppContent = () => {
   const { isOnline } = useOfflineStorage();
   
   return (
-    <div className="min-h-screen bg-white">
+    <div className="h-screen overflow-hidden bg-white">
       {/* Network Status Bar */}
       <NetworkStatusBar />
       
-      {/* Main content with safe area handling - no bottom padding for fixed nav */}
+      {/* Main scrollable content area */}
       <div 
-        className="min-h-screen" 
+        className="h-full overflow-y-auto overflow-x-hidden" 
         style={{ 
           paddingTop: `${safeArea.top}px`,
           paddingLeft: `${safeArea.left}px`,
           paddingRight: `${safeArea.right}px`,
+          paddingBottom: `calc(80px + ${safeArea.bottom}px)`, // Space for fixed bottom nav
         }}
       >
         <Routes>
@@ -98,7 +99,7 @@ const AppContent = () => {
         </Routes>
       </div>
       
-      {/* Mobile bottom navigation floating at viewport bottom */}
+      {/* Fixed bottom navigation - completely independent */}
       <MobileBottomNav />
     </div>
   );

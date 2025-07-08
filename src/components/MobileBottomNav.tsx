@@ -21,24 +21,24 @@ const MobileBottomNav = () => {
 
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-[9999] md:hidden shadow-lg"
+      className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-[99999] md:hidden shadow-lg"
       style={{ 
         paddingBottom: `max(${safeArea.bottom}px, env(safe-area-inset-bottom, 0px))`,
         paddingLeft: `max(${safeArea.left}px, env(safe-area-inset-left, 0px))`,
         paddingRight: `max(${safeArea.right}px, env(safe-area-inset-right, 0px))`,
       }}
     >
-      <div className="flex justify-around items-center py-2">
+      <div className="flex justify-around items-center py-3">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.name}
               to={item.href}
-              className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
+              className={`flex flex-col items-center py-2 px-3 rounded-lg transition-all duration-200 min-w-[60px] ${
                 isActive(item.href)
-                  ? "text-orange-500 bg-orange-50"
-                  : "text-gray-600 hover:text-orange-500"
+                  ? "text-orange-500 bg-orange-50 scale-105"
+                  : "text-gray-600 hover:text-orange-500 hover:bg-orange-50/50"
               }`}
             >
               <Icon className="w-5 h-5 mb-1" />

@@ -25,7 +25,7 @@ const Favorites = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24 md:pb-0">
+    <div className="min-h-full bg-slate-50">
       <Navigation />
       
       <div className="pt-20 px-4">
