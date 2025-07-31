@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useFavorites } from "@/hooks/useFavorites";
+import type { Studio } from "@/types/studio";
 
 const STUDIO_TAGS = [
   { value: 'hot-selling', label: 'Hot Selling', color: 'bg-red-100 text-red-800' },
@@ -14,24 +15,7 @@ const STUDIO_TAGS = [
   { value: 'popular', label: 'Popular', color: 'bg-orange-100 text-orange-800' },
 ];
 
-interface Studio {
-  id: string;
-  title: string;
-  location: string;
-  city?: string;
-  state?: string;
-  price_per_hour: number;
-  rating?: number;
-  total_reviews?: number;
-  images?: string[];
-  amenities?: string[];
-  description?: string;
-  tags?: string[];
-  profiles?: {
-    full_name: string;
-    email: string;
-  };
-}
+// Studio interface moved to shared types file
 
 interface StudioCardProps {
   studio: Studio;

@@ -8,21 +8,9 @@ import { useNavigate } from "react-router-dom";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useMobileLocation } from "@/hooks/useMobileLocation";
 import { Share } from '@capacitor/share';
+import type { Studio } from "@/types/studio";
 
-interface Studio {
-  id: string;
-  title: string;
-  location: string;
-  city?: string;
-  state?: string;
-  price_per_hour: number;
-  rating?: number;
-  total_reviews?: number;
-  images?: string[];
-  amenities?: string[];
-  latitude?: number;
-  longitude?: number;
-}
+// Studio interface moved to shared types file
 
 interface MobileStudioCardProps {
   studio: Studio;

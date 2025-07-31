@@ -8,6 +8,7 @@ import MobileStudioCard from '@/components/MobileStudioCard';
 import Navigation from '@/components/Navigation';
 import ImprovedFilterBar from '@/components/ImprovedFilterBar';
 import { Search, MapPin } from 'lucide-react';
+import type { Studio } from "@/types/studio";
 import { Button } from '@/components/ui/button';
 import { useMobileLocation } from '@/hooks/useMobileLocation';
 import OfflineBookingQueue from '@/components/OfflineBookingQueue';
@@ -76,7 +77,8 @@ const Studios = () => {
         return filterOfflineStudios(offlineData.studios);
       }
 
-      let query = supabase
+      // Use type assertion to bypass TypeScript inference issues
+      let query: any = supabase
         .from('studios')
         .select(`
           *,
@@ -85,22 +87,23 @@ const Studios = () => {
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      // Apply search filter
+      // Apply filters
       if (filters.searchTerm) {
         query = query.or(`title.ilike.%${filters.searchTerm}%,location.ilike.%${filters.searchTerm}%,city.ilike.%${filters.searchTerm}%,amenities.cs.{${filters.searchTerm}}`);
       }
-
-      // Apply city filter
+      
       if (filters.selectedCity) {
         query = query.eq('city', filters.selectedCity);
       }
-
-      // Category filter removed - column doesn't exist
-
-      // Apply price range filter
-      query = query.gte('price_per_hour', filters.priceRange[0]).lte('price_per_hour', filters.priceRange[1]);
-
-      // Apply rating filter
+      
+      if (filters.selectedCategory) {
+        query = query.eq('category', filters.selectedCategory);
+      }
+      
+      query = query
+        .gte('price_per_hour', filters.priceRange[0])
+        .lte('price_per_hour', filters.priceRange[1]);
+        
       if (filters.minRating > 0) {
         query = query.gte('rating', filters.minRating);
       }
@@ -113,7 +116,7 @@ const Studios = () => {
       }
 
       // Filter by amenities on the client side since PostgreSQL array filtering is complex
-      let filteredData = data || [];
+      let filteredData = (data || []) as Studio[];
       if (filters.selectedAmenities.length > 0) {
         filteredData = filteredData.filter(studio => {
           if (!studio.amenities) return false;
@@ -153,7 +156,10 @@ const Studios = () => {
       filtered = filtered.filter(studio => studio.city === filters.selectedCity);
     }
 
-    // Category filter removed - column doesn't exist
+    // Apply category filter
+    if (filters.selectedCategory) {
+      filtered = filtered.filter(studio => studio.category === filters.selectedCategory);
+    }
 
     // Apply price range filter
     filtered = filtered.filter(studio => 

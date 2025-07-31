@@ -3,25 +3,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StudioCard from "@/components/StudioCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import type { Studio } from "@/types/studio";
 
-interface Studio {
-  id: string;
-  title: string;
-  location: string;
-  city?: string;
-  state?: string;
-  price_per_hour: number;
-  rating?: number;
-  total_reviews?: number;
-  images?: string[];
-  amenities?: string[];
-  description?: string;
-  tags?: string[];
-  profiles?: {
-    full_name: string;
-    email: string;
-  };
-}
+// Studio interface moved to shared types file
 
 interface HorizontalStudioScrollerProps {
   studios: Studio[];

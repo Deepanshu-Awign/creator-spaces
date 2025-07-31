@@ -55,6 +55,7 @@ const Index = () => {
         location: studio.location,
         city: studio.city,
         state: studio.state,
+        category: (studio as any).category,
         price_per_hour: studio.price_per_hour,
         rating: studio.rating || 0,
         total_reviews: studio.total_reviews || 0,
