@@ -241,31 +241,33 @@ const Studios = () => {
 
         {/* Search and Filters */}
         <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-8">
-          {/* Main Search */}
-          <div className="flex flex-col md:flex-row gap-4 mb-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                type="text"
-                placeholder="Search studios, locations, or amenities..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-12 text-lg"
-              />
+          {/* Main Search with City Integration */}
+          <div className="flex flex-col gap-4 mb-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  type="text"
+                  placeholder="Search studios, locations, or amenities..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 h-12 text-lg"
+                />
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="h-12 gap-2"
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+                {hasActiveFilters && (
+                  <Badge variant="secondary" className="ml-2">
+                    {[searchTerm, priceRange[0] > 0 || priceRange[1] < 10000, selectedAmenities.length > 0, minRating > 0].filter(Boolean).length}
+                  </Badge>
+                )}
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="h-12 gap-2"
-            >
-              <Filter className="w-4 h-4" />
-              Filters
-              {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-2">
-                  {[searchTerm, priceRange[0] > 0 || priceRange[1] < 10000, selectedAmenities.length > 0, minRating > 0].filter(Boolean).length}
-                </Badge>
-              )}
-            </Button>
           </div>
 
           {/* Expanded Filters */}

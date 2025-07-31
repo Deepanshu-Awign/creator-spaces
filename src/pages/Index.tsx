@@ -1,13 +1,12 @@
 
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import Navigation from "@/components/Navigation";
 import StudioCard from "@/components/StudioCard";
 import DatabaseSeeder from "@/components/DatabaseSeeder";
 import LocationSelector from "@/components/LocationSelector";
+import SearchBarWithCity from "@/components/SearchBarWithCity";
 import CategoriesSection from "@/components/sections/CategoriesSection";
 import LocationsSection from "@/components/sections/LocationsSection";
 import TestimonialsSection from "@/components/sections/TestimonialsSection";
@@ -17,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [featuredStudios, setFeaturedStudios] = useState<any[]>([]);
+  const [popularByCity, setPopularByCity] = useState<{[key: string]: any[]}>({});
   const [loading, setLoading] = useState(true);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [showLocationSelector, setShowLocationSelector] = useState(true);
@@ -39,19 +39,13 @@ const Index = () => {
   const fetchFeaturedStudios = async () => {
     try {
       setLoading(true);
-      let query = supabase
+      
+      // Fetch all studios to group by city
+      const { data, error } = await supabase
         .from("studios")
         .select("*")
         .eq("is_active", true)
-        .order("rating", { ascending: false })
-        .limit(6);
-
-      // Filter by city if selected
-      if (selectedCity) {
-        query = query.eq("city", selectedCity);
-      }
-
-      const { data, error } = await query;
+        .order("rating", { ascending: false });
 
       if (error) throw error;
 
@@ -69,10 +63,32 @@ const Index = () => {
         description: studio.description
       })) || [];
 
-      setFeaturedStudios(formattedStudios);
+      // Group studios by city, taking top 6 per city
+      const groupedByCity: {[key: string]: any[]} = {};
+      formattedStudios.forEach(studio => {
+        if (studio.city) {
+          if (!groupedByCity[studio.city]) {
+            groupedByCity[studio.city] = [];
+          }
+          if (groupedByCity[studio.city].length < 6) {
+            groupedByCity[studio.city].push(studio);
+          }
+        }
+      });
+
+      setPopularByCity(groupedByCity);
+      
+      // Set featured studios for selected city or default
+      if (selectedCity && groupedByCity[selectedCity]) {
+        setFeaturedStudios(groupedByCity[selectedCity]);
+      } else {
+        // Show first 6 overall highest rated
+        setFeaturedStudios(formattedStudios.slice(0, 6));
+      }
     } catch (error) {
       console.error("Error fetching studios:", error);
       setFeaturedStudios([]);
+      setPopularByCity({});
     } finally {
       setLoading(false);
     }
@@ -84,6 +100,11 @@ const Index = () => {
     localStorage.setItem('selectedCity', city);
     // Update URL with city
     window.history.pushState({}, '', `/${city.toLowerCase().replace(/\s+/g, '-')}`);
+    
+    // Update featured studios for selected city
+    if (popularByCity[city]) {
+      setFeaturedStudios(popularByCity[city]);
+    }
   };
 
   const handleSearch = () => {
@@ -119,37 +140,24 @@ const Index = () => {
             <DatabaseSeeder />
           )}
 
-          {/* Responsive Search Bar */}
-          <div className="bg-white rounded-2xl shadow-2xl p-3 md:p-4 max-w-4xl mx-auto mb-12 animate-scale-in">
-            <div className="flex flex-col md:flex-row gap-3 md:gap-4">
-              <div className="flex-1 flex items-center px-4 md:px-6 py-3 md:py-4">
-                <Search className="w-5 h-5 text-slate-400 mr-3 flex-shrink-0" />
-                <Input
-                  placeholder="Search for studios, equipment, or services..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="border-0 focus-visible:ring-0 text-base md:text-lg bg-transparent p-0"
-                />
-              </div>
-              <div className="flex justify-center md:justify-end">
-                <Button 
-                  onClick={handleSearch}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl md:rounded-full text-base md:text-lg font-semibold transition-all hover:scale-105 w-full md:w-auto"
-                >
-                  Search Studios
-                </Button>
-              </div>
-            </div>
-          </div>
+          {/* Integrated Search Bar with City Selection */}
+          <SearchBarWithCity
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            selectedCity={selectedCity || ""}
+            onCityChange={handleCitySelect}
+            onSearch={handleSearch}
+          />
         </div>
       </section>
 
-      {/* Featured Studios */}
+      {/* Featured Studios - Popular in Selected City */}
       <section className="py-16 px-4 bg-neutral-50">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-12 gap-4">
-            <h2 className="text-2xl md:text-3xl font-bold text-neutral-900">Popular in {selectedCity}</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-neutral-900">
+              Popular in {selectedCity}
+            </h2>
             <Link to={`/studios?city=${selectedCity}`}>
               <Button variant="outline" className="hover:bg-neutral-100 border-neutral-300 w-full md:w-auto">
                 Show all
@@ -177,6 +185,36 @@ const Index = () => {
           )}
         </div>
       </section>
+
+      {/* Popular in Other Cities */}
+      {Object.keys(popularByCity).filter(city => city !== selectedCity).length > 0 && (
+        <section className="py-16 px-4 bg-white">
+          <div className="max-w-7xl mx-auto">
+            {Object.entries(popularByCity)
+              .filter(([city]) => city !== selectedCity)
+              .slice(0, 3)
+              .map(([city, studios]) => (
+                <div key={city} className="mb-16 last:mb-0">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
+                    <h2 className="text-2xl md:text-3xl font-bold text-neutral-900">
+                      Popular in {city}
+                    </h2>
+                    <Link to={`/studios?city=${city}`}>
+                      <Button variant="outline" className="hover:bg-neutral-100 border-neutral-300 w-full md:w-auto">
+                        Show all in {city}
+                      </Button>
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {studios.slice(0, 3).map((studio) => (
+                      <StudioCard key={studio.id} studio={studio} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+          </div>
+        </section>
+      )}
 
       {/* Categories Section */}
       <CategoriesSection />
