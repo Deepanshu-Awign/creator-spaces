@@ -65,8 +65,8 @@ const ImprovedFilterBar = ({ filters, onFiltersChange }: ImprovedFilterBarProps)
     },
   });
 
-  // Use static categories for now since cs_studios table might not be accessible
-  const categories = ['photography', 'videography', 'recording', 'event', 'conference', 'workshop'];
+  // Database categories from studio_category enum
+  const categories = ['Photography', 'Music Recording', 'Video Production', 'Podcast', 'Coworking', 'Event Spaces'];
 
   const updateFilter = (key: keyof FilterState, value: any) => {
     // Handle special "all" values by converting them to empty strings
