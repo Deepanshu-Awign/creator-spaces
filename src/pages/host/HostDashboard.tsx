@@ -65,7 +65,7 @@ const HostDashboard = () => {
         .from('bookings')
         .select(`
           *,
-          cs_studios(title),
+          studios(title),
           profiles(full_name)
         `)
         .in('studio_id', studioIds)
@@ -105,10 +105,10 @@ const HostDashboard = () => {
 
   const recentBookings = bookings.slice(0, 5).map(booking => ({
     id: booking.id,
-    studioName: booking.cs_studios?.title || 'Unknown Studio',
+    studioName: booking.studios?.title || 'Unknown Studio',
     guestName: booking.profiles?.full_name || 'Anonymous User',
     date: format(new Date(booking.booking_date), 'yyyy-MM-dd'),
-    time: `${booking.start_time} - ${booking.end_time}`,
+    time: `${booking.start_time} (${booking.duration_hours}h)`,
     status: booking.status,
     amount: booking.total_price
   }));

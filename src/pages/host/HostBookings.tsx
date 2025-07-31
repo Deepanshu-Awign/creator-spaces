@@ -38,7 +38,7 @@ const HostBookings = () => {
         .from('bookings')
         .select(`
           *,
-          cs_studios(title, location, price_per_hour),
+          studios(title, location, price_per_hour),
           profiles(full_name, email, phone)
         `)
         .in('studio_id', studioIds)
@@ -174,11 +174,11 @@ const HostBookings = () => {
                         <div className="flex items-start justify-between mb-3">
                           <div>
                             <h3 className="font-semibold text-lg text-foreground">
-                              {booking.cs_studios?.title || 'Unknown Studio'}
+                              {booking.studios?.title || 'Unknown Studio'}
                             </h3>
                             <p className="text-muted-foreground flex items-center gap-1 mt-1">
                               <MapPin className="w-4 h-4" />
-                              {booking.cs_studios?.location || 'Location not specified'}
+                              {booking.studios?.location || 'Location not specified'}
                             </p>
                           </div>
                           <Badge className={getStatusColor(booking.status)}>
@@ -198,7 +198,7 @@ const HostBookings = () => {
                             </div>
                             <div className="flex items-center gap-2">
                               <Clock className="w-4 h-4 text-muted-foreground" />
-                              <span>{booking.start_time} - {booking.end_time}</span>
+                              <span>{booking.start_time} ({booking.duration_hours}h)</span>
                             </div>
                           </div>
                           

@@ -27,10 +27,10 @@ const HostStudios = () => {
       if (!user?.id) return [];
       
       const { data, error } = await supabase
-        .from('cs_studios')
+        .from('studios')
         .select(`
           *,
-          cs_reviews (
+          reviews (
             rating,
             comment
           )
@@ -48,7 +48,7 @@ const HostStudios = () => {
   const deleteStudioMutation = useMutation({
     mutationFn: async (studioId: string) => {
       const { error } = await supabase
-        .from('cs_studios')
+        .from('studios')
         .delete()
         .eq('id', studioId);
       
