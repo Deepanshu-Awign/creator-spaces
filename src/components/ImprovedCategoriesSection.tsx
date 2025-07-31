@@ -45,15 +45,58 @@ const ImprovedCategoriesSection = ({ selectedCity }: ImprovedCategoriesSectionPr
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ['studio-categories', selectedCity],
     queryFn: async () => {
-      // Since category column doesn't exist, return static categories for now
-      const staticCategories = [
-        { category: 'photography', count: 25 },
-        { category: 'videography', count: 18 },
-        { category: 'recording', count: 12 },
-        { category: 'event', count: 8 },
-      ];
-      
-      return staticCategories;
+      try {
+        let query = supabase
+          .from('studios')
+          .select('title, amenities')
+          .eq('is_active', true);
+        
+        if (selectedCity) {
+          query = query.eq('city', selectedCity);
+        }
+        
+        const { data, error } = await query;
+        if (error) throw error;
+        
+        // Categorize studios based on title and amenities
+        const categoryCount: { [key: string]: number } = {};
+        
+        data?.forEach(studio => {
+          const title = studio.title?.toLowerCase() || '';
+          const amenities = studio.amenities?.join(' ').toLowerCase() || '';
+          const combined = `${title} ${amenities}`;
+          
+          // Photography
+          if (combined.includes('photo') || combined.includes('portrait') || combined.includes('studio light')) {
+            categoryCount['photography'] = (categoryCount['photography'] || 0) + 1;
+          }
+          // Video/Videography  
+          else if (combined.includes('video') || combined.includes('film') || combined.includes('cinema')) {
+            categoryCount['videography'] = (categoryCount['videography'] || 0) + 1;
+          }
+          // Music/Recording
+          else if (combined.includes('music') || combined.includes('record') || combined.includes('audio') || combined.includes('sound')) {
+            categoryCount['music'] = (categoryCount['music'] || 0) + 1;
+          }
+          // Event
+          else if (combined.includes('event') || combined.includes('party') || combined.includes('meeting')) {
+            categoryCount['event'] = (categoryCount['event'] || 0) + 1;
+          }
+          // General/Other
+          else {
+            categoryCount['general'] = (categoryCount['general'] || 0) + 1;
+          }
+        });
+        
+        // Convert to array format and filter out categories with 0 studios
+        return Object.entries(categoryCount)
+          .map(([category, count]) => ({ category, count }))
+          .filter(item => item.count > 0)
+          .sort((a, b) => b.count - a.count);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        return [];
+      }
     },
   });
 
@@ -62,7 +105,15 @@ const ImprovedCategoriesSection = ({ selectedCity }: ImprovedCategoriesSectionPr
     if (selectedCity) {
       params.set('city', selectedCity);
     }
-    params.set('category', category);
+    // Use search instead of category since category column doesn't exist
+    const searchTerms: { [key: string]: string } = {
+      'photography': 'photo',
+      'videography': 'video', 
+      'music': 'music',
+      'event': 'event',
+      'general': 'studio',
+    };
+    params.set('search', searchTerms[category.toLowerCase()] || category);
     navigate(`/studios?${params.toString()}`);
   };
 

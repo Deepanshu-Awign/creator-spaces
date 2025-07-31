@@ -1,60 +1,135 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
-import { Mic, Camera, Video, Music, Headphones, Monitor } from 'lucide-react';
+import { Mic, Camera, Video, Music, Headphones, Monitor, Palette, Users, Building, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
-const categories = [
-  {
-    icon: <Mic className="w-8 h-8" />,
-    title: 'Podcast Studios',
-    description: 'Professional audio recording spaces',
-    count: '120+ Studios',
-    color: 'from-blue-500 to-blue-600',
-    link: '/studios?category=podcast'
-  },
-  {
-    icon: <Camera className="w-8 h-8" />,
-    title: 'Photography',
-    description: 'Perfect lighting and backdrops',
-    count: '85+ Studios',
-    color: 'from-purple-500 to-purple-600',
-    link: '/studios?category=photography'
-  },
-  {
-    icon: <Video className="w-8 h-8" />,
-    title: 'Video Production',
-    description: 'Cinema-quality video studios',
-    count: '95+ Studios',
-    color: 'from-red-500 to-red-600',
-    link: '/studios?category=video'
-  },
-  {
-    icon: <Music className="w-8 h-8" />,
-    title: 'Music Recording',
-    description: 'Acoustic-perfect music studios',
-    count: '70+ Studios',
-    color: 'from-green-500 to-green-600',
-    link: '/studios?category=music'
-  },
-  {
-    icon: <Headphones className="w-8 h-8" />,
-    title: 'Voice Over',
-    description: 'Soundproof voice recording',
-    count: '60+ Studios',
-    color: 'from-yellow-500 to-yellow-600',
-    link: '/studios?category=voiceover'
-  },
-  {
-    icon: <Monitor className="w-8 h-8" />,
-    title: 'Live Streaming',
-    description: 'Professional streaming setups',
-    count: '45+ Studios',
-    color: 'from-indigo-500 to-indigo-600',
-    link: '/studios?category=streaming'
-  }
-];
+const categoryIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
+  'podcast': Mic,
+  'photography': Camera,
+  'video': Video,
+  'videography': Video,
+  'music': Music,
+  'recording': Music,
+  'voiceover': Headphones,
+  'streaming': Monitor,
+  'live streaming': Monitor,
+  'art': Palette,
+  'event': Users,
+  'general': Settings,
+  'other': Building,
+};
+
+const categoryColors: { [key: string]: string } = {
+  'podcast': 'from-blue-500 to-blue-600',
+  'photography': 'from-purple-500 to-purple-600',
+  'video': 'from-red-500 to-red-600',
+  'videography': 'from-red-500 to-red-600',
+  'music': 'from-green-500 to-green-600',
+  'recording': 'from-green-500 to-green-600',
+  'voiceover': 'from-yellow-500 to-yellow-600',
+  'streaming': 'from-indigo-500 to-indigo-600',
+  'live streaming': 'from-indigo-500 to-indigo-600',
+  'art': 'from-orange-500 to-orange-600',
+  'event': 'from-pink-500 to-pink-600',
+  'general': 'from-gray-500 to-gray-600',
+  'other': 'from-gray-500 to-gray-600',
+};
 
 const CategoriesSection = () => {
+  const { data: categories = [], isLoading } = useQuery({
+    queryKey: ['studio-categories'],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('studios')
+          .select('title, amenities')
+          .eq('is_active', true);
+        
+        if (error) throw error;
+        
+        // Categorize studios based on title and amenities
+        const categoryCount: { [key: string]: number } = {};
+        
+        data?.forEach(studio => {
+          const title = studio.title?.toLowerCase() || '';
+          const amenities = studio.amenities?.join(' ').toLowerCase() || '';
+          const combined = `${title} ${amenities}`;
+          
+          // Photography
+          if (combined.includes('photo') || combined.includes('portrait') || combined.includes('studio light')) {
+            categoryCount['photography'] = (categoryCount['photography'] || 0) + 1;
+          }
+          // Video/Videography  
+          else if (combined.includes('video') || combined.includes('film') || combined.includes('cinema')) {
+            categoryCount['videography'] = (categoryCount['videography'] || 0) + 1;
+          }
+          // Music/Recording
+          else if (combined.includes('music') || combined.includes('record') || combined.includes('audio') || combined.includes('sound')) {
+            categoryCount['music'] = (categoryCount['music'] || 0) + 1;
+          }
+          // Podcast
+          else if (combined.includes('podcast') || combined.includes('voice') || combined.includes('interview')) {
+            categoryCount['podcast'] = (categoryCount['podcast'] || 0) + 1;
+          }
+          // Event
+          else if (combined.includes('event') || combined.includes('party') || combined.includes('meeting')) {
+            categoryCount['event'] = (categoryCount['event'] || 0) + 1;
+          }
+          // General/Other
+          else {
+            categoryCount['general'] = (categoryCount['general'] || 0) + 1;
+          }
+        });
+        
+        // Convert to array format and filter out categories with 0 studios
+        return Object.entries(categoryCount)
+          .map(([category, count]) => ({ 
+            category, 
+            count,
+            icon: categoryIcons[category.toLowerCase()] || Building,
+            color: categoryColors[category.toLowerCase()] || categoryColors.other,
+            title: category.charAt(0).toUpperCase() + category.slice(1).replace(/([A-Z])/g, ' $1'),
+            description: getDescription(category),
+            link: `/studios?search=${encodeURIComponent(getCategorySearchTerm(category))}`
+          }))
+          .filter(item => item.count > 0)
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 6); // Show top 6 categories
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        return [];
+      }
+    },
+  });
+
+  const getCategorySearchTerm = (category: string): string => {
+    const searchTerms: { [key: string]: string } = {
+      'photography': 'photo',
+      'videography': 'video',
+      'music': 'music',
+      'podcast': 'podcast',
+      'event': 'event',
+      'general': 'studio',
+    };
+    return searchTerms[category.toLowerCase()] || 'studio';
+  };
+
+  const getDescription = (category: string): string => {
+    const descriptions: { [key: string]: string } = {
+      'podcast': 'Professional audio recording spaces',
+      'photography': 'Perfect lighting and backdrops', 
+      'videography': 'Cinema-quality video studios',
+      'music': 'Acoustic-perfect music studios',
+      'event': 'Versatile event hosting spaces',
+      'general': 'Multi-purpose creative spaces',
+    };
+    return descriptions[category.toLowerCase()] || 'Professional creative spaces';
+  };
+
+  if (isLoading || categories.length === 0) return null;
+
   return (
     <section className="py-16 px-4 bg-gradient-subtle">
       <div className="max-w-7xl mx-auto">
@@ -68,31 +143,34 @@ const CategoriesSection = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.map((category, index) => (
-            <Link key={index} to={category.link} className="group">
-              <Card className="h-full hover:shadow-xl transition-all duration-300 hover:scale-105 overflow-hidden border-0 shadow-elegant">
-                <CardContent className="p-0">
-                  <div className={`bg-gradient-to-br ${category.color} p-6 text-white`}>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-                        {category.icon}
+          {categories.map((category, index) => {
+            const IconComponent = category.icon;
+            return (
+              <Link key={index} to={category.link} className="group">
+                <Card className="h-full hover:shadow-xl transition-all duration-300 hover:scale-105 overflow-hidden border-0 shadow-elegant">
+                  <CardContent className="p-0">
+                    <div className={`bg-gradient-to-br ${category.color} p-6 text-white`}>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                          <IconComponent className="w-8 h-8" />
+                        </div>
+                        <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
+                          {category.count} studio{category.count !== 1 ? 's' : ''}
+                        </span>
                       </div>
-                      <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
-                        {category.count}
+                      <h3 className="text-xl font-bold mb-2">{category.title}</h3>
+                      <p className="text-white/90 text-sm">{category.description}</p>
+                    </div>
+                    <div className="p-4">
+                      <span className="text-sm text-primary font-medium group-hover:text-primary-hover transition-colors">
+                        Explore Studios →
                       </span>
                     </div>
-                    <h3 className="text-xl font-bold mb-2">{category.title}</h3>
-                    <p className="text-white/90 text-sm">{category.description}</p>
-                  </div>
-                  <div className="p-4">
-                    <span className="text-sm text-primary font-medium group-hover:text-primary-hover transition-colors">
-                      Explore Studios →
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>
