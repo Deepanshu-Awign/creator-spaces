@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, User, LogOut, Shield, MapPin, ChevronDown, Heart, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useIsAdmin } from "@/hooks/useUserRole";
+import { useIsAdmin, useIsManager } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import creatorSpacesLogo from "@/assets/creator-spaces-logo-colorful.png";
@@ -36,6 +36,7 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const isAdmin = useIsAdmin();
+  const isManagerOrAdmin = useIsManager();
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -166,12 +167,12 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
                     <Heart className="w-4 h-4 mr-2" />
                     Favorites
                   </DropdownMenuItem>
-                  {isAdmin && (
+                  {isManagerOrAdmin && (
                     <>
                       <DropdownMenuSeparator className="bg-neutral-200" />
-                      <DropdownMenuItem onClick={() => navigate("/admin")} className="hover:bg-neutral-50">
+                      <DropdownMenuItem onClick={() => navigate(isAdmin ? "/admin" : "/host/dashboard")} className="hover:bg-neutral-50">
                         <Shield className="w-4 h-4 mr-2" />
-                        Admin Panel
+                        {isAdmin ? "Admin Panel" : "Host Dashboard"}
                       </DropdownMenuItem>
                     </>
                   )}
@@ -258,17 +259,17 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
                     <Heart className="w-4 h-4 mr-2" />
                     Favorites
                   </Button>
-                  {isAdmin && (
+                  {isManagerOrAdmin && (
                     <Button 
                       variant="ghost"
                       className="w-full justify-start mx-2 hover:bg-neutral-50 text-neutral-600 hover:text-neutral-900"
                       onClick={() => {
-                        navigate("/admin");
+                        navigate(isAdmin ? "/admin" : "/host/dashboard");
                         setIsMenuOpen(false);
                       }}
                     >
                       <Shield className="w-4 h-4 mr-2" />
-                      Admin Panel
+                      {isAdmin ? "Admin Panel" : "Host Dashboard"}
                     </Button>
                   )}
                   <Button 

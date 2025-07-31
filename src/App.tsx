@@ -28,6 +28,8 @@ const BookingDetails = lazy(() => import("./pages/BookingDetails"));
 // Lazy load host pages
 const HostDashboard = lazy(() => import("./pages/host/HostDashboard"));
 const HostSignup = lazy(() => import("./pages/host/HostSignup"));
+const HostStudios = lazy(() => import("./pages/host/HostStudios"));
+const HostBookings = lazy(() => import("./pages/host/HostBookings"));
 
 // Lazy load admin components
 const AdminRoute = lazy(() => import("./components/AdminRoute"));
@@ -84,6 +86,8 @@ const AppContent = () => {
           {/* Host Routes */}
           <Route path="/host/dashboard" element={<LazyWrapper><HostDashboard /></LazyWrapper>} />
           <Route path="/host/signup" element={<LazyWrapper><HostSignup /></LazyWrapper>} />
+          <Route path="/host/studios" element={<LazyWrapper><HostStudios /></LazyWrapper>} />
+          <Route path="/host/bookings" element={<LazyWrapper><HostBookings /></LazyWrapper>} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={

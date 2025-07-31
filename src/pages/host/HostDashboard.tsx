@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,82 +18,115 @@ import {
   Users
 } from 'lucide-react';
 import Navigation from '@/components/Navigation';
+import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 
 const HostDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [selectedPeriod, setSelectedPeriod] = useState('week');
 
-  // Mock data - in real app, this would come from API
+  // Fetch host's studios
+  const { data: studios = [] } = useQuery({
+    queryKey: ['hostStudios', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('studios')
+        .select('*')
+        .eq('host_id', user.id);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch host's bookings
+  const { data: bookings = [] } = useQuery({
+    queryKey: ['hostBookings', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      // First get the host's studios
+      const { data: studios, error: studiosError } = await supabase
+        .from('studios')
+        .select('id')
+        .eq('host_id', user.id);
+
+      if (studiosError) throw studiosError;
+      if (!studios || studios.length === 0) return [];
+
+      const studioIds = studios.map(s => s.id);
+
+      // Then get bookings for those studios
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          cs_studios(title),
+          profiles(full_name)
+        `)
+        .in('studio_id', studioIds)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Calculate real stats
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  
+  const thisMonthBookings = bookings.filter(booking => {
+    const bookingDate = new Date(booking.booking_date);
+    return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
+  });
+
+  const totalRevenue = thisMonthBookings.reduce((sum, booking) => sum + (booking.total_price || 0), 0);
+  const pendingBookings = bookings.filter(booking => booking.status === 'pending').length;
+  const averageRating = studios.length > 0 
+    ? studios.reduce((sum, studio) => sum + (studio.rating || 0), 0) / studios.length 
+    : 0;
+
   const stats = {
-    totalStudios: 3,
-    totalBookings: 28,
-    totalRevenue: 45600,
-    averageRating: 4.8,
-    pendingBookings: 5,
-    thisMonthBookings: 12,
-    viewsThisMonth: 324,
-    occupancyRate: 75
+    totalStudios: studios.length,
+    totalBookings: bookings.length,
+    totalRevenue,
+    averageRating: Number(averageRating.toFixed(1)),
+    pendingBookings,
+    thisMonthBookings: thisMonthBookings.length,
+    viewsThisMonth: 324, // This would need to be tracked separately
+    occupancyRate: 75 // This would need to be calculated based on availability
   };
 
-  const recentBookings = [
-    {
-      id: 1,
-      studioName: 'Professional Podcast Studio',
-      guestName: 'Rahul Sharma',
-      date: '2024-01-15',
-      time: '14:00 - 17:00',
-      status: 'confirmed',
-      amount: 2400
-    },
-    {
-      id: 2,
-      studioName: 'Photography Studio Pro',
-      guestName: 'Priya Patel',
-      date: '2024-01-16',
-      time: '10:00 - 14:00',
-      status: 'pending',
-      amount: 3200
-    },
-    {
-      id: 3,
-      studioName: 'Video Production Suite',
-      guestName: 'Vikram Singh',
-      date: '2024-01-18',
-      time: '09:00 - 18:00',
-      status: 'confirmed',
-      amount: 7200
-    }
-  ];
+  const recentBookings = bookings.slice(0, 5).map(booking => ({
+    id: booking.id,
+    studioName: booking.cs_studios?.title || 'Unknown Studio',
+    guestName: booking.profiles?.full_name || 'Anonymous User',
+    date: format(new Date(booking.booking_date), 'yyyy-MM-dd'),
+    time: `${booking.start_time} - ${booking.end_time}`,
+    status: booking.status,
+    amount: booking.total_price
+  }));
 
-  const studios = [
-    {
-      id: 1,
-      name: 'Professional Podcast Studio',
-      status: 'active',
-      bookings: 12,
-      rating: 4.9,
-      revenue: 18600,
-      image: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=300&h=200'
-    },
-    {
-      id: 2,
-      name: 'Photography Studio Pro',
-      status: 'active',
-      bookings: 9,
-      rating: 4.7,
-      revenue: 15200,
-      image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=300&h=200'
-    },
-    {
-      id: 3,
-      name: 'Video Production Suite',
-      status: 'active',
-      bookings: 7,
-      rating: 4.8,
-      revenue: 11800,
-      image: 'https://images.unsplash.com/photo-1579952363873-27d3bfad9c0d?auto=format&fit=crop&w=300&h=200'
-    }
-  ];
+  const studioStats = studios.map(studio => {
+    const studioBookings = bookings.filter(booking => booking.studio_id === studio.id);
+    const studioRevenue = studioBookings.reduce((sum, booking) => sum + (booking.total_price || 0), 0);
+    
+    return {
+      id: studio.id,
+      name: studio.title,
+      status: studio.approval_status,
+      bookings: studioBookings.length,
+      rating: studio.rating || 0,
+      revenue: studioRevenue,
+      image: studio.images && studio.images.length > 0 ? studio.images[0] : null
+    };
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -122,9 +157,12 @@ const HostDashboard = () => {
                 Manage your studios and track your performance
               </p>
             </div>
-            <Button className="mt-4 md:mt-0">
+            <Button 
+              className="mt-4 md:mt-0"
+              onClick={() => navigate('/host/studios')}
+            >
               <Plus className="w-4 h-4 mr-2" />
-              Add New Studio
+              Manage Studios
             </Button>
           </div>
 
@@ -218,7 +256,11 @@ const HostDashboard = () => {
                         </div>
                       ))}
                     </div>
-                    <Button variant="outline" className="w-full mt-4">
+                    <Button 
+                      variant="outline" 
+                      className="w-full mt-4"
+                      onClick={() => navigate('/host/bookings')}
+                    >
                       View All Bookings
                     </Button>
                   </CardContent>
@@ -290,46 +332,85 @@ const HostDashboard = () => {
             </TabsContent>
 
             <TabsContent value="studios" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {studios.map((studio) => (
-                  <Card key={studio.id}>
-                    <CardContent className="p-0">
-                      <img
-                        src={studio.image}
-                        alt={studio.name}
-                        className="w-full h-48 object-cover rounded-t-lg"
-                      />
-                      <div className="p-4">
-                        <h3 className="font-medium mb-2">{studio.name}</h3>
-                        <div className="space-y-2 text-sm text-muted-foreground">
-                          <div className="flex justify-between">
-                            <span>Bookings this month:</span>
-                            <span className="font-medium">{studio.bookings}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Rating:</span>
-                            <span className="font-medium flex items-center gap-1">
-                              <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                              {studio.rating}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Revenue:</span>
-                            <span className="font-medium text-green-600">₹{studio.revenue.toLocaleString()}</span>
-                          </div>
-                        </div>
-                        <div className="flex gap-2 mt-4">
-                          <Button size="sm" variant="outline" className="flex-1">
-                            <Eye className="w-3 h-3 mr-1" />
-                            View
-                          </Button>
-                          <Button size="sm" className="flex-1">Edit</Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold">Your Studios</h2>
+                <Button onClick={() => navigate('/host/studios')}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Manage Studios
+                </Button>
               </div>
+              
+              {studioStats.length === 0 ? (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <Building2 className="w-12 h-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No Studios Listed</h3>
+                    <p className="text-muted-foreground mb-4">Start earning by listing your first studio</p>
+                    <Button onClick={() => navigate('/host/studios')}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Your First Studio
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {studioStats.slice(0, 6).map((studio) => (
+                    <Card key={studio.id}>
+                      <CardContent className="p-0">
+                        {studio.image ? (
+                          <img
+                            src={studio.image}
+                            alt={studio.name}
+                            className="w-full h-48 object-cover rounded-t-lg"
+                          />
+                        ) : (
+                          <div className="w-full h-48 bg-gray-200 rounded-t-lg flex items-center justify-center">
+                            <Building2 className="w-12 h-12 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="p-4">
+                          <h3 className="font-medium mb-2">{studio.name}</h3>
+                          <div className="space-y-2 text-sm text-muted-foreground">
+                            <div className="flex justify-between">
+                              <span>Bookings:</span>
+                              <span className="font-medium">{studio.bookings}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Rating:</span>
+                              <span className="font-medium flex items-center gap-1">
+                                <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                                {studio.rating.toFixed(1)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Revenue:</span>
+                              <span className="font-medium text-green-600">₹{studio.revenue.toLocaleString()}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-4">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="flex-1"
+                              onClick={() => window.open(`/studios/${studio.id}`, '_blank')}
+                            >
+                              <Eye className="w-3 h-3 mr-1" />
+                              View
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              className="flex-1"
+                              onClick={() => navigate('/host/studios')}
+                            >
+                              Edit
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6">
