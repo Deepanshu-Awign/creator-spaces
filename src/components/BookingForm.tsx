@@ -146,8 +146,17 @@ const BookingForm = ({ studio }: BookingFormProps) => {
           disabled={!selectedDate || !startTime || isBooking}
           onClick={handleBookNow}
         >
-          <CreditCard className="w-5 h-5 mr-2" />
-          {isBooking ? 'Processing...' : user ? 'Pay Now' : 'Login to Book'}
+          {isBooking ? (
+            <div className="flex items-center">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+              Processing...
+            </div>
+          ) : (
+            <>
+              <CreditCard className="w-5 h-5 mr-2" />
+              {user ? 'Pay Now' : 'Login to Book'}
+            </>
+          )}
         </Button>
         {error && <div className="text-red-500 text-center text-sm mt-2">{error}</div>}
         <p className="text-sm text-slate-500 text-center">

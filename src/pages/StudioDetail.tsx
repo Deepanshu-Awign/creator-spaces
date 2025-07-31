@@ -105,6 +105,7 @@ const StudioDetail = () => {
           image: (data.images && data.images[0]) || "/placeholder.svg",
           amenities: data.amenities || [],
           tags: data.tags || [],
+          category: (data as any).category || null,
           features: [],
           host: {
             full_name: data.profiles?.full_name || "Host",
@@ -331,7 +332,16 @@ const StudioDetail = () => {
                       <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500" : ""}`} />
                     </Button>
                   </div>
-                </div>
+                 </div>
+                
+                {/* Category */}
+                {studio.category && (
+                  <div className="mb-4">
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      {studio.category}
+                    </Badge>
+                  </div>
+                )}
                 
                 {/* Tags */}
                 {studio.tags && studio.tags.length > 0 && (
@@ -368,17 +378,32 @@ const StudioDetail = () => {
               
               {/* Amenities */}
               <div>
-                <h2 className="text-xl font-semibold mb-4">Amenities</h2>
-                <div className="grid grid-cols-2 gap-4">
+                <h2 className="text-xl font-semibold mb-4">What this place offers</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {(studio.amenities || []).map((amenity: string, index: number) => (
-                    <div key={index} className="flex items-center">
-                      <span className="text-slate-700">{amenity}</span>
+                    <div key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="w-6 h-6 text-gray-600">
+                        {/* You can add specific icons based on amenity type later */}
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <span className="text-slate-700 font-medium">{amenity}</span>
                     </div>
                   ))}
                   {(!studio.amenities || studio.amenities.length === 0) && (
-                    <div className="text-slate-500">No amenities listed</div>
+                    <div className="text-slate-500 col-span-2 text-center py-8">
+                      No amenities listed for this studio
+                    </div>
                   )}
                 </div>
+                {studio.amenities && studio.amenities.length > 6 && (
+                  <div className="mt-4">
+                    <Button variant="outline" className="w-full md:w-auto">
+                      Show all {studio.amenities.length} amenities
+                    </Button>
+                  </div>
+                )}
               </div>
               
               {/* Host */}
@@ -466,8 +491,15 @@ const StudioDetail = () => {
                       onChange={e => setReviewText(e.target.value)}
                       required
                     />
-                    <Button type="submit" disabled={submittingReview} className="bg-orange-500 hover:bg-orange-600 text-white">
-                      {submittingReview ? "Submitting..." : "Submit Review"}
+                    <Button type="submit" disabled={submittingReview} className="bg-orange-500 hover:bg-orange-600 text-white min-w-32">
+                      {submittingReview ? (
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Submitting...
+                        </div>
+                      ) : (
+                        "Submit Review"
+                      )}
                     </Button>
                     {reviewError && <div className="text-red-500 text-sm mt-2">{reviewError}</div>}
                   </form>

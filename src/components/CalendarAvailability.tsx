@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useBookingSlots } from '@/hooks/useBookingSlots';
-import { format, isSameDay } from 'date-fns';
+import { format, isSameDay, addMonths, subMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface CalendarAvailabilityProps {
   studioId: string;
@@ -14,6 +16,7 @@ interface CalendarAvailabilityProps {
 
 const CalendarAvailability = ({ studioId, onDateSelect, selectedDate }: CalendarAvailabilityProps) => {
   const [currentDate, setCurrentDate] = useState<Date>(selectedDate || new Date());
+  const [calendarMonth, setCalendarMonth] = useState<Date>(selectedDate || new Date());
   const { bookedSlots, loading } = useBookingSlots(studioId, format(currentDate, 'yyyy-MM-dd'));
 
   const handleDateChange = (date: Date | undefined) => {
@@ -53,7 +56,25 @@ const CalendarAvailability = ({ studioId, onDateSelect, selectedDate }: Calendar
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">Availability Calendar</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-semibold">Availability Calendar</CardTitle>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
         <div className="flex gap-4 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -74,6 +95,8 @@ const CalendarAvailability = ({ studioId, onDateSelect, selectedDate }: Calendar
           mode="single"
           selected={currentDate}
           onSelect={handleDateChange}
+          month={calendarMonth}
+          onMonthChange={setCalendarMonth}
           disabled={(date) => date < new Date()}
           className="rounded-md border pointer-events-auto"
         />

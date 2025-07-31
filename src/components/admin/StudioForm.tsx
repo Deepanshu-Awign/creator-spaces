@@ -354,8 +354,15 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
       </div>
 
       <div className="flex justify-end space-x-4">
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : (studioData?.id ? "Update Studio" : "Create Studio")}
+        <Button type="submit" disabled={isSubmitting} className="min-w-32">
+          {isSubmitting ? (
+            <div className="flex items-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Saving...
+            </div>
+          ) : (
+            studioData?.id ? "Update Studio" : "Create Studio"
+          )}
         </Button>
       </div>
     </form>
