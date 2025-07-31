@@ -44,42 +44,16 @@ const CategoriesSection = () => {
       try {
         const { data, error } = await supabase
           .from('studios')
-          .select('title, amenities')
+          .select('category')
           .eq('is_active', true);
         
         if (error) throw error;
         
-        // Categorize studios based on title and amenities
+        // Count studios by category
         const categoryCount: { [key: string]: number } = {};
-        
         data?.forEach(studio => {
-          const title = studio.title?.toLowerCase() || '';
-          const amenities = studio.amenities?.join(' ').toLowerCase() || '';
-          const combined = `${title} ${amenities}`;
-          
-          // Photography
-          if (combined.includes('photo') || combined.includes('portrait') || combined.includes('studio light')) {
-            categoryCount['photography'] = (categoryCount['photography'] || 0) + 1;
-          }
-          // Video/Videography  
-          else if (combined.includes('video') || combined.includes('film') || combined.includes('cinema')) {
-            categoryCount['videography'] = (categoryCount['videography'] || 0) + 1;
-          }
-          // Music/Recording
-          else if (combined.includes('music') || combined.includes('record') || combined.includes('audio') || combined.includes('sound')) {
-            categoryCount['music'] = (categoryCount['music'] || 0) + 1;
-          }
-          // Podcast
-          else if (combined.includes('podcast') || combined.includes('voice') || combined.includes('interview')) {
-            categoryCount['podcast'] = (categoryCount['podcast'] || 0) + 1;
-          }
-          // Event
-          else if (combined.includes('event') || combined.includes('party') || combined.includes('meeting')) {
-            categoryCount['event'] = (categoryCount['event'] || 0) + 1;
-          }
-          // General/Other
-          else {
-            categoryCount['general'] = (categoryCount['general'] || 0) + 1;
+          if (studio.category) {
+            categoryCount[studio.category] = (categoryCount[studio.category] || 0) + 1;
           }
         });
         
@@ -92,7 +66,7 @@ const CategoriesSection = () => {
             color: categoryColors[category.toLowerCase()] || categoryColors.other,
             title: category.charAt(0).toUpperCase() + category.slice(1).replace(/([A-Z])/g, ' $1'),
             description: getDescription(category),
-            link: `/studios?search=${encodeURIComponent(getCategorySearchTerm(category))}`
+            link: `/studios?category=${encodeURIComponent(category)}`
           }))
           .filter(item => item.count > 0)
           .sort((a, b) => b.count - a.count)
@@ -104,26 +78,21 @@ const CategoriesSection = () => {
     },
   });
 
-  const getCategorySearchTerm = (category: string): string => {
-    const searchTerms: { [key: string]: string } = {
-      'photography': 'photo',
-      'videography': 'video',
-      'music': 'music',
-      'podcast': 'podcast',
-      'event': 'event',
-      'general': 'studio',
-    };
-    return searchTerms[category.toLowerCase()] || 'studio';
-  };
-
   const getDescription = (category: string): string => {
     const descriptions: { [key: string]: string } = {
       'podcast': 'Professional audio recording spaces',
       'photography': 'Perfect lighting and backdrops', 
       'videography': 'Cinema-quality video studios',
+      'video': 'Cinema-quality video studios',
       'music': 'Acoustic-perfect music studios',
+      'recording': 'Professional recording studios',
+      'voiceover': 'Soundproof voice recording',
+      'streaming': 'Professional streaming setups',
+      'live_streaming': 'Professional streaming setups',
+      'art': 'Creative art and design spaces',
       'event': 'Versatile event hosting spaces',
       'general': 'Multi-purpose creative spaces',
+      'other': 'Unique creative spaces',
     };
     return descriptions[category.toLowerCase()] || 'Professional creative spaces';
   };
