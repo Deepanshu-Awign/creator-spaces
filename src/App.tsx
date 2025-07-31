@@ -58,13 +58,13 @@ const AppContent = () => {
   const { isOnline } = useOfflineStorage();
   
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="h-screen bg-neutral-50 flex flex-col">
       {/* Network Status Bar */}
       <NetworkStatusBar />
       
-      {/* Main content area with proper spacing for fixed header */}
+      {/* Main content area with proper spacing for fixed header and bottom nav */}
       <div 
-        className="pb-16 md:pb-0" 
+        className="flex-1 overflow-y-auto pb-20 md:pb-0" 
         style={{ 
           paddingLeft: `max(${safeArea.left}px, 0px)`,
           paddingRight: `max(${safeArea.right}px, 0px)`,
