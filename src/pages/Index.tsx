@@ -7,7 +7,7 @@ import StudioCard from "@/components/StudioCard";
 import DatabaseSeeder from "@/components/DatabaseSeeder";
 import LocationSelector from "@/components/LocationSelector";
 import SearchBarWithCity from "@/components/SearchBarWithCity";
-import CategoriesSection from "@/components/sections/CategoriesSection";
+import ImprovedCategoriesSection from "@/components/ImprovedCategoriesSection";
 import LocationsSection from "@/components/sections/LocationsSection";
 import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import HowItWorksSection from "@/components/sections/HowItWorksSection";
@@ -217,7 +217,7 @@ const Index = () => {
       )}
 
       {/* Categories Section */}
-      <CategoriesSection />
+      <ImprovedCategoriesSection selectedCity={selectedCity} />
 
       {/* Locations Section */}
       <LocationsSection />
