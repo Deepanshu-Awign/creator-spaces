@@ -148,10 +148,10 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               >
                 <Menu className="w-5 h-5" />
               </Button>
-              <nav className="hidden lg:flex space-x-2 text-sm text-gray-500">
-                <Link to="/" className="hover:text-gray-700">BookMyStudio</Link>
+              <nav className="hidden lg:flex space-x-2 text-sm text-neutral-500">
+                <Link to="/" className="hover:text-neutral-700">Creator Spaces</Link>
                 <span>/</span>
-                <span className="text-gray-900">Admin</span>
+                <span className="text-neutral-900">Admin</span>
               </nav>
             </div>
 

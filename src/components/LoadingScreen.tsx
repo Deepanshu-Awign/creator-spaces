@@ -21,14 +21,14 @@ const LoadingScreen = () => {
   return (
     <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
+        <div className="w-16 h-16 mx-auto mb-4 bg-brand/10 rounded-full flex items-center justify-center">
           <img 
-            src="/lovable-uploads/63c25b0c-9e71-4bbb-b0e3-4529c6c44ecf.png" 
-            alt="BookMyStudio" 
-            className="w-10 h-10"
+            src="/src/assets/creator-spaces-logo-colorful.png" 
+            alt="Creator Spaces" 
+            className="w-12 h-4"
           />
         </div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">BookMyStudio</h1>
+        <h1 className="text-2xl font-bold text-neutral-800 mb-2">Creator Spaces</h1>
         <p className="text-gray-600">Loading your creative space...</p>
       </div>
       

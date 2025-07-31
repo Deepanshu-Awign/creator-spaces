@@ -67,26 +67,26 @@ const StudioCard = ({ studio }: StudioCardProps) => {
     : studio.location;
 
   return (
-    <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group cursor-pointer">
+    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group cursor-pointer border-0 shadow-sm bg-white rounded-xl">
       <div className="relative" onClick={handleCardClick}>
         <img
           src={displayImage}
           alt={studio.title}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-64 object-cover group-hover:scale-[1.02] transition-transform duration-500"
         />
         <Button
           variant="ghost"
           size="sm"
-          className="absolute top-3 right-3 bg-white/80 hover:bg-white hover:text-red-500 transition-colors"
+          className="absolute top-3 right-3 bg-white/90 hover:bg-white hover:scale-110 transition-all duration-200 rounded-full w-8 h-8 p-0 shadow-sm"
           onClick={handleFavoriteClick}
         >
-          <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
+          <Heart className={`w-4 h-4 ${isFavorite ? "fill-brand text-brand" : "text-neutral-600"}`} />
         </Button>
         <div className="absolute top-3 left-3 flex flex-col gap-1">
           {studio.tags?.map((tagValue) => {
             const tag = STUDIO_TAGS.find(t => t.value === tagValue);
             return tag ? (
-              <Badge key={tagValue} className={`text-xs ${tag.color} border-none font-medium`}>
+              <Badge key={tagValue} className="text-xs bg-white/90 text-neutral-800 border-none font-medium px-2 py-1 rounded-full shadow-sm">
                 {tag.label}
               </Badge>
             ) : null;
@@ -94,45 +94,48 @@ const StudioCard = ({ studio }: StudioCardProps) => {
         </div>
       </div>
       
-      <CardContent className="p-4">
-        <h3 className="font-semibold text-lg text-slate-800 mb-2 group-hover:text-orange-500 transition-colors">
-          {studio.title}
-        </h3>
-        
-        <div className="flex items-center text-sm text-slate-600 mb-2">
-          <MapPin className="w-4 h-4 mr-1" />
-          {locationDisplay}
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between mb-2">
+          <h3 className="font-semibold text-lg text-neutral-800 group-hover:text-neutral-900 transition-colors leading-tight">
+            {studio.title}
+          </h3>
         </div>
         
-        <div className="flex items-center mb-3">
-          <Star className="w-4 h-4 text-yellow-400 fill-current" />
-          <span className="text-sm font-medium ml-1">{studio.rating || 0}</span>
-          <span className="text-sm text-slate-500 ml-1">({studio.total_reviews || 0} reviews)</span>
+        <div className="flex items-center text-sm text-neutral-600 mb-2">
+          <MapPin className="w-4 h-4 mr-1.5 text-neutral-400" />
+          <span className="font-medium">{locationDisplay}</span>
         </div>
         
-        <div className="flex flex-wrap gap-1 mb-3">
-          {studio.amenities?.slice(0, 2).map((amenity, index) => (
+        <div className="flex items-center mb-4">
+          <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
+          <span className="text-sm font-semibold text-neutral-800">{studio.rating || 0}</span>
+          <span className="text-sm text-neutral-500 ml-1">({studio.total_reviews || 0})</span>
+        </div>
+        
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {studio.amenities?.slice(0, 3).map((amenity, index) => (
             <span
               key={index}
-              className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded"
+              className="text-xs bg-neutral-100 text-neutral-700 px-2.5 py-1 rounded-full font-medium"
             >
               {amenity}
             </span>
           ))}
-          {studio.amenities && studio.amenities.length > 2 && (
-            <span className="text-xs text-slate-500">
-              +{studio.amenities.length - 2} more
+          {studio.amenities && studio.amenities.length > 3 && (
+            <span className="text-xs text-neutral-500 px-2.5 py-1">
+              +{studio.amenities.length - 3} more
             </span>
           )}
         </div>
         
-        <div className="flex justify-between items-center">
-          <div>
-            <span className="text-lg font-bold text-slate-800">₹{studio.price_per_hour}/hr</span>
+        <div className="flex justify-between items-center pt-2 border-t border-neutral-100">
+          <div className="flex flex-col">
+            <span className="text-xl font-bold text-neutral-900">₹{studio.price_per_hour}</span>
+            <span className="text-sm text-neutral-500">per hour</span>
           </div>
           <Button
             size="sm"
-            className="bg-orange-500 hover:bg-orange-600 text-white"
+            className="bg-neutral-900 hover:bg-neutral-800 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             onClick={handleViewDetails}
           >
             View Details

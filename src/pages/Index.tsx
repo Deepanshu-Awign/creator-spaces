@@ -142,13 +142,13 @@ const Index = () => {
       </section>
 
       {/* Featured Studios */}
-      <section className="py-16 px-4 bg-white">
+      <section className="py-16 px-4 bg-neutral-50">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-12 gap-4">
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Hot Selling Studios in {selectedCity}</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-neutral-900">Popular in {selectedCity}</h2>
             <Link to={`/studios?city=${selectedCity}`}>
-              <Button variant="outline" className="hover:bg-orange-50 hover:border-orange-300 w-full md:w-auto">
-                View All Studios
+              <Button variant="outline" className="hover:bg-neutral-100 border-neutral-300 w-full md:w-auto">
+                Show all
               </Button>
             </Link>
           </div>
@@ -175,15 +175,15 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+      <section className="py-20 px-4 bg-neutral-900 text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Create Something Amazing?</h2>
-          <p className="text-lg md:text-xl mb-8 text-blue-100">
-            Join thousands of creators who trust BookMyStudio for their perfect studio space.
+          <p className="text-lg md:text-xl mb-8 text-neutral-300">
+            Join thousands of creators who trust Creator Spaces for their perfect studio space.
           </p>
           <div className="flex justify-center">
             <Link to={`/studios?city=${selectedCity}`}>
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white px-6 md:px-8 py-3 md:py-4 text-lg font-semibold">
+              <Button className="bg-white hover:bg-neutral-100 text-neutral-900 px-6 md:px-8 py-3 md:py-4 text-lg font-semibold rounded-xl">
                 Browse Studios
               </Button>
             </Link>

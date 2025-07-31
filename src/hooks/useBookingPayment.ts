@@ -17,7 +17,7 @@ export const useBookingPayment = () => {
       key: RAZORPAY_KEY_ID,
       amount: amount * 100, // in paise
       currency: "INR",
-      name: "BookMyStudio",
+      name: "Creator Spaces",
       description: `Booking for ${studioTitle || 'Studio'}`,
       handler: async (response: RazorpayResponse) => {
         try {

@@ -153,7 +153,7 @@ const AdminSettings = () => {
                     id="site_name"
                     value={formData.site_name}
                     onChange={(e) => setFormData(prev => ({ ...prev, site_name: e.target.value }))}
-                    placeholder="BookMyStudio"
+                    placeholder="Creator Spaces"
                   />
                 </div>
                 <div className="space-y-2">
@@ -163,7 +163,7 @@ const AdminSettings = () => {
                     type="email"
                     value={formData.admin_email}
                     onChange={(e) => setFormData(prev => ({ ...prev, admin_email: e.target.value }))}
-                    placeholder="admin@bookmystudio.com"
+                    placeholder="admin@creatorspaces.com"
                   />
                 </div>
               </div>
