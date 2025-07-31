@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
+import creatorSpacesLogo from "@/assets/creator-spaces-logo-colorful.png";
 
 const LoadingScreen = () => {
   const [progress, setProgress] = useState(0);
@@ -23,7 +24,7 @@ const LoadingScreen = () => {
       <div className="text-center mb-8">
         <div className="w-16 h-16 mx-auto mb-4 bg-brand/10 rounded-full flex items-center justify-center">
           <img 
-            src="/src/assets/creator-spaces-logo-colorful.png" 
+            src={creatorSpacesLogo} 
             alt="Creator Spaces" 
             className="w-12 h-4"
           />

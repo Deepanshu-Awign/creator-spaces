@@ -37,7 +37,7 @@ const config: CapacitorConfig = {
     captureInput: true,
     webContentsDebuggingEnabled: true,
     // Enable better caching and performance
-    appendUserAgent: 'BookMyStudio',
+    appendUserAgent: 'CreatorSpaces',
     overrideUserAgent: undefined,
     backgroundColor: '#ffffff',
     // Enable hardware acceleration

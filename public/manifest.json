@@ -1,7 +1,7 @@
 
 {
-  "name": "BookMyStudio",
-  "short_name": "BookMyStudio",
+  "name": "Creator Spaces",
+  "short_name": "Creator Spaces",
   "description": "Book professional studios for podcasting, photography, video production, and more",
   "start_url": "/",
   "display": "standalone",
@@ -11,13 +11,19 @@
   "categories": ["business", "productivity"],
   "icons": [
     {
-      "src": "/lovable-uploads/63c25b0c-9e71-4bbb-b0e3-4529c6c44ecf.png",
+      "src": "/favicon-32x32.png",
+      "type": "image/png",
+      "sizes": "32x32",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "/lovable-uploads/63c25b0c-9e71-4bbb-b0e3-4529c6c44ecf.png",
+      "src": "/favicon.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
@@ -25,7 +31,7 @@
   ],
   "screenshots": [
     {
-      "src": "/lovable-uploads/63c25b0c-9e71-4bbb-b0e3-4529c6c44ecf.png",
+      "src": "/favicon.png",
       "type": "image/png",
       "sizes": "540x720",
       "form_factor": "narrow"

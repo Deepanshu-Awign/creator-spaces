@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'bookmystudio-v1';
+const CACHE_NAME = 'creator-spaces-v1';
 const OFFLINE_URL = '/offline.html';
 
 // Critical resources to cache for offline functionality
@@ -131,7 +131,7 @@ async function syncOfflineFavorites() {
 // IndexedDB helper functions
 function openDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('BookMyStudioDB', 1);
+    const request = indexedDB.open('CreatorSpacesDB', 1);
     
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
