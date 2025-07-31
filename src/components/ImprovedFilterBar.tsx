@@ -69,9 +69,11 @@ const ImprovedFilterBar = ({ filters, onFiltersChange }: ImprovedFilterBarProps)
   const categories = ['photography', 'videography', 'recording', 'event'];
 
   const updateFilter = (key: keyof FilterState, value: any) => {
+    // Handle special "all" values by converting them to empty strings
+    const processedValue = value === 'all-cities' || value === 'all-categories' ? '' : value;
     onFiltersChange({
       ...filters,
-      [key]: value,
+      [key]: processedValue,
     });
   };
 
@@ -134,7 +136,7 @@ const ImprovedFilterBar = ({ filters, onFiltersChange }: ImprovedFilterBarProps)
                 </div>
               </SelectTrigger>
               <SelectContent className="bg-white border border-neutral-200 shadow-lg">
-                <SelectItem value="">All Cities</SelectItem>
+                <SelectItem value="all-cities">All Cities</SelectItem>
                 {cities.map((city) => (
                   <SelectItem key={city} value={city} className="hover:bg-neutral-50">
                     {city}
@@ -152,7 +154,7 @@ const ImprovedFilterBar = ({ filters, onFiltersChange }: ImprovedFilterBarProps)
                 </div>
               </SelectTrigger>
               <SelectContent className="bg-white border border-neutral-200 shadow-lg">
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all-categories">All Categories</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category} value={category} className="hover:bg-neutral-50 capitalize">
                     {category.replace('_', ' ')}
