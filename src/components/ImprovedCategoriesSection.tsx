@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import type { Studio } from "@/types/studio";
 import { 
   Camera, 
   Mic, 
@@ -60,7 +61,7 @@ const ImprovedCategoriesSection = ({ selectedCity }: ImprovedCategoriesSectionPr
         
         // Count studios by category
         const categoryCount: { [key: string]: number } = {};
-        data?.forEach(studio => {
+        (data as unknown as Studio[])?.forEach(studio => {
           if (studio.category) {
             categoryCount[studio.category] = (categoryCount[studio.category] || 0) + 1;
           }

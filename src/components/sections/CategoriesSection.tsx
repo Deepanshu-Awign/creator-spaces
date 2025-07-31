@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Mic, Camera, Video, Music, Headphones, Monitor, Palette, Users, Building, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import type { Studio } from '@/types/studio';
 
 const categoryIcons: { [key: string]: React.ComponentType<{ className?: string }> } = {
   'podcast': Mic,
@@ -51,7 +52,7 @@ const CategoriesSection = () => {
         
         // Count studios by category
         const categoryCount: { [key: string]: number } = {};
-        data?.forEach(studio => {
+        (data as unknown as Studio[])?.forEach(studio => {
           if (studio.category) {
             categoryCount[studio.category] = (categoryCount[studio.category] || 0) + 1;
           }
