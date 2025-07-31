@@ -415,9 +415,9 @@ const Studios = () => {
 
         {/* Studios Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-lg shadow-md p-6 animate-pulse">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6">
+            {[...Array(10)].map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl shadow-sm p-4 animate-pulse border border-neutral-200">
                 <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
                 <div className="h-6 bg-gray-200 rounded mb-2"></div>
                 <div className="h-4 bg-gray-200 rounded mb-2"></div>
@@ -426,7 +426,7 @@ const Studios = () => {
             ))}
           </div>
         ) : studios.length > 0 ? (
-          <div className={isMobile ? "space-y-4" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"}>
+          <div className={isMobile ? "space-y-4" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6"}>
             {studios.map((studio) => (
               isMobile ? (
                 <MobileStudioCard key={studio.id} studio={studio} />

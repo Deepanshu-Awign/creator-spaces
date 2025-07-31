@@ -67,13 +67,15 @@ const StudioCard = ({ studio }: StudioCardProps) => {
     : studio.location;
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group cursor-pointer border-0 shadow-sm bg-white rounded-xl">
+    <Card className="overflow-hidden hover:shadow-md transition-all duration-200 group cursor-pointer border border-neutral-200 shadow-sm bg-white rounded-2xl">
       <div className="relative" onClick={handleCardClick}>
-        <img
-          src={displayImage}
-          alt={studio.title}
-          className="w-full h-64 object-cover group-hover:scale-[1.02] transition-transform duration-500"
-        />
+        <div className="aspect-[4/3] w-full">
+          <img
+            src={displayImage}
+            alt={studio.title}
+            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+          />
+        </div>
         <Button
           variant="ghost"
           size="sm"
@@ -94,51 +96,34 @@ const StudioCard = ({ studio }: StudioCardProps) => {
         </div>
       </div>
       
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between mb-2">
-          <h3 className="font-semibold text-lg text-neutral-800 group-hover:text-neutral-900 transition-colors leading-tight">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-1">
+          <h3 className="font-semibold text-base text-neutral-900 line-clamp-1 leading-tight">
             {studio.title}
           </h3>
+          <div className="flex items-center ml-2 flex-shrink-0">
+            <Star className="w-3.5 h-3.5 text-yellow-400 fill-current mr-1" />
+            <span className="text-sm font-medium text-neutral-800">{studio.rating || 0}</span>
+          </div>
         </div>
         
         <div className="flex items-center text-sm text-neutral-600 mb-2">
-          <MapPin className="w-4 h-4 mr-1.5 text-neutral-400" />
-          <span className="font-medium">{locationDisplay}</span>
+          <MapPin className="w-3.5 h-3.5 mr-1 text-neutral-400" />
+          <span className="line-clamp-1">{locationDisplay}</span>
         </div>
         
-        <div className="flex items-center mb-4">
-          <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-          <span className="text-sm font-semibold text-neutral-800">{studio.rating || 0}</span>
-          <span className="text-sm text-neutral-500 ml-1">({studio.total_reviews || 0})</span>
-        </div>
-        
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {studio.amenities?.slice(0, 3).map((amenity, index) => (
-            <span
-              key={index}
-              className="text-xs bg-neutral-100 text-neutral-700 px-2.5 py-1 rounded-full font-medium"
-            >
-              {amenity}
-            </span>
-          ))}
-          {studio.amenities && studio.amenities.length > 3 && (
-            <span className="text-xs text-neutral-500 px-2.5 py-1">
-              +{studio.amenities.length - 3} more
-            </span>
-          )}
-        </div>
-        
-        <div className="flex justify-between items-center pt-2 border-t border-neutral-100">
-          <div className="flex flex-col">
-            <span className="text-xl font-bold text-neutral-900">₹{studio.price_per_hour}</span>
-            <span className="text-sm text-neutral-500">per hour</span>
+        <div className="flex items-center justify-between mt-3">
+          <div className="flex items-baseline">
+            <span className="text-lg font-semibold text-neutral-900">₹{studio.price_per_hour}</span>
+            <span className="text-sm text-neutral-500 ml-1">per hour</span>
           </div>
           <Button
             size="sm"
-            className="bg-neutral-900 hover:bg-neutral-800 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            variant="outline"
+            className="text-xs px-3 py-1 h-8 hover:bg-neutral-50 border-neutral-300"
             onClick={handleViewDetails}
           >
-            View Details
+            View
           </Button>
         </div>
       </CardContent>

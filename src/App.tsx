@@ -56,18 +56,17 @@ const AppContent = () => {
   const { isOnline } = useOfflineStorage();
   
   return (
-    <div className="h-screen overflow-hidden bg-white">
+    <div className="min-h-screen bg-neutral-50">
       {/* Network Status Bar */}
       <NetworkStatusBar />
       
-      {/* Main scrollable content area */}
+      {/* Main content area with proper spacing for fixed header */}
       <div 
-        className="h-full overflow-y-auto overflow-x-hidden" 
+        className="pt-16 pb-20 md:pb-4" 
         style={{ 
-          paddingTop: `${safeArea.top}px`,
-          paddingLeft: `${safeArea.left}px`,
-          paddingRight: `${safeArea.right}px`,
-          paddingBottom: `calc(80px + ${safeArea.bottom}px)`, // Space for fixed bottom nav
+          paddingLeft: `max(${safeArea.left}px, 0px)`,
+          paddingRight: `max(${safeArea.right}px, 0px)`,
+          paddingBottom: `max(calc(80px + ${safeArea.bottom}px), 80px)`, // Space for mobile bottom nav
         }}
       >
         <Routes>

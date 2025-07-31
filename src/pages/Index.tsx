@@ -165,14 +165,14 @@ const Index = () => {
             </Link>
           </div>
           
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-slate-200 animate-pulse rounded-lg h-80"></div>
+           {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="bg-neutral-200 animate-pulse rounded-2xl h-72"></div>
               ))}
             </div>
           ) : featuredStudios.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6">
               {featuredStudios.map((studio) => (
                 <StudioCard key={studio.id} studio={studio} />
               ))}
@@ -205,8 +205,8 @@ const Index = () => {
                       </Button>
                     </Link>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {studios.slice(0, 3).map((studio) => (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6">
+                    {studios.slice(0, 5).map((studio) => (
                       <StudioCard key={studio.id} studio={studio} />
                     ))}
                   </div>
