@@ -33,35 +33,35 @@ const About = () => {
     <div className="min-h-screen bg-slate-50">
       <Navigation />
       
-      <div className="pt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="pt-16 sm:pt-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Hero Section */}
-          <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-5xl font-bold text-slate-800 mb-6">
+          <div className="text-center mb-12 sm:mb-16">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-800 mb-4 sm:mb-6">
               About Creator Spaces
             </h1>
-            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
               We're revolutionizing how creative professionals find and book studio spaces. 
               From podcast recordings to photo shoots, we connect you with the perfect space for your vision.
             </p>
           </div>
 
           {/* Story Section */}
-          <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
+          <div className="grid md:grid-cols-2 gap-8 sm:gap-12 items-center mb-16 sm:mb-20">
             <div>
-              <h2 className="text-3xl font-bold text-slate-800 mb-6">Our Story</h2>
-              <p className="text-slate-600 mb-4">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-800 mb-4 sm:mb-6">Our Story</h2>
+              <p className="text-sm sm:text-base text-slate-600 mb-3 sm:mb-4">
                 Creator Spaces was born from a simple frustration: finding the right studio space 
                 shouldn't be harder than creating your content. As content creators ourselves, 
                 we experienced the endless hours spent searching for studios, dealing with 
                 complicated booking processes, and settling for spaces that didn't quite fit our vision.
               </p>
-              <p className="text-slate-600 mb-4">
+              <p className="text-sm sm:text-base text-slate-600 mb-3 sm:mb-4">
                 In 2024, we decided to change that. We built a platform where studio discovery 
                 is effortless, booking is seamless, and every creative professional can find 
                 their perfect space in minutes, not days.
               </p>
-              <p className="text-slate-600">
+              <p className="text-sm sm:text-base text-slate-600">
                 Today, we're proud to connect thousands of creators with amazing studio spaces 
                 across the globe, making creativity more accessible than ever before.
               </p>
@@ -76,17 +76,17 @@ const About = () => {
           </div>
 
           {/* Values Section */}
-          <div className="mb-20">
-            <h2 className="text-3xl font-bold text-slate-800 text-center mb-12">Our Values</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="mb-16 sm:mb-20">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-800 text-center mb-8 sm:mb-12">Our Values</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
               {values.map((value, index) => (
                 <Card key={index} className="text-center hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex justify-center mb-4">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex justify-center mb-3 sm:mb-4">
                       {value.icon}
                     </div>
-                    <h3 className="text-xl font-semibold text-slate-800 mb-3">{value.title}</h3>
-                    <p className="text-slate-600">{value.description}</p>
+                    <h3 className="text-lg sm:text-xl font-semibold text-slate-800 mb-2 sm:mb-3">{value.title}</h3>
+                    <p className="text-sm sm:text-base text-slate-600">{value.description}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -94,40 +94,40 @@ const About = () => {
           </div>
 
           {/* Stats Section */}
-          <div className="bg-white rounded-lg shadow-lg p-8 mb-20">
-            <div className="grid md:grid-cols-3 gap-8 text-center">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 mb-16 sm:mb-20">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 text-center">
               <div>
-                <div className="text-4xl font-bold text-orange-500 mb-2">500+</div>
-                <div className="text-slate-600">Studios Listed</div>
+                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-orange-500 mb-1 sm:mb-2">500+</div>
+                <div className="text-sm sm:text-base text-slate-600">Studios Listed</div>
               </div>
               <div>
-                <div className="text-4xl font-bold text-orange-500 mb-2">10K+</div>
-                <div className="text-slate-600">Bookings Made</div>
+                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-orange-500 mb-1 sm:mb-2">10K+</div>
+                <div className="text-sm sm:text-base text-slate-600">Bookings Made</div>
               </div>
               <div>
-                <div className="text-4xl font-bold text-orange-500 mb-2">50+</div>
-                <div className="text-slate-600">Cities Covered</div>
+                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-orange-500 mb-1 sm:mb-2">50+</div>
+                <div className="text-sm sm:text-base text-slate-600">Cities Covered</div>
               </div>
             </div>
           </div>
 
           {/* Team Section */}
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-slate-800 mb-6">Join Our Mission</h2>
-            <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-800 mb-4 sm:mb-6">Join Our Mission</h2>
+            <p className="text-base sm:text-lg md:text-xl text-slate-600 mb-6 sm:mb-8 max-w-2xl mx-auto">
               Whether you're a creator looking for the perfect space or a studio owner 
               wanting to share your amazing facility, we're here to make it happen.
             </p>
             
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <Link to="/studios">
-                <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg">
+                <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-full shadow-lg">
                   🎙 Explore Studios
                 </Button>
               </Link>
               <Link to="/host/signup">
-                <Button size="lg" variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white px-8 py-4 text-lg font-semibold rounded-full">
+                <Button size="lg" variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-full">
                   🏠 List Your Studio
                 </Button>
               </Link>

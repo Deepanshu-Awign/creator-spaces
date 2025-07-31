@@ -32,20 +32,20 @@ const MobileBottomNav = () => {
         right: 0,
       }}
     >
-      <div className="flex justify-around items-center py-2">
+      <div className="flex justify-around items-center py-1.5 sm:py-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.name}
               to={item.href}
-              className={`flex flex-col items-center py-2 px-3 rounded-lg transition-all duration-200 min-w-[60px] ${
+              className={`flex flex-col items-center py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg transition-all duration-200 min-w-[50px] sm:min-w-[60px] ${
                 isActive(item.href)
                   ? "text-neutral-900"
                   : "text-neutral-500 hover:text-neutral-700"
               }`}
             >
-              <Icon className={`w-5 h-5 mb-1 ${isActive(item.href) ? "fill-current" : ""}`} />
+              <Icon className={`w-4 h-4 sm:w-5 sm:h-5 mb-0.5 sm:mb-1 ${isActive(item.href) ? "fill-current" : ""}`} />
               <span className={`text-xs font-medium ${isActive(item.href) ? "font-semibold" : ""}`}>
                 {item.name}
               </span>

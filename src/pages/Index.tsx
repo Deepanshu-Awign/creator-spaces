@@ -126,13 +126,13 @@ const Index = () => {
       <Navigation selectedCity={selectedCity} onCityChange={handleCitySelect} />
       
       {/* Hero Section */}
-      <section className="relative pt-16 md:pt-20 pb-12 md:pb-16 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-3xl md:text-5xl lg:text-7xl font-bold text-slate-800 mb-4 md:mb-6 animate-fade-in leading-tight">
+      <section className="relative pt-6 sm:pt-8 md:pt-12 lg:pt-16 pb-8 sm:pb-12 md:pb-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto text-center">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-slate-800 mb-3 sm:mb-4 md:mb-6 animate-fade-in leading-tight">
             Book Your Perfect
             <span className="text-orange-500 block">Creative Space</span>
           </h1>
-          <p className="text-base md:text-lg lg:text-xl text-slate-600 mb-8 md:mb-12 max-w-2xl mx-auto animate-fade-in px-4">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-slate-600 mb-6 sm:mb-8 md:mb-12 max-w-2xl mx-auto animate-fade-in px-2 sm:px-4">
             Discover and book professional studios for podcasting, photography, video production, and more in {selectedCity}.
           </p>
 
@@ -153,35 +153,37 @@ const Index = () => {
       </section>
 
       {/* Featured Studios - Popular in Selected City */}
-      <section className="py-12 md:py-16 px-4 bg-neutral-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 md:mb-12 gap-4">
-            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-neutral-900">
+      <section className="py-8 sm:py-12 md:py-16 px-4 sm:px-6 lg:px-8 bg-neutral-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8 md:mb-12 gap-3 sm:gap-4">
+            <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-neutral-900">
               Popular in {selectedCity}
             </h2>
             <Link to={`/studios?city=${selectedCity}`}>
-              <Button variant="outline" className="hover:bg-neutral-100 border-neutral-300 w-full md:w-auto text-sm">
+              <Button variant="outline" className="hover:bg-neutral-100 border-neutral-300 w-full sm:w-auto text-xs sm:text-sm">
                 Show all
               </Button>
             </Link>
           </div>
           
            {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 lg:gap-6">
+            <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 pb-4 sm:pb-0">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="bg-neutral-200 animate-pulse rounded-2xl h-64 md:h-72"></div>
+                <div key={i} className="bg-neutral-200 animate-pulse rounded-xl sm:rounded-2xl h-48 sm:h-56 md:h-64 lg:h-72 min-w-[200px] sm:min-w-0 flex-shrink-0 sm:flex-shrink"></div>
               ))}
             </div>
           ) : featuredStudios.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 lg:gap-6">
+            <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 pb-4 sm:pb-0">
               {featuredStudios.map((studio) => (
-                <StudioCard key={studio.id} studio={studio} />
+                <div key={studio.id} className="min-w-[200px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                  <StudioCard studio={studio} />
+                </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-slate-600 text-lg mb-4">No studios available in {selectedCity} at the moment.</p>
-              <p className="text-slate-500">Please try a different city or check back later.</p>
+            <div className="text-center py-8 sm:py-12">
+              <p className="text-slate-600 text-base sm:text-lg mb-3 sm:mb-4">No studios available in {selectedCity} at the moment.</p>
+              <p className="text-slate-500 text-sm sm:text-base">Please try a different city or check back later.</p>
             </div>
           )}
         </div>
@@ -189,26 +191,28 @@ const Index = () => {
 
       {/* Popular in Other Cities */}
       {Object.keys(popularByCity).filter(city => city !== selectedCity).length > 0 && (
-        <section className="py-12 md:py-16 px-4 bg-white">
-          <div className="max-w-7xl mx-auto">
+        <section className="py-8 sm:py-12 md:py-16 px-4 sm:px-6 lg:px-8 bg-white">
+          <div className="max-w-6xl mx-auto">
             {Object.entries(popularByCity)
               .filter(([city]) => city !== selectedCity)
               .slice(0, 3)
               .map(([city, studios]) => (
-                <div key={city} className="mb-16 last:mb-0">
-                  <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
-                    <h2 className="text-2xl md:text-3xl font-bold text-neutral-900">
+                <div key={city} className="mb-12 sm:mb-16 last:mb-0">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8 gap-3 sm:gap-4">
+                    <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-neutral-900">
                       Popular in {city}
                     </h2>
                     <Link to={`/studios?city=${city}`}>
-                      <Button variant="outline" className="hover:bg-neutral-100 border-neutral-300 w-full md:w-auto">
+                      <Button variant="outline" className="hover:bg-neutral-100 border-neutral-300 w-full sm:w-auto text-xs sm:text-sm">
                         Show all in {city}
                       </Button>
                     </Link>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6">
+                  <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 pb-4 sm:pb-0">
                     {studios.slice(0, 5).map((studio) => (
-                      <StudioCard key={studio.id} studio={studio} />
+                      <div key={studio.id} className="min-w-[200px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                        <StudioCard studio={studio} />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -230,20 +234,26 @@ const Index = () => {
       <TestimonialsSection />
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-primary text-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Create Something Amazing?</h2>
-          <p className="text-lg md:text-xl mb-8 text-white/90">
+      <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-dark text-white relative overflow-hidden">
+        {/* Background pattern for better contrast */}
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20"></div>
+        
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-white drop-shadow-lg">
+            Ready to Create Something Amazing?
+          </h2>
+          <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 text-white/95 drop-shadow-sm">
             Join thousands of creators who trust Creator Spaces for their perfect studio space.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Link to={`/studios?city=${selectedCity}`}>
-              <Button size="lg" className="bg-white hover:bg-white/90 text-primary px-8 py-4 text-lg font-semibold rounded-full shadow-glow">
+              <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
                 🎙 Explore Studios
               </Button>
             </Link>
             <Link to="/host/signup">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary px-8 py-4 text-lg font-semibold rounded-full">
+              <Button size="lg" variant="outline" className="border-white/80 text-white hover:bg-white hover:text-slate-800 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-full backdrop-blur-sm transition-all duration-300 transform hover:scale-105">
                 🏠 List Your Studio
               </Button>
             </Link>

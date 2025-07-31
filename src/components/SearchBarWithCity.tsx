@@ -98,19 +98,19 @@ const SearchBarWithCity = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-2xl p-3 md:p-4 max-w-5xl mx-auto mb-12 animate-scale-in">
-      <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-2xl p-3 sm:p-4 max-w-4xl mx-auto mb-8 sm:mb-12 animate-scale-in">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         {/* City Selector */}
-        <div className="md:w-48 flex-shrink-0">
+        <div className="sm:w-48 flex-shrink-0">
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-between h-12 md:h-14 px-4 border-r-0 md:border-r border-gray-200 rounded-xl md:rounded-l-xl md:rounded-r-none"
+                className="w-full justify-between h-11 sm:h-12 md:h-14 px-3 sm:px-4 border-r-0 sm:border-r border-gray-200 rounded-lg sm:rounded-l-lg sm:rounded-r-none"
               >
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-gray-500" />
-                  <span className="truncate">
+                  <span className="truncate text-sm sm:text-base">
                     {selectedCity || "Select City"}
                   </span>
                 </div>
@@ -131,8 +131,8 @@ const SearchBarWithCity = ({
                       >
                         <span className="text-lg">{city.icon}</span>
                         <div>
-                          <div className="font-medium">{city.name}</div>
-                          <div className="text-sm text-gray-500">{city.state}</div>
+                          <div className="font-medium text-sm sm:text-base">{city.name}</div>
+                          <div className="text-xs sm:text-sm text-gray-500">{city.state}</div>
                         </div>
                       </button>
                     ))}
@@ -144,22 +144,22 @@ const SearchBarWithCity = ({
         </div>
 
         {/* Search Input */}
-        <div className="flex-1 flex items-center px-4 md:px-6 py-3 md:py-4 border border-gray-200 md:border-l-0 rounded-xl md:rounded-none md:rounded-r-none">
-          <Search className="w-5 h-5 text-slate-400 mr-3 flex-shrink-0" />
+        <div className="flex-1 flex items-center px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 border border-gray-200 sm:border-l-0 rounded-lg sm:rounded-none sm:rounded-r-none">
+          <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-2 sm:mr-3 flex-shrink-0" />
           <Input
             placeholder={placeholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="border-0 focus-visible:ring-0 text-base md:text-lg bg-transparent p-0"
+            className="border-0 focus-visible:ring-0 text-sm sm:text-base md:text-lg bg-transparent p-0"
           />
         </div>
 
         {/* Search Button */}
-        <div className="flex justify-center md:justify-end">
+        <div className="flex justify-center sm:justify-end">
           <Button 
             onClick={onSearch}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl md:rounded-full text-base md:text-lg font-semibold transition-all hover:scale-105 w-full md:w-auto h-12 md:h-14"
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-4 rounded-lg sm:rounded-full text-sm sm:text-base md:text-lg font-semibold transition-all hover:scale-105 w-full sm:w-auto h-11 sm:h-12 md:h-14"
           >
             Search Studios
           </Button>

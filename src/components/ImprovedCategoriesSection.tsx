@@ -91,22 +91,23 @@ const ImprovedCategoriesSection = ({ selectedCity }: ImprovedCategoriesSectionPr
   if (isLoading || categories.length === 0) return null;
 
   return (
-    <section className="mb-12">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-4">
-          Browse by Category
-          {selectedCity && (
-            <span className="block text-lg font-normal text-neutral-600 mt-2">
-              in {selectedCity}
-            </span>
-          )}
-        </h2>
-        <p className="text-neutral-600 max-w-2xl mx-auto">
-          Find the perfect studio space for your creative needs
-        </p>
-      </div>
+    <section className="py-8 sm:py-12 md:py-16 px-4 sm:px-6 lg:px-8 bg-white">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-neutral-900 mb-3 sm:mb-4">
+            Browse by Category
+            {selectedCity && (
+              <span className="block text-base sm:text-lg font-normal text-neutral-600 mt-1 sm:mt-2">
+                in {selectedCity}
+              </span>
+            )}
+          </h2>
+          <p className="text-sm sm:text-base text-neutral-600 max-w-2xl mx-auto">
+            Find the perfect studio space for your creative needs
+          </p>
+        </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
         {categories.map(({ category, count }) => {
           const IconComponent = categoryIcons[category as keyof typeof categoryIcons] || Building;
           const colorClass = categoryColors[category as keyof typeof categoryColors] || categoryColors.other;
@@ -117,14 +118,14 @@ const ImprovedCategoriesSection = ({ selectedCity }: ImprovedCategoriesSectionPr
               className="group cursor-pointer hover:shadow-lg transition-all duration-300 border border-neutral-200 hover:border-neutral-300 overflow-hidden"
               onClick={() => handleCategoryClick(category)}
             >
-              <CardContent className="p-4 md:p-6 text-center">
-                <div className={`w-12 h-12 md:w-16 md:h-16 rounded-full ${colorClass} flex items-center justify-center mx-auto mb-3 md:mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                  <IconComponent className="w-6 h-6 md:w-8 md:h-8" />
+              <CardContent className="p-3 sm:p-4 md:p-6 text-center">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full ${colorClass} flex items-center justify-center mx-auto mb-2 sm:mb-3 md:mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                  <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />
                 </div>
-                <h3 className="font-semibold text-neutral-900 mb-1 text-sm md:text-base capitalize">
+                <h3 className="font-semibold text-neutral-900 mb-1 text-xs sm:text-sm md:text-base capitalize">
                   {category.replace('_', ' ')}
                 </h3>
-                <p className="text-xs md:text-sm text-neutral-600">
+                <p className="text-xs text-neutral-600">
                   {count} studio{count !== 1 ? 's' : ''}
                 </p>
               </CardContent>
@@ -132,6 +133,7 @@ const ImprovedCategoriesSection = ({ selectedCity }: ImprovedCategoriesSectionPr
           );
         })}
       </div>
+    </div>
     </section>
   );
 };

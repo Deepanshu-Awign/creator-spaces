@@ -104,20 +104,20 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
 
   return (
     <nav className="sticky top-0 w-full bg-white/95 backdrop-blur-md border-b border-neutral-200 z-50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-14 sm:h-16">
           <Link to="/" className="flex items-center">
             <img 
               src={creatorSpacesLogo}
               alt="Creator Spaces Logo" 
-              className="h-8 w-auto"
+              className="h-6 sm:h-8 w-auto"
             />
           </Link>
 
           {/* City Selector - Hidden for cleaner look */}
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -137,7 +137,7 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
           </div>
 
           {/* Desktop Auth & User Actions */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-3 lg:space-x-4">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
