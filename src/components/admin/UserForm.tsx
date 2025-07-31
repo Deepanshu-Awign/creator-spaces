@@ -20,6 +20,7 @@ const userSchema = z.object({
   phone: z.string().optional(),
   location: z.string().optional(),
   role: z.enum(['admin', 'manager', 'user']).optional(),
+  password: z.string().min(6, 'Password must be at least 6 characters').optional(),
 });
 
 type UserFormData = z.infer<typeof userSchema>;
@@ -91,6 +92,21 @@ const UserForm = ({ onSubmit, initialData, isLoading, isEdit }: UserFormProps) =
         />
       </div>
 
+      {!isEdit && (
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            {...register('password')}
+            placeholder="Enter password (optional - will generate random if empty)"
+          />
+          {errors.password && (
+            <p className="text-sm text-red-500">{errors.password.message}</p>
+          )}
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label>Role</Label>
         <Select
@@ -102,7 +118,7 @@ const UserForm = ({ onSubmit, initialData, isLoading, isEdit }: UserFormProps) =
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="user">User</SelectItem>
-            <SelectItem value="manager">Manager</SelectItem>
+            <SelectItem value="manager">Manager/Host</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
           </SelectContent>
         </Select>

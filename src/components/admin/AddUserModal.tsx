@@ -21,18 +21,27 @@ const AddUserModal = ({ open, onOpenChange }: AddUserModalProps) => {
 
   const addUserMutation = useMutation({
     mutationFn: async (userData: any) => {
-      // Create user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: crypto.randomUUID(), // This would need proper user creation via auth
-          email: userData.email,
+      // Create user with proper auth signup
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: userData.email,
+        password: userData.password || Math.random().toString(36).substring(2, 15), // Generate random password if not provided
+        email_confirm: true, // Auto-confirm email for admin-created users
+        user_metadata: {
           full_name: userData.full_name,
+        }
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('Failed to create user');
+
+      // Update profile with additional data
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
           phone: userData.phone,
           location: userData.location,
         })
-        .select()
-        .single();
+        .eq('id', authData.user.id);
 
       if (profileError) throw profileError;
 
@@ -41,7 +50,7 @@ const AddUserModal = ({ open, onOpenChange }: AddUserModalProps) => {
         const { error: roleError } = await supabase
           .from('user_roles')
           .insert({
-            user_id: profile.id,
+            user_id: authData.user.id,
             role: userData.role,
           });
 
@@ -52,11 +61,11 @@ const AddUserModal = ({ open, onOpenChange }: AddUserModalProps) => {
       await supabase.rpc('log_admin_activity', {
         _action: 'Created user',
         _target_type: 'user',
-        _target_id: profile.id,
+        _target_id: authData.user.id,
         _details: userData
       });
 
-      return profile;
+      return authData.user;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });

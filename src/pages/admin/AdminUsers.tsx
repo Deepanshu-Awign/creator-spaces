@@ -29,14 +29,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Search, MoreHorizontal, Shield, ShieldCheck, Edit, Trash2, UserCheck } from 'lucide-react';
+import { Search, MoreHorizontal, Shield, ShieldCheck, Edit, Trash2, UserCheck, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import EditUserModal from '@/components/admin/EditUserModal';
+import AddUserModal from '@/components/admin/AddUserModal';
 
 const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<any>(null);
   const [deletingUser, setDeletingUser] = useState<any>(null);
+  const [showAddUser, setShowAddUser] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch users with their roles using separate queries
@@ -220,6 +222,10 @@ const AdminUsers = () => {
           <h1 className="text-3xl font-bold text-gray-900">Platform Users</h1>
           <p className="text-gray-600 mt-2">Manage registered users and assign admin roles</p>
         </div>
+        <Button onClick={() => setShowAddUser(true)} className="gap-2">
+          <Plus className="w-4 h-4" />
+          Add New User
+        </Button>
       </div>
 
       <Card>
@@ -331,6 +337,12 @@ const AdminUsers = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Add User Modal */}
+      <AddUserModal
+        open={showAddUser}
+        onOpenChange={setShowAddUser}
+      />
 
       {/* Edit User Modal */}
       {editingUser && (

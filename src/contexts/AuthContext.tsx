@@ -8,7 +8,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, role?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, role?: string) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
@@ -91,11 +91,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           emailRedirectTo: redirectUrl,
           data: {
             full_name: fullName,
+            role: role || 'user',
           }
         }
       });
       
       if (error) throw error;
+      
+      // If a specific role is provided and user is created, assign the role
+      if (data.user && role && role !== 'user') {
+        setTimeout(async () => {
+          try {
+            await supabase.from('user_roles').insert({
+              user_id: data.user.id,
+              role: role as any,
+            });
+          } catch (roleError) {
+            console.error('Error assigning role:', roleError);
+          }
+        }, 1000); // Wait for profile creation trigger
+      }
+      
       return { error: null };
     } catch (error) {
       console.error('Sign up error:', error);

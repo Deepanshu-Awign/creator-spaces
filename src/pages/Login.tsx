@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Mail, ArrowRight, Check, UserPlus, Eye, EyeOff } from "lucide-react";
+import { Mail, ArrowRight, Check, UserPlus, Eye, EyeOff, Building2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [fullName, setFullName] = useState("");
+  const [userRole, setUserRole] = useState<"user" | "manager">("user");
   const [step, setStep] = useState<"auth" | "otp-sent">("auth");
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [signInType, setSignInType] = useState<"password" | "otp">("password");
@@ -60,7 +61,7 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await signUp(email, password, fullName);
+      const { error } = await signUp(email, password, fullName, userRole);
       
       if (error) {
         toast({
@@ -71,7 +72,7 @@ const Login = () => {
       } else {
         toast({
           title: "Account Created!",
-          description: "Please check your email to verify your account.",
+          description: `Your ${userRole === 'manager' ? 'host' : 'user'} account has been created! Please check your email to verify your account.`,
         });
       }
     } catch (error) {
@@ -188,6 +189,7 @@ const Login = () => {
     setOtp("");
     setFullName("");
     setPassword("");
+    setUserRole("user");
   };
 
   return (
@@ -247,21 +249,53 @@ const Login = () => {
 
                   <form onSubmit={signInType === "password" ? (authMode === "signin" ? handlePasswordSignIn : handlePasswordSignUp) : handleSendOTP} className="space-y-4">
                     {authMode === "signup" && (
-                      <div>
-                        <Label htmlFor="fullName">Full Name</Label>
-                        <div className="relative mt-2">
-                          <UserPlus className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                          <Input
-                            id="fullName"
-                            type="text"
-                            placeholder="Enter your full name"
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                            className="pl-10"
-                            required
-                          />
+                      <>
+                        <div>
+                          <Label htmlFor="fullName">Full Name</Label>
+                          <div className="relative mt-2">
+                            <UserPlus className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                            <Input
+                              id="fullName"
+                              type="text"
+                              placeholder="Enter your full name"
+                              value={fullName}
+                              onChange={(e) => setFullName(e.target.value)}
+                              className="pl-10"
+                              required
+                            />
+                          </div>
                         </div>
-                      </div>
+
+                        <div>
+                          <Label>Account Type</Label>
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              type="button"
+                              variant={userRole === "user" ? "default" : "outline"}
+                              onClick={() => setUserRole("user")}
+                              className="flex-1 gap-2"
+                            >
+                              <User className="w-4 h-4" />
+                              I'm a User
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={userRole === "manager" ? "default" : "outline"}
+                              onClick={() => setUserRole("manager")}
+                              className="flex-1 gap-2"
+                            >
+                              <Building2 className="w-4 h-4" />
+                              I'm a Host
+                            </Button>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {userRole === "user" 
+                              ? "Book studios and spaces for your creative projects" 
+                              : "List and manage your creative spaces for others to book"
+                            }
+                          </p>
+                        </div>
+                      </>
                     )}
 
                     <div>
