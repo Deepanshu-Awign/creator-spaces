@@ -65,8 +65,8 @@ const ImprovedFilterBar = ({ filters, onFiltersChange }: ImprovedFilterBarProps)
     },
   });
 
-  // Static categories since column doesn't exist
-  const categories = ['photography', 'videography', 'recording', 'event'];
+  // Use static categories for now since cs_studios table might not be accessible
+  const categories = ['photography', 'videography', 'recording', 'event', 'conference', 'workshop'];
 
   const updateFilter = (key: keyof FilterState, value: any) => {
     // Handle special "all" values by converting them to empty strings
@@ -109,33 +109,33 @@ const ImprovedFilterBar = ({ filters, onFiltersChange }: ImprovedFilterBarProps)
   ].filter(Boolean).length;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-4 md:p-6 mb-8">
+    <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-3 md:p-6 mb-8">
       {/* Main Search Row */}
-      <div className="flex flex-col gap-4 mb-4">
-        <div className="flex flex-col md:flex-row gap-3">
+      <div className="flex flex-col gap-3 md:gap-4 mb-4">
+        <div className="flex flex-col gap-3">
           {/* Search Input */}
-          <div className="flex-1 relative">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
             <Input
               type="text"
               placeholder="Search studios, locations, or amenities..."
               value={filters.searchTerm}
               onChange={(e) => updateFilter('searchTerm', e.target.value)}
-              className="pl-10 h-12 text-base border-neutral-300 focus:border-neutral-500"
+              className="pl-10 h-11 md:h-12 text-base border-neutral-300 focus:border-neutral-500"
             />
           </div>
 
           {/* Quick Filters Row - Mobile/Desktop Responsive */}
-          <div className="flex gap-2 md:gap-3">
+          <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2 md:pb-0">
             {/* City Filter */}
             <Select value={filters.selectedCity} onValueChange={(value) => updateFilter('selectedCity', value)}>
-              <SelectTrigger className="w-full md:w-40 h-12 border-neutral-300 focus:border-neutral-500">
+              <SelectTrigger className="min-w-[120px] md:w-40 h-11 md:h-12 border-neutral-300 focus:border-neutral-500 flex-shrink-0">
                 <div className="flex items-center gap-2 text-left">
                   <MapPin className="w-4 h-4 text-neutral-500 flex-shrink-0" />
                   <SelectValue placeholder="City" />
                 </div>
               </SelectTrigger>
-              <SelectContent className="bg-white border border-neutral-200 shadow-lg">
+              <SelectContent className="bg-white border border-neutral-200 shadow-lg z-[9999]">
                 <SelectItem value="all-cities">All Cities</SelectItem>
                 {cities.map((city) => (
                   <SelectItem key={city} value={city} className="hover:bg-neutral-50">
@@ -147,13 +147,13 @@ const ImprovedFilterBar = ({ filters, onFiltersChange }: ImprovedFilterBarProps)
 
             {/* Category Filter */}
             <Select value={filters.selectedCategory} onValueChange={(value) => updateFilter('selectedCategory', value)}>
-              <SelectTrigger className="w-full md:w-40 h-12 border-neutral-300 focus:border-neutral-500">
+              <SelectTrigger className="min-w-[130px] md:w-40 h-11 md:h-12 border-neutral-300 focus:border-neutral-500 flex-shrink-0">
                 <div className="flex items-center gap-2 text-left">
                   <Tag className="w-4 h-4 text-neutral-500 flex-shrink-0" />
                   <SelectValue placeholder="Category" />
                 </div>
               </SelectTrigger>
-              <SelectContent className="bg-white border border-neutral-200 shadow-lg">
+              <SelectContent className="bg-white border border-neutral-200 shadow-lg z-[9999]">
                 <SelectItem value="all-categories">All Categories</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category} value={category} className="hover:bg-neutral-50 capitalize">
@@ -167,12 +167,12 @@ const ImprovedFilterBar = ({ filters, onFiltersChange }: ImprovedFilterBarProps)
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="h-12 px-4 border-neutral-300 hover:border-neutral-400 flex-shrink-0"
+              className="h-11 md:h-12 px-3 md:px-4 border-neutral-300 hover:border-neutral-400 flex-shrink-0 whitespace-nowrap"
             >
-              <Filter className="w-4 h-4 mr-2" />
+              <Filter className="w-4 h-4 mr-1 md:mr-2" />
               {isMobile ? 'More' : 'Filters'}
               {activeFilterCount > 0 && (
-                <Badge variant="secondary" className="ml-2 bg-neutral-800 text-white">
+                <Badge variant="secondary" className="ml-1 md:ml-2 bg-neutral-800 text-white text-xs">
                   {activeFilterCount}
                 </Badge>
               )}

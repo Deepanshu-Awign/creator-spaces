@@ -113,26 +113,7 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
             />
           </Link>
 
-          {/* City Selector */}
-          {selectedCity && (
-            <div className="hidden md:flex items-center">
-              <Select value={selectedCity} onValueChange={handleCityChange}>
-                <SelectTrigger className="w-40 border-neutral-300 focus:border-brand hover:border-neutral-400 transition-colors bg-white shadow-sm">
-                  <div className="flex items-center">
-                    <MapPin className="w-4 h-4 text-neutral-600 mr-2" />
-                    <SelectValue />
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="bg-white border border-neutral-200 shadow-lg">
-                  {availableCities.map((city) => (
-                    <SelectItem key={city} value={city} className="hover:bg-neutral-50">
-                      {city}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {/* City Selector - Hidden for cleaner look */}
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
@@ -227,26 +208,7 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-neutral-200">
-              {/* Mobile City Selector */}
-              {selectedCity && (
-                <div className="px-3 py-2 border-b border-neutral-200">
-                  <Select value={selectedCity} onValueChange={handleCityChange}>
-                    <SelectTrigger className="w-full border-neutral-300 bg-white">
-                      <div className="flex items-center">
-                        <MapPin className="w-4 h-4 text-neutral-600 mr-2" />
-                        <SelectValue />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border border-neutral-200 shadow-lg">
-                      {availableCities.map((city) => (
-                        <SelectItem key={city} value={city} className="hover:bg-neutral-50">
-                          {city}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              {/* Mobile City Selector - Hidden for cleaner look */}
               
               {navigation.map((item) => (
                 <Link

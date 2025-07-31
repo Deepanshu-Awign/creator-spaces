@@ -121,17 +121,17 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-full bg-gradient-to-br from-slate-50 to-blue-50 pb-16 md:pb-0">
       <Navigation selectedCity={selectedCity} onCityChange={handleCitySelect} />
       
       {/* Hero Section */}
-      <section className="relative pt-20 pb-16 px-4">
+      <section className="relative pt-16 md:pt-20 pb-12 md:pb-16 px-4">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-slate-800 mb-6 animate-fade-in">
+          <h1 className="text-3xl md:text-5xl lg:text-7xl font-bold text-slate-800 mb-4 md:mb-6 animate-fade-in leading-tight">
             Book Your Perfect
             <span className="text-orange-500 block">Creative Space</span>
           </h1>
-          <p className="text-lg md:text-xl text-slate-600 mb-12 max-w-2xl mx-auto animate-fade-in">
+          <p className="text-base md:text-lg lg:text-xl text-slate-600 mb-8 md:mb-12 max-w-2xl mx-auto animate-fade-in px-4">
             Discover and book professional studios for podcasting, photography, video production, and more in {selectedCity}.
           </p>
 
@@ -152,27 +152,27 @@ const Index = () => {
       </section>
 
       {/* Featured Studios - Popular in Selected City */}
-      <section className="py-16 px-4 bg-neutral-50">
+      <section className="py-12 md:py-16 px-4 bg-neutral-50">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-12 gap-4">
-            <h2 className="text-2xl md:text-3xl font-bold text-neutral-900">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 md:mb-12 gap-4">
+            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-neutral-900">
               Popular in {selectedCity}
             </h2>
             <Link to={`/studios?city=${selectedCity}`}>
-              <Button variant="outline" className="hover:bg-neutral-100 border-neutral-300 w-full md:w-auto">
+              <Button variant="outline" className="hover:bg-neutral-100 border-neutral-300 w-full md:w-auto text-sm">
                 Show all
               </Button>
             </Link>
           </div>
           
            {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 lg:gap-6">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="bg-neutral-200 animate-pulse rounded-2xl h-72"></div>
+                <div key={i} className="bg-neutral-200 animate-pulse rounded-2xl h-64 md:h-72"></div>
               ))}
             </div>
           ) : featuredStudios.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-4 lg:gap-6">
               {featuredStudios.map((studio) => (
                 <StudioCard key={studio.id} studio={studio} />
               ))}
@@ -188,7 +188,7 @@ const Index = () => {
 
       {/* Popular in Other Cities */}
       {Object.keys(popularByCity).filter(city => city !== selectedCity).length > 0 && (
-        <section className="py-16 px-4 bg-white">
+        <section className="py-12 md:py-16 px-4 bg-white">
           <div className="max-w-7xl mx-auto">
             {Object.entries(popularByCity)
               .filter(([city]) => city !== selectedCity)

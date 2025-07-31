@@ -62,11 +62,10 @@ const AppContent = () => {
       
       {/* Main content area with proper spacing for fixed header */}
       <div 
-        className="pt-16 pb-20 md:pb-4" 
+        className="pb-16 md:pb-0" 
         style={{ 
           paddingLeft: `max(${safeArea.left}px, 0px)`,
           paddingRight: `max(${safeArea.right}px, 0px)`,
-          paddingBottom: `max(calc(80px + ${safeArea.bottom}px), 80px)`, // Space for mobile bottom nav
         }}
       >
         <Routes>
