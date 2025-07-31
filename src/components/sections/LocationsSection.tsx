@@ -8,7 +8,7 @@ const popularLocations = [
   {
     city: 'Mumbai',
     state: 'Maharashtra',
-    image: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?auto=format&fit=crop&w=600&h=400',
+    image: 'https://images.memphistours.com/xlarge/1014015423_Mumbai.jpg',
     description: 'Bollywood capital with premium studios'
   },
   {
@@ -20,7 +20,7 @@ const popularLocations = [
   {
     city: 'Bangalore',
     state: 'Karnataka',
-    image: 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?auto=format&fit=crop&w=600&h=400',
+    image: 'https://www.redefine.co/_next/image?url=https%3A%2F%2Fimages.ctfassets.net%2F3sjsytt3tkv5%2F46bboLK0kJZZz0vkNTlfva%2F9bcf0bd693c960ee5f36ffc5de842e40%2FAdobeStock_341950409.jpeg&w=3840&q=75',
     description: 'Tech hub with modern recording facilities'
   },
   {
@@ -32,13 +32,13 @@ const popularLocations = [
   {
     city: 'Pune',
     state: 'Maharashtra',
-    image: 'https://images.unsplash.com/photo-1605043204790-cbef5def93b9?auto=format&fit=crop&w=600&h=400',
+    image: 'https://www.adanirealty.com/-/media/Project/Realty/Blogs/images/Next-Sought-after-Location-in-Pune.png',
     description: 'Growing creative community'
   },
   {
     city: 'Hyderabad',
     state: 'Telangana',
-    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?auto=format&fit=crop&w=600&h=400',
+    image: 'https://c.ndtvimg.com/2025-03/7ndi40jo_hyderabad-_625x300_11_March_25.jpg',
     description: 'Emerging tech and media destination'
   }
 ];
