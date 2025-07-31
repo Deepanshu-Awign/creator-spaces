@@ -8,6 +8,10 @@ import Navigation from "@/components/Navigation";
 import StudioCard from "@/components/StudioCard";
 import DatabaseSeeder from "@/components/DatabaseSeeder";
 import LocationSelector from "@/components/LocationSelector";
+import CategoriesSection from "@/components/sections/CategoriesSection";
+import LocationsSection from "@/components/sections/LocationsSection";
+import TestimonialsSection from "@/components/sections/TestimonialsSection";
+import HowItWorksSection from "@/components/sections/HowItWorksSection";
 import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
@@ -174,17 +178,34 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Categories Section */}
+      <CategoriesSection />
+
+      {/* Locations Section */}
+      <LocationsSection />
+
+      {/* How It Works Section */}
+      <HowItWorksSection />
+
+      {/* Testimonials Section */}
+      <TestimonialsSection />
+
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-neutral-900 text-white">
+      <section className="py-20 px-4 bg-gradient-primary text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Create Something Amazing?</h2>
-          <p className="text-lg md:text-xl mb-8 text-neutral-300">
+          <p className="text-lg md:text-xl mb-8 text-white/90">
             Join thousands of creators who trust Creator Spaces for their perfect studio space.
           </p>
-          <div className="flex justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to={`/studios?city=${selectedCity}`}>
-              <Button className="bg-white hover:bg-neutral-100 text-neutral-900 px-6 md:px-8 py-3 md:py-4 text-lg font-semibold rounded-xl">
-                Browse Studios
+              <Button size="lg" className="bg-white hover:bg-white/90 text-primary px-8 py-4 text-lg font-semibold rounded-full shadow-glow">
+                🎙 Explore Studios
+              </Button>
+            </Link>
+            <Link to="/host/signup">
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary px-8 py-4 text-lg font-semibold rounded-full">
+                🏠 List Your Studio
               </Button>
             </Link>
           </div>

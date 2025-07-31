@@ -2,6 +2,8 @@
 import Navigation from "@/components/Navigation";
 import { Users, Award, Heart, Target } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const About = () => {
   const values = [
@@ -36,7 +38,7 @@ const About = () => {
           {/* Hero Section */}
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-5xl font-bold text-slate-800 mb-6">
-              About BookMyStage
+              About Creator Spaces
             </h1>
             <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
               We're revolutionizing how creative professionals find and book studio spaces. 
@@ -49,7 +51,7 @@ const About = () => {
             <div>
               <h2 className="text-3xl font-bold text-slate-800 mb-6">Our Story</h2>
               <p className="text-slate-600 mb-4">
-                BookMyStage was born from a simple frustration: finding the right studio space 
+                Creator Spaces was born from a simple frustration: finding the right studio space 
                 shouldn't be harder than creating your content. As content creators ourselves, 
                 we experienced the endless hours spent searching for studios, dealing with 
                 complicated booking processes, and settling for spaces that didn't quite fit our vision.
@@ -116,6 +118,20 @@ const About = () => {
               Whether you're a creator looking for the perfect space or a studio owner 
               wanting to share your amazing facility, we're here to make it happen.
             </p>
+            
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/studios">
+                <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg">
+                  🎙 Explore Studios
+                </Button>
+              </Link>
+              <Link to="/host/signup">
+                <Button size="lg" variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white px-8 py-4 text-lg font-semibold rounded-full">
+                  🏠 List Your Studio
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

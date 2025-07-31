@@ -25,6 +25,10 @@ const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BookingDetails = lazy(() => import("./pages/BookingDetails"));
 
+// Lazy load host pages
+const HostDashboard = lazy(() => import("./pages/host/HostDashboard"));
+const HostSignup = lazy(() => import("./pages/host/HostSignup"));
+
 // Lazy load admin components
 const AdminRoute = lazy(() => import("./components/AdminRoute"));
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
@@ -78,6 +82,10 @@ const AppContent = () => {
           <Route path="/login" element={<LazyWrapper><Login /></LazyWrapper>} />
           <Route path="/about" element={<LazyWrapper><About /></LazyWrapper>} />
           <Route path="/contact" element={<LazyWrapper><Contact /></LazyWrapper>} />
+          
+          {/* Host Routes */}
+          <Route path="/host/dashboard" element={<LazyWrapper><HostDashboard /></LazyWrapper>} />
+          <Route path="/host/signup" element={<LazyWrapper><HostSignup /></LazyWrapper>} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={

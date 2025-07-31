@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Navigation from "@/components/Navigation";
 import BookingForm from "@/components/BookingForm";
+import CalendarAvailability from "@/components/CalendarAvailability";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -474,10 +475,13 @@ const StudioDetail = () => {
               </div>
             </div>
             
-            {/* Booking Sidebar */}
-            <div className="lg:col-span-1">
+            {/* Booking Form and Calendar */}
+            <div className="lg:col-span-1 space-y-6">
               <div className="sticky top-24">
-                <BookingForm studio={studio} />
+                <CalendarAvailability studioId={studio.id} />
+                <div className="mt-6">
+                  <BookingForm studio={studio} />
+                </div>
               </div>
             </div>
           </div>
