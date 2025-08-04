@@ -26,38 +26,17 @@ const CalendarAvailability = ({ studioId, onDateSelect, selectedDate }: Calendar
     }
   };
 
-  // Create availability indicators for calendar
-  const getAvailabilityForDate = (date: Date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    // For simplicity, we'll just check if the currently selected date has bookings
-    if (isSameDay(date, currentDate)) {
-      return bookedSlots.length > 16 ? 'fully-booked' : 
-             bookedSlots.length > 8 ? 'partially-booked' : 'available';
-    }
-    return 'available'; // Default for other dates
-  };
 
-  const dayClassName = (date: Date) => {
-    const availability = getAvailabilityForDate(date);
-    const baseClasses = "relative";
-    
-    switch (availability) {
-      case 'fully-booked':
-        return cn(baseClasses, "after:absolute after:bottom-1 after:left-1/2 after:transform after:-translate-x-1/2 after:w-2 after:h-2 after:bg-red-500 after:rounded-full");
-      case 'partially-booked':
-        return cn(baseClasses, "after:absolute after:bottom-1 after:left-1/2 after:transform after:-translate-x-1/2 after:w-2 after:h-2 after:bg-yellow-500 after:rounded-full");
-      case 'available':
-        return cn(baseClasses, "after:absolute after:bottom-1 after:left-1/2 after:transform after:-translate-x-1/2 after:w-2 after:h-2 after:bg-green-500 after:rounded-full");
-      default:
-        return baseClasses;
-    }
-  };
+
+
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-center">
           <CardTitle className="text-lg font-semibold">Availability Calendar</CardTitle>
+        </div>
+        <div className="flex justify-center mt-2">
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -66,6 +45,9 @@ const CalendarAvailability = ({ studioId, onDateSelect, selectedDate }: Calendar
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
+            <span className="text-sm font-medium px-4">
+              {format(calendarMonth, 'MMMM yyyy')}
+            </span>
             <Button
               variant="outline"
               size="sm"
@@ -75,20 +57,7 @@ const CalendarAvailability = ({ studioId, onDateSelect, selectedDate }: Calendar
             </Button>
           </div>
         </div>
-        <div className="flex gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span>Available</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-            <span>Partially Booked</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-            <span>Fully Booked</span>
-          </div>
-        </div>
+
       </CardHeader>
       <CardContent>
         <Calendar
@@ -97,8 +66,26 @@ const CalendarAvailability = ({ studioId, onDateSelect, selectedDate }: Calendar
           onSelect={handleDateChange}
           month={calendarMonth}
           onMonthChange={setCalendarMonth}
-          disabled={(date) => date < new Date()}
-          className="rounded-md border pointer-events-auto"
+          disabled={(date) => {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return date < today;
+          }}
+          className="rounded-md border pointer-events-auto w-full"
+          classNames={{
+            caption: "hidden",
+            nav: "hidden",
+            nav_button: "hidden",
+            nav_button_previous: "hidden",
+            nav_button_next: "hidden",
+            months: "flex justify-center w-full",
+            month: "space-y-4 w-full",
+            table: "w-full border-collapse space-y-1",
+            head_row: "flex justify-center w-full",
+            row: "flex w-full mt-2 justify-center",
+            cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+
+          }}
         />
         
         {currentDate && (
@@ -111,25 +98,53 @@ const CalendarAvailability = ({ studioId, onDateSelect, selectedDate }: Calendar
             ) : (
               <div className="space-y-2">
                 <div className="flex gap-2 flex-wrap">
-                  {bookedSlots.length > 0 ? (
-                    <>
-                      <Badge variant="destructive">
-                        {bookedSlots.length} slots booked
-                      </Badge>
-                      <Badge variant="secondary">
-                        {24 - bookedSlots.length} slots available
-                      </Badge>
-                    </>
-                  ) : (
-                    <Badge variant="secondary">
-                      All 24 slots available
-                    </Badge>
-                  )}
+                  {(() => {
+                    const now = new Date();
+                    const isToday = isSameDay(currentDate, now);
+                    const currentHour = now.getHours();
+                    
+                    // Filter out past time slots for today
+                    const availableSlots = isToday ? 
+                      bookedSlots.filter(slot => {
+                        const slotHour = parseInt(slot.split(':')[0]);
+                        return slotHour > currentHour;
+                      }) : bookedSlots;
+                    
+                    const totalSlots = isToday ? (24 - currentHour) : 24;
+                    const availableCount = totalSlots - availableSlots.length;
+                    
+                    return (
+                      <>
+                        <Badge variant="destructive">
+                          {availableSlots.length} slots booked
+                        </Badge>
+                        <Badge variant="secondary">
+                          {availableCount} slots available
+                        </Badge>
+                      </>
+                    );
+                  })()}
                 </div>
                 {bookedSlots.length > 0 && (
                   <div className="text-sm text-gray-600">
-                    Booked times: {bookedSlots.slice(0, 3).join(', ')}
-                    {bookedSlots.length > 3 && ` +${bookedSlots.length - 3} more`}
+                    {(() => {
+                      const now = new Date();
+                      const isToday = isSameDay(currentDate, now);
+                      const currentHour = now.getHours();
+                      
+                      const futureBookedSlots = isToday ? 
+                        bookedSlots.filter(slot => {
+                          const slotHour = parseInt(slot.split(':')[0]);
+                          return slotHour > currentHour;
+                        }) : bookedSlots;
+                      
+                      return futureBookedSlots.length > 0 ? (
+                        <>
+                          Booked times: {futureBookedSlots.slice(0, 3).join(', ')}
+                          {futureBookedSlots.length > 3 && ` +${futureBookedSlots.length - 3} more`}
+                        </>
+                      ) : null;
+                    })()}
                   </div>
                 )}
               </div>

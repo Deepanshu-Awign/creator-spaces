@@ -39,8 +39,29 @@ export const BookingFormFields = ({
 }: BookingFormFieldsProps) => {
   const { bookedSlots, loading } = useBookingSlots(studioId, selectedDate);
 
-  // Filter out booked time slots
-  const availableTimeSlots = allTimeSlots.filter(time => !bookedSlots.includes(time));
+  // Get current time for filtering past slots
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+  const isToday = selectedDate === now.toISOString().split('T')[0];
+
+  // Filter out booked time slots and past times for today
+  const availableTimeSlots = allTimeSlots.filter(time => {
+    // First filter out booked slots
+    if (bookedSlots.includes(time)) return false;
+    
+    // If it's today, also filter out past times
+    if (isToday) {
+      const [hour] = time.split(':').map(Number);
+      const timeInMinutes = hour * 60;
+      const currentTimeInMinutes = currentHour * 60 + currentMinute;
+      
+      // Only show times that are at least 30 minutes in the future
+      return timeInMinutes > currentTimeInMinutes + 30;
+    }
+    
+    return true;
+  });
 
   return (
     <>
@@ -83,7 +104,14 @@ export const BookingFormFields = ({
           </SelectContent>
         </Select>
         {selectedDate && !loading && availableTimeSlots.length === 0 && (
-          <p className="text-sm text-red-500 mt-1">All time slots are booked for this date.</p>
+          <p className="text-sm text-red-500 mt-1">
+            {isToday ? "No available time slots for today. Please select a future date." : "All time slots are booked for this date."}
+          </p>
+        )}
+        {isToday && availableTimeSlots.length > 0 && (
+          <p className="text-sm text-slate-500 mt-1">
+            Showing only future time slots (at least 30 minutes from now).
+          </p>
         )}
       </div>
 
