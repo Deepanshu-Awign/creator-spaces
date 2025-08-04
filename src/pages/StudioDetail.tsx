@@ -79,10 +79,13 @@ const StudioDetail = () => {
       setError(null);
       try {
         console.log("Fetching studio with ID:", id);
-        // Get the studio data
+        // Get the studio data with host profile information
         const { data: studioData, error: studioError } = await supabase
           .from("studios")
-          .select("*")
+          .select(`
+            *,
+            profiles(full_name, avatar_url)
+          `)
           .eq("id", id)
           .single();
         
@@ -118,8 +121,8 @@ const StudioDetail = () => {
           category: (studioData as any).category || null,
           features: [],
           host: {
-            full_name: (studioData as any).host_name || `Host ${studioData.host_id?.slice(0, 8)}`,
-            avatar_url: "/placeholder.svg"
+            full_name: (studioData as any).host_name || (studioData.profiles?.full_name) || `Host ${studioData.host_id?.slice(0, 8)}`,
+            avatar_url: studioData.profiles?.avatar_url || null // Use actual avatar URL from profiles table, fallback to initials
           },
           is_active: studioData.is_active,
           created_at: studioData.created_at,
@@ -130,6 +133,9 @@ const StudioDetail = () => {
         console.log("Raw studio data:", studioData);
         console.log("Host name:", (studioData as any).host_name);
         console.log("Host ID:", studioData.host_id);
+        console.log("Profiles data:", studioData.profiles);
+        console.log("Profiles full_name:", studioData.profiles?.full_name);
+        console.log("Profiles avatar_url:", studioData.profiles?.avatar_url);
 
         console.log("Transformed studio data:", transformedStudio);
         setStudio(transformedStudio);
@@ -145,10 +151,13 @@ const StudioDetail = () => {
       if (!id) return;
 
       try {
-        // Get all reviews for this studio with user_full_name
+        // Get all reviews for this studio with user profile information
         const { data: reviewsData, error: reviewsError } = await supabase
           .from("reviews")
-          .select("*")
+          .select(`
+            *,
+            profiles(full_name, avatar_url)
+          `)
           .eq("studio_id", id)
           .order("created_at", { ascending: false });
         
@@ -159,15 +168,16 @@ const StudioDetail = () => {
           return;
         }
 
-        // Process reviews with user_full_name
+        // Process reviews with user profile data
         const processedReviews = reviewsData.map((review) => {
+          const userName = (review as any).user_full_name || (review.profiles?.full_name) || `User ${review.user_id?.slice(0, 8)}`;
           const result = {
             ...review,
-            user: (review as any).user_full_name || `User ${review.user_id?.slice(0, 8)}`,
-            avatar: "/placeholder.svg", // Using placeholder since we don't have avatar in reviews table
+            user: userName,
+            avatar: review.profiles?.avatar_url || null, // Use actual avatar URL from profiles table, fallback to initials
             date: new Date(review.created_at).toLocaleDateString(),
           };
-          console.log(`Review ${review.id}: user_id=${review.user_id}, user_full_name=`, (review as any).user_full_name, "final user name=", result.user);
+          console.log(`Review ${review.id}: user_id=${review.user_id}, user_full_name=`, (review as any).user_full_name, "profiles.full_name=", review.profiles?.full_name, "profiles.avatar_url=", review.profiles?.avatar_url, "final user name=", result.user);
           return result;
         });
         
@@ -245,17 +255,20 @@ const StudioDetail = () => {
       // Refresh reviews
       const { data: reviewsData, error: reviewFetchError } = await supabase
         .from("reviews")
-        .select("*")
+        .select(`
+          *,
+          profiles(full_name, avatar_url)
+        `)
         .eq("studio_id", id)
         .order("created_at", { ascending: false });
       
       if (!reviewFetchError && reviewsData) {
-        // Process reviews with user_full_name
+        // Process reviews with user profile data
         const processedReviews = reviewsData.map((review) => {
           return {
             ...review,
-            user: (review as any).user_full_name || `User ${review.user_id?.slice(0, 8)}`,
-            avatar: "/placeholder.svg", // Using placeholder since we don't have avatar in reviews table
+            user: (review as any).user_full_name || (review.profiles?.full_name) || `User ${review.user_id?.slice(0, 8)}`,
+            avatar: review.profiles?.avatar_url || null, // Use actual avatar URL from profiles table, fallback to initials
             date: new Date(review.created_at).toLocaleDateString(),
           };
         });
@@ -501,7 +514,12 @@ const StudioDetail = () => {
                   <div className="flex items-center space-x-4">
                     <Avatar className="w-16 h-16 ring-2 ring-orange-200">
                       <AvatarImage src={studio.host.avatar_url} />
-                      <AvatarFallback className="bg-orange-100 text-orange-700">{(studio.host.full_name || "H").slice(0, 2)}</AvatarFallback>
+                      <AvatarFallback className="bg-orange-100 text-orange-700">
+                        {studio.host.full_name 
+                          ? studio.host.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase()
+                          : "H"
+                        }
+                      </AvatarFallback>
                     </Avatar>
                     <div>
                       <h3 className="font-semibold text-lg text-slate-800">
@@ -549,7 +567,10 @@ const StudioDetail = () => {
                                 <Avatar className="ring-2 ring-orange-100">
                                   <AvatarImage src={review.avatar} />
                                   <AvatarFallback className="bg-orange-100 text-orange-700">
-                                    {review.user.split(' ').map((n: string) => n[0]).join('')}
+                                    {review.user.startsWith('User ') 
+                                      ? review.user.slice(5, 7).toUpperCase() 
+                                      : review.user.split(' ').map((n: string) => n[0]).join('').toUpperCase()
+                                    }
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1">
@@ -582,7 +603,10 @@ const StudioDetail = () => {
                         <Avatar className="ring-2 ring-orange-100">
                           <AvatarImage src={review.avatar} />
                           <AvatarFallback className="bg-orange-100 text-orange-700">
-                            {review.user.split(' ').map((n: string) => n[0]).join('')}
+                            {review.user.startsWith('User ') 
+                              ? review.user.slice(5, 7).toUpperCase() 
+                              : review.user.split(' ').map((n: string) => n[0]).join('').toUpperCase()
+                            }
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
