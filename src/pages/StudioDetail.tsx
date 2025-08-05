@@ -313,7 +313,7 @@ const StudioDetail = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <Navigation />
-      <div className="pt-16 sm:pt-20 px-4 sm:px-6 lg:px-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         <div className="max-w-7xl mx-auto">
           {/* Back Button */}
           <Button 
@@ -326,20 +326,20 @@ const StudioDetail = () => {
           </Button>
           
           {/* Image Gallery */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8 items-start">
             <div className="lg:col-span-3">
               <div className="relative group overflow-hidden rounded-2xl shadow-lg">
-                <img
-                  src={[
-                    studio.image,
-                    ...(studio.images || [])
-                  ][selectedImageIndex] || studio.image}
-                  alt={studio.title}
-                  className="w-full h-64 sm:h-80 lg:h-[500px] object-cover transition-transform duration-300 group-hover:scale-105"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/placeholder.svg";
-                  }}
-                />
+                                  <img
+                    src={[
+                      studio.image,
+                      ...(studio.images || [])
+                    ][selectedImageIndex] || studio.image}
+                    alt={studio.title}
+                    className="w-full h-64 sm:h-80 lg:h-[420px] object-cover transition-transform duration-300 group-hover:scale-105"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/placeholder.svg";
+                    }}
+                  />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 
                 {/* Image Navigation Arrows */}
@@ -377,25 +377,40 @@ const StudioDetail = () => {
               {[
                 studio.image,
                 ...(studio.images || [])
-              ].slice(0, 4).map((image: string, index: number) => (
-                <div 
-                  key={index} 
-                  className={`relative group overflow-hidden rounded-xl shadow-md cursor-pointer transition-all duration-200 ${
-                    selectedImageIndex === index ? 'ring-2 ring-orange-500' : ''
-                  }`}
-                  onClick={() => setSelectedImageIndex(index)}
-                >
-                  <img
-                    src={image}
-                    alt={`${studio.title} ${index + 1}`}
-                    className="w-full h-16 sm:h-20 lg:h-24 object-cover transition-transform duration-300 group-hover:scale-110"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/placeholder.svg";
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                </div>
-              ))}
+              ].map((image: string, index: number) => {
+                const totalImages = [studio.image, ...(studio.images || [])].length;
+                const isLastVisible = index === 3; // Show first 4 images
+                const hasMoreImages = totalImages > 4 && index === 3;
+                
+                return (
+                  <div 
+                    key={index} 
+                    className={`relative group overflow-hidden rounded-xl shadow-md cursor-pointer transition-all duration-200 ${
+                      selectedImageIndex === index || (index === 3 && selectedImageIndex >= 3) ? 'ring-2 ring-orange-500' : ''
+                    } ${index >= 4 ? 'hidden' : ''}`}
+                    onClick={() => setSelectedImageIndex(index)}
+                  >
+                    <img
+                      src={image}
+                      alt={`${studio.title} ${index + 1}`}
+                      className="w-full h-16 sm:h-20 lg:h-24 object-cover transition-transform duration-300 group-hover:scale-110"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/placeholder.svg";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    
+                    {/* Show more indicator */}
+                    {hasMoreImages && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <div className="text-white text-sm font-medium">
+                          +{totalImages - 4} more
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
           
@@ -403,7 +418,7 @@ const StudioDetail = () => {
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6 sm:space-y-8">
               {/* Header */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/50">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
                   <div className="flex-1">
                     <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-800 mb-3 leading-tight">
@@ -472,7 +487,7 @@ const StudioDetail = () => {
               </div>
               
               {/* Description */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/50">
                 <h2 className="text-xl font-semibold mb-4 text-slate-800">About this studio</h2>
                 <p className="text-slate-700 leading-relaxed text-sm sm:text-base">
                   {studio.description}
@@ -480,11 +495,11 @@ const StudioDetail = () => {
               </div>
               
               {/* Amenities */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/50">
                 <h2 className="text-xl font-semibold mb-4 text-slate-800">What this place offers</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {(studio.amenities || []).map((amenity: string, index: number) => (
-                    <div key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-orange-50 transition-all duration-200 border border-transparent hover:border-orange-200">
+                    <div key={index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-orange-50 hover:shadow-md transition-all duration-200 border border-transparent hover:border-orange-200">
                       <div className="w-6 h-6 text-orange-500">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -509,7 +524,7 @@ const StudioDetail = () => {
               </div>
               
               {/* Host */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="bg-gradient-to-br from-orange-50 to-yellow-50 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-orange-200/30">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center space-x-4">
                     <Avatar className="w-16 h-16 ring-2 ring-orange-200">
@@ -522,14 +537,17 @@ const StudioDetail = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold text-lg text-slate-800">
+                      <h3 className="font-semibold text-lg text-slate-800 mb-1">
                         Hosted by {studio.host.full_name}
                       </h3>
                       <div className="flex items-center text-sm text-slate-600">
                         <svg className="w-4 h-4 text-green-500 fill-current mr-1" viewBox="0 0 24 24">
                           <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                         </svg>
-                        <span>Verified Host</span>
+                        <span className="font-medium">Verified Host</span>
+                      </div>
+                      <div className="mt-2 text-xs text-slate-500 bg-orange-100 px-2 py-1 rounded-full inline-block">
+                        Professional studio host with verified credentials
                       </div>
                     </div>
                   </div>
@@ -538,7 +556,7 @@ const StudioDetail = () => {
               </div>
               
               {/* Reviews */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-slate-200/50">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-slate-800">Reviews</h2>
                   <Sheet open={showAllReviews} onOpenChange={setShowAllReviews}>
@@ -637,7 +655,7 @@ const StudioDetail = () => {
                 </div>
                 
                 {canReview && (
-                  <form onSubmit={handleReviewSubmit} className="mt-8 bg-gradient-to-r from-orange-50 to-yellow-50 p-6 rounded-2xl shadow-lg border border-orange-200 space-y-4">
+                  <form onSubmit={handleReviewSubmit} className="mt-8 bg-gradient-to-r from-orange-50 to-amber-50 p-6 rounded-2xl shadow-lg border border-orange-200/50 space-y-4">
                     <h3 className="text-lg font-semibold text-slate-800">Leave a Review</h3>
                     <div className="flex items-center gap-2">
                       <span className="text-slate-700 text-sm sm:text-base">Your Rating:</span>

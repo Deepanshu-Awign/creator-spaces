@@ -126,13 +126,13 @@ const Index = () => {
       <Navigation selectedCity={selectedCity} onCityChange={handleCitySelect} />
       
       {/* Hero Section */}
-      <section className="relative pt-6 sm:pt-8 md:pt-12 lg:pt-16 pb-8 sm:pb-12 md:pb-16 px-4 sm:px-6 lg:px-8">
+      <section className="relative pt-4 sm:pt-6 md:pt-8 lg:pt-8 pb-4 sm:pb-6 md:pb-8 lg:pb-8 px-4 sm:px-6 md:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-slate-800 mb-3 sm:mb-4 md:mb-6 animate-fade-in leading-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-slate-800 mb-2 sm:mb-3 md:mb-4 animate-fade-in leading-tight">
             Book Your Perfect
             <span className="text-orange-500 block">Creative Space</span>
           </h1>
-          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-slate-600 mb-6 sm:mb-8 md:mb-12 max-w-2xl mx-auto animate-fade-in px-2 sm:px-4">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-slate-600 mb-4 sm:mb-6 md:mb-8 max-w-2xl mx-auto animate-fade-in px-2 sm:px-4">
             Discover and book professional studios for podcasting, photography, video production, and more in {selectedCity}.
           </p>
 
@@ -153,9 +153,9 @@ const Index = () => {
       </section>
 
       {/* Featured Studios - Popular in Selected City */}
-      <section className="py-8 sm:py-12 md:py-16 px-4 sm:px-6 lg:px-8 bg-neutral-50">
+      <section className="py-4 sm:py-6 md:py-6 lg:py-8 px-4 sm:px-6 md:px-6 lg:px-8 bg-neutral-50">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8 md:mb-12 gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 md:mb-8 gap-3 sm:gap-4">
             <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-neutral-900">
               Popular in {selectedCity}
             </h2>
@@ -167,15 +167,15 @@ const Index = () => {
           </div>
           
            {loading ? (
-            <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 pb-4 sm:pb-0">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="bg-neutral-200 animate-pulse rounded-xl sm:rounded-2xl h-48 sm:h-56 md:h-64 lg:h-72 min-w-[200px] sm:min-w-0 flex-shrink-0 sm:flex-shrink"></div>
+            <div className="flex overflow-x-auto gap-3 pb-4 scrollbar-hide">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+                <div key={i} className="bg-neutral-200 animate-pulse rounded-xl h-48 min-w-[200px] flex-shrink-0"></div>
               ))}
             </div>
           ) : featuredStudios.length > 0 ? (
-            <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 pb-4 sm:pb-0">
-              {featuredStudios.map((studio) => (
-                <div key={studio.id} className="min-w-[200px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+            <div className="flex overflow-x-auto gap-3 pb-4 scrollbar-hide">
+              {featuredStudios.slice(0, 10).map((studio) => (
+                <div key={studio.id} className="min-w-[200px] max-w-[200px] lg:min-w-[250px] lg:max-w-[250px] flex-shrink-0">
                   <StudioCard studio={studio} />
                 </div>
               ))}
@@ -191,14 +191,14 @@ const Index = () => {
 
       {/* Popular in Other Cities */}
       {Object.keys(popularByCity).filter(city => city !== selectedCity).length > 0 && (
-        <section className="py-8 sm:py-12 md:py-16 px-4 sm:px-6 lg:px-8 bg-white">
+        <section className="py-4 sm:py-6 md:py-6 lg:py-8 px-4 sm:px-6 md:px-6 lg:px-8 bg-white">
           <div className="max-w-6xl mx-auto">
             {Object.entries(popularByCity)
               .filter(([city]) => city !== selectedCity)
               .slice(0, 3)
               .map(([city, studios]) => (
-                <div key={city} className="mb-12 sm:mb-16 last:mb-0">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8 gap-3 sm:gap-4">
+                <div key={city} className="mb-8 sm:mb-12 last:mb-0">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-4">
                     <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-neutral-900">
                       Popular in {city}
                     </h2>
@@ -208,9 +208,9 @@ const Index = () => {
                       </Button>
                     </Link>
                   </div>
-                  <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 pb-4 sm:pb-0">
-                    {studios.slice(0, 5).map((studio) => (
-                      <div key={studio.id} className="min-w-[200px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                  <div className="flex overflow-x-auto gap-3 pb-4 scrollbar-hide">
+                    {studios.slice(0, 10).map((studio) => (
+                      <div key={studio.id} className="min-w-[200px] max-w-[200px] lg:min-w-[250px] lg:max-w-[250px] flex-shrink-0">
                         <StudioCard studio={studio} />
                       </div>
                     ))}
@@ -253,7 +253,7 @@ const Index = () => {
               </Button>
             </Link>
             <Link to="/host/signup">
-              <Button size="lg" variant="outline" className="border-white/80 text-white hover:bg-white hover:text-slate-800 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-full backdrop-blur-sm transition-all duration-300 transform hover:scale-105">
+              <Button size="lg" variant="outline" className="border-white/80 text-black bg-white hover:bg-gray-100 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-full backdrop-blur-sm transition-all duration-300 transform hover:scale-105">
                 🏠 List Your Studio
               </Button>
             </Link>

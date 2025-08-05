@@ -87,9 +87,20 @@ const Studios = () => {
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      // Apply filters
+      // Apply comprehensive search filters
       if (filters.searchTerm) {
-        query = query.or(`title.ilike.%${filters.searchTerm}%,location.ilike.%${filters.searchTerm}%,city.ilike.%${filters.searchTerm}%,amenities.cs.{${filters.searchTerm}}`);
+        const searchTerm = filters.searchTerm.toLowerCase();
+        query = query.or(`
+          title.ilike.%${filters.searchTerm}%,
+          description.ilike.%${filters.searchTerm}%,
+          location.ilike.%${filters.searchTerm}%,
+          city.ilike.%${filters.searchTerm}%,
+          state.ilike.%${filters.searchTerm}%,
+          category.ilike.%${filters.searchTerm}%,
+          tags.cs.{${filters.searchTerm}},
+          amenities.cs.{${filters.searchTerm}},
+          profiles!studios_host_id_fkey.full_name.ilike.%${filters.searchTerm}%
+        `);
       }
       
       if (filters.selectedCity) {
@@ -139,15 +150,23 @@ const Studios = () => {
   const filterOfflineStudios = (cachedStudios: any[]) => {
     let filtered = cachedStudios;
 
-    // Apply search filter
+    // Apply comprehensive search filter
     if (filters.searchTerm) {
+      const searchTerm = filters.searchTerm.toLowerCase();
       filtered = filtered.filter(studio => 
-        studio.title?.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        studio.location?.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        studio.city?.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        studio.title?.toLowerCase().includes(searchTerm) ||
+        studio.description?.toLowerCase().includes(searchTerm) ||
+        studio.location?.toLowerCase().includes(searchTerm) ||
+        studio.city?.toLowerCase().includes(searchTerm) ||
+        studio.state?.toLowerCase().includes(searchTerm) ||
+        studio.category?.toLowerCase().includes(searchTerm) ||
+        studio.tags?.some((tag: string) => 
+          tag.toLowerCase().includes(searchTerm)
+        ) ||
         studio.amenities?.some((amenity: string) => 
-          amenity.toLowerCase().includes(filters.searchTerm.toLowerCase())
-        )
+          amenity.toLowerCase().includes(searchTerm)
+        ) ||
+        studio.profiles?.full_name?.toLowerCase().includes(searchTerm)
       );
     }
 
@@ -257,7 +276,7 @@ const Studios = () => {
 
         {/* Studios Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
             {[...Array(10)].map((_, i) => (
               <div key={i} className="bg-white rounded-2xl shadow-sm p-4 animate-pulse border border-neutral-200">
                 <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
@@ -268,7 +287,7 @@ const Studios = () => {
             ))}
           </div>
         ) : studios.length > 0 ? (
-          <div className={isMobile ? "space-y-4" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6"}>
+          <div className={isMobile ? "space-y-4" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6"}>
             {studios.map((studio) => (
               isMobile ? (
                 <MobileStudioCard key={studio.id} studio={studio} />

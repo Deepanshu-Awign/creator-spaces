@@ -106,7 +106,7 @@ const SearchBarWithCity = ({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-between h-11 sm:h-12 md:h-14 px-3 sm:px-4 border-r-0 sm:border-r border-gray-200 rounded-lg sm:rounded-l-lg sm:rounded-r-none"
+                className="w-full justify-between h-12 px-3 sm:px-4 border-r-0 sm:border-r border-gray-200 rounded-lg sm:rounded-l-lg sm:rounded-r-none"
               >
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-gray-500" />
@@ -144,7 +144,7 @@ const SearchBarWithCity = ({
         </div>
 
         {/* Search Input */}
-        <div className="flex-1 flex items-center px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 border border-gray-200 sm:border-l-0 rounded-lg sm:rounded-none sm:rounded-r-none">
+        <div className="flex-1 flex items-center px-3 sm:px-4 md:px-6 h-12 border border-gray-200 sm:border-l-0 rounded-lg sm:rounded-none sm:rounded-r-none">
           <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-2 sm:mr-3 flex-shrink-0" />
           <Input
             placeholder={placeholder}
@@ -159,7 +159,7 @@ const SearchBarWithCity = ({
         <div className="flex justify-center sm:justify-end">
           <Button 
             onClick={onSearch}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 md:py-4 rounded-lg sm:rounded-full text-sm sm:text-base md:text-lg font-semibold transition-all hover:scale-105 w-full sm:w-auto h-11 sm:h-12 md:h-14"
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 sm:px-6 md:px-8 rounded-lg sm:rounded-full text-sm sm:text-base md:text-lg font-semibold transition-all hover:scale-105 w-full sm:w-auto h-12"
           >
             Search Studios
           </Button>

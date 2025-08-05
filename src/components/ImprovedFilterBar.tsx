@@ -118,7 +118,7 @@ const ImprovedFilterBar = ({ filters, onFiltersChange }: ImprovedFilterBarProps)
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
             <Input
               type="text"
-              placeholder="Search studios, locations, or amenities..."
+              placeholder="Search studios, hosts, tags, amenities, locations..."
               value={filters.searchTerm}
               onChange={(e) => updateFilter('searchTerm', e.target.value)}
               className="pl-10 h-11 md:h-12 text-base border-neutral-300 focus:border-neutral-500"
@@ -126,10 +126,10 @@ const ImprovedFilterBar = ({ filters, onFiltersChange }: ImprovedFilterBarProps)
           </div>
 
           {/* Quick Filters Row - Mobile/Desktop Responsive */}
-          <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2 md:pb-0">
+          <div className="flex flex-col md:flex-row gap-3 md:gap-3">
             {/* City Filter */}
             <Select value={filters.selectedCity} onValueChange={(value) => updateFilter('selectedCity', value)}>
-              <SelectTrigger className="min-w-[120px] md:w-40 h-11 md:h-12 border-neutral-300 focus:border-neutral-500 flex-shrink-0">
+              <SelectTrigger className="w-full md:w-40 h-11 md:h-12 border-neutral-300 focus:border-neutral-500">
                 <div className="flex items-center gap-2 text-left">
                   <MapPin className="w-4 h-4 text-neutral-500 flex-shrink-0" />
                   <SelectValue placeholder="City" />
@@ -147,7 +147,7 @@ const ImprovedFilterBar = ({ filters, onFiltersChange }: ImprovedFilterBarProps)
 
             {/* Category Filter */}
             <Select value={filters.selectedCategory} onValueChange={(value) => updateFilter('selectedCategory', value)}>
-              <SelectTrigger className="min-w-[130px] md:w-40 h-11 md:h-12 border-neutral-300 focus:border-neutral-500 flex-shrink-0">
+              <SelectTrigger className="w-full md:w-40 h-11 md:h-12 border-neutral-300 focus:border-neutral-500">
                 <div className="flex items-center gap-2 text-left">
                   <Tag className="w-4 h-4 text-neutral-500 flex-shrink-0" />
                   <SelectValue placeholder="Category" />
@@ -167,10 +167,10 @@ const ImprovedFilterBar = ({ filters, onFiltersChange }: ImprovedFilterBarProps)
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="h-11 md:h-12 px-3 md:px-4 border-neutral-300 hover:border-neutral-400 flex-shrink-0 whitespace-nowrap"
+              className="w-full md:w-auto h-11 md:h-12 px-3 md:px-4 border-neutral-300 hover:border-neutral-400"
             >
               <Filter className="w-4 h-4 mr-1 md:mr-2" />
-              {isMobile ? 'More' : 'Filters'}
+              {isMobile ? 'More Filters' : 'Filters'}
               {activeFilterCount > 0 && (
                 <Badge variant="secondary" className="ml-1 md:ml-2 bg-neutral-800 text-white text-xs">
                   {activeFilterCount}

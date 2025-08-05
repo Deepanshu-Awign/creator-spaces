@@ -1,10 +1,6 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   Building2, 
@@ -12,8 +8,7 @@ import {
   Star, 
   Users, 
   Camera,
-  ArrowRight,
-  CheckCircle
+  ArrowRight
 } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 
@@ -64,38 +59,15 @@ const steps = [
 ];
 
 const HostSignup = () => {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    studioName: '',
-    studioType: '',
-    location: '',
-    description: '',
-    experience: ''
-  });
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission
-    console.log('Form submitted:', formData);
-  };
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50/20">
       <Navigation />
       
-      <div className="pt-20">
+      <div>
         {/* Hero Section */}
-        <section className="bg-gradient-primary text-white py-20">
+        <section className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-16 sm:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
@@ -132,7 +104,7 @@ const HostSignup = () => {
                 <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-lg shadow-lg">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-sm font-medium">Studio Available</span>
+                    <span className="text-sm font-medium text-black">Studio Available</span>
                   </div>
                 </div>
               </div>
@@ -141,43 +113,41 @@ const HostSignup = () => {
         </section>
 
         {/* Benefits Section */}
-        <section className="py-16 bg-background">
+        <section className="py-16 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-foreground mb-4">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">
                 Why Host on Creator Spaces?
               </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
                 Join our community of successful hosts and discover the benefits of sharing your studio space
               </p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {benefits.map((benefit, index) => (
-                <Card key={index} className="text-center hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                      <div className="text-primary">
-                        {benefit.icon}
-                      </div>
+                <div key={index} className="text-center hover:shadow-lg transition-all duration-300 border-0 shadow-sm bg-white/80 backdrop-blur-sm rounded-xl p-6">
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <div className="text-orange-600">
+                      {benefit.icon}
                     </div>
-                    <h3 className="font-semibold text-foreground mb-2">{benefit.title}</h3>
-                    <p className="text-sm text-muted-foreground">{benefit.description}</p>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">{benefit.title}</h3>
+                  <p className="text-sm text-gray-600">{benefit.description}</p>
+                </div>
               ))}
             </div>
           </div>
         </section>
 
         {/* How It Works */}
-        <section className="py-16 bg-gradient-subtle">
+        <section className="py-16 bg-gradient-to-br from-orange-50 to-yellow-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-foreground mb-4">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">
                 How to Start Hosting
               </h2>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-lg text-gray-600">
                 Get your studio listed in just 4 simple steps
               </p>
             </div>
@@ -185,158 +155,43 @@ const HostSignup = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {steps.map((step, index) => (
                 <div key={index} className="text-center">
-                  <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+                  <div className="w-16 h-16 bg-orange-500 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg">
                     {step.number}
                   </div>
-                  <h3 className="font-semibold text-foreground mb-2">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground">{step.description}</p>
+                  <h3 className="font-semibold text-gray-900 mb-2">{step.title}</h3>
+                  <p className="text-sm text-gray-600">{step.description}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Signup Form */}
-        <section id="signup-form" className="py-16 bg-background">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-foreground mb-4">
-                Ready to Start Hosting?
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                Fill out the form below and we'll get your studio listed
-              </p>
-            </div>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="w-5 h-5" />
-                  Host Application Form
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <Label htmlFor="fullName">Full Name *</Label>
-                      <Input
-                        id="fullName"
-                        name="fullName"
-                        value={formData.fullName}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="email">Email Address *</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <Label htmlFor="phone">Phone Number *</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="studioName">Studio Name *</Label>
-                      <Input
-                        id="studioName"
-                        name="studioName"
-                        value={formData.studioName}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <Label htmlFor="studioType">Studio Type *</Label>
-                      <Input
-                        id="studioType"
-                        name="studioType"
-                        placeholder="e.g., Podcast, Photography, Video"
-                        value={formData.studioType}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="location">Location *</Label>
-                      <Input
-                        id="location"
-                        name="location"
-                        placeholder="City, State"
-                        value={formData.location}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="description">Studio Description *</Label>
-                    <Textarea
-                      id="description"
-                      name="description"
-                      placeholder="Describe your studio, equipment, and what makes it special..."
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      rows={4}
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="experience">Hosting Experience</Label>
-                    <Textarea
-                      id="experience"
-                      name="experience"
-                      placeholder="Tell us about your experience with hosting or studio management (optional)..."
-                      value={formData.experience}
-                      onChange={handleInputChange}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <Button type="submit" size="lg" className="flex-1">
-                      Submit Application
-                      <CheckCircle className="w-5 h-5 ml-2" />
-                    </Button>
-                    <Button type="button" variant="outline" size="lg" className="flex-1">
-                      Save as Draft
-                    </Button>
-                  </div>
-
-                  <p className="text-sm text-muted-foreground text-center">
-                    By submitting this form, you agree to our{' '}
-                    <Link to="/terms" className="text-primary hover:underline">
-                      Terms of Service
-                    </Link>{' '}
-                    and{' '}
-                    <Link to="/privacy" className="text-primary hover:underline">
-                      Privacy Policy
-                    </Link>
-                  </p>
-                </form>
-              </CardContent>
-            </Card>
+        {/* Signup Section */}
+        <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-dark text-white relative overflow-hidden">
+          {/* Background pattern for better contrast */}
+          <div className="absolute inset-0 bg-black/10"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20"></div>
+          
+          <div className="max-w-4xl mx-auto text-center relative z-10">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-white drop-shadow-lg">
+              Ready to Sign Up as Host?
+            </h2>
+            <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 text-white/95 drop-shadow-sm">
+              Join our community of successful hosts and start earning from your studio space.
+            </p>
+            <Button 
+              size="lg" 
+              className="bg-orange-500 hover:bg-orange-600 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+              onClick={() => {
+                // Set user type as host in localStorage
+                localStorage.setItem('userType', 'host');
+                // Navigate to login page with signup mode and host role
+                navigate('/login?mode=signup&role=host');
+              }}
+            >
+              Sign Up as Host
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
           </div>
         </section>
       </div>

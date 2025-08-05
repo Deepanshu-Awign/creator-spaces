@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { Mail, ArrowRight, Check, UserPlus, Eye, EyeOff, Building2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import Navigation from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
@@ -25,6 +26,20 @@ const Login = () => {
   
   const { toast } = useToast();
   const { user, signIn, signUp } = useAuth();
+
+  // Handle URL parameters for auto-selecting signup mode and host role
+  useEffect(() => {
+    const mode = searchParams.get('mode');
+    const role = searchParams.get('role');
+    
+    if (mode === 'signup') {
+      setAuthMode('signup');
+    }
+    
+    if (role === 'host') {
+      setUserRole('manager');
+    }
+  }, [searchParams]);
 
   // Redirect if already authenticated
   if (user) {

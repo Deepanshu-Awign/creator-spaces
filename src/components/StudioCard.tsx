@@ -51,9 +51,9 @@ const StudioCard = ({ studio }: StudioCardProps) => {
     : studio.location;
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-all duration-200 group cursor-pointer border border-neutral-200 shadow-sm bg-white rounded-xl sm:rounded-2xl">
+    <Card className="overflow-hidden hover:shadow-md transition-all duration-200 group cursor-pointer border border-neutral-200 shadow-sm bg-white rounded-xl sm:rounded-2xl w-[200px] lg:w-[250px]">
       <div className="relative" onClick={handleCardClick}>
-        <div className="aspect-[3/2] sm:aspect-[4/3] w-full max-h-[120px] sm:max-h-none">
+        <div className="w-full h-[140px] lg:h-[160px]">
           <img
             src={displayImage}
             alt={studio.title}
@@ -80,31 +80,31 @@ const StudioCard = ({ studio }: StudioCardProps) => {
         </div>
       </div>
       
-      <CardContent className="p-1.5 sm:p-3 md:p-4">
+      <CardContent className="p-3 lg:p-4">
         <div className="flex items-start justify-between mb-1">
-          <h3 className="font-semibold text-xs sm:text-sm md:text-base text-neutral-900 line-clamp-1 leading-tight flex-1 mr-1 sm:mr-2">
+          <h3 className="font-semibold text-sm lg:text-base text-neutral-900 line-clamp-1 leading-tight flex-1 mr-2">
             {studio.title}
           </h3>
           <div className="flex items-center flex-shrink-0">
-            <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-yellow-400 fill-current mr-0.5 sm:mr-1" />
-            <span className="text-xs sm:text-sm font-medium text-neutral-800">{studio.rating || 0}</span>
+            <Star className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-yellow-400 fill-current mr-1" />
+            <span className="text-sm lg:text-base font-medium text-neutral-800">{studio.rating || 0}</span>
           </div>
         </div>
         
-        <div className="flex items-center text-xs sm:text-sm text-neutral-600 mb-1 sm:mb-2">
-          <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-0.5 sm:mr-1 text-neutral-400" />
+        <div className="flex items-center text-sm lg:text-base text-neutral-600 mb-3">
+          <MapPin className="w-3.5 h-3.5 lg:w-4 lg:h-4 mr-1 text-neutral-400" />
           <span className="line-clamp-1">{locationDisplay}</span>
         </div>
         
-        <div className="flex items-center justify-between mt-1.5 sm:mt-3">
+        <div className="flex items-center justify-between mt-3">
           <div className="flex items-baseline">
-                      <span className="text-sm sm:text-base md:text-lg font-semibold text-neutral-900">₹{studio.price_per_hour}</span>
-          <span className="text-xs text-neutral-500 ml-1">per hour</span>
+            <span className="text-base lg:text-lg font-semibold text-neutral-900">₹{studio.price_per_hour}</span>
+            <span className="text-xs lg:text-sm text-neutral-500 ml-1">per hour</span>
           </div>
           <Button
             size="sm"
             variant="outline"
-            className="text-xs px-2 sm:px-3 py-1 h-7 sm:h-8 hover:bg-neutral-50 border-neutral-300"
+            className="text-xs lg:text-sm px-2 lg:px-3 py-1 h-7 lg:h-8 hover:bg-neutral-50 border-neutral-300"
             onClick={handleViewDetails}
           >
             View
