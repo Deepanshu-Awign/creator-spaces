@@ -19,16 +19,6 @@ const LoadingScreen = () => {
       });
     }, 200);
 
-    // Update loading text based on progress
-    const textInterval = setInterval(() => {
-      setLoadingText(prev => {
-        if (progress < 20) return "Initializing...";
-        if (progress < 50) return "Loading resources...";
-        if (progress < 90) return "Preparing your experience...";
-        return "Almost ready...";
-      });
-    }, 500);
-
     // Complete loading after minimum time
     const timer = setTimeout(() => {
       setIsLoaded(true);
@@ -38,13 +28,25 @@ const LoadingScreen = () => {
 
     return () => {
       clearInterval(progressInterval);
-      clearInterval(textInterval);
       clearTimeout(timer);
     };
+  }, []);
+
+  // Update loading text based on progress
+  useEffect(() => {
+    if (progress < 30) {
+      setLoadingText("Initializing...");
+    } else if (progress < 60) {
+      setLoadingText("Loading resources...");
+    } else if (progress < 90) {
+      setLoadingText("Preparing your experience...");
+    } else {
+      setLoadingText("Almost ready...");
+    }
   }, [progress]);
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-white via-orange-50 to-orange-100 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-gradient-to-br from-white via-orange-50 to-orange-100 z-50 flex items-center justify-center p-4 min-h-screen pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-5 pointer-events-none">
         <div className="absolute top-4 left-4 w-16 h-16 bg-orange-500 rounded-full blur-xl"></div>
@@ -53,9 +55,9 @@ const LoadingScreen = () => {
       </div>
 
       {/* Main content */}
-      <div className="relative z-10 text-center max-w-sm w-full">
+      <div className="relative z-10 text-center max-w-sm w-full flex flex-col items-center justify-center">
         {/* Logo Container */}
-        <div className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-6 md:mb-8 relative">
+        <div className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-4 md:mb-6 relative">
           <img 
             src={creatorSpacesLogo} 
             alt="Creator Spaces" 
@@ -63,7 +65,7 @@ const LoadingScreen = () => {
               isLoaded ? 'scale-100 opacity-100' : 'scale-90 opacity-80'
             }`}
             style={{
-              animation: 'logoSpin 3s ease-in-out infinite'
+              animation: 'logoSpin 2s linear infinite'
             }}
           />
           {/* Rotating ring effect */}
@@ -83,17 +85,17 @@ const LoadingScreen = () => {
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl md:text-3xl font-bold text-neutral-800 mb-2 md:mb-3 animate-fade-in">
+        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-neutral-800 mb-2 md:mb-3 animate-fade-in leading-tight">
           Creator Spaces
         </h1>
         
         {/* Loading text */}
-        <p className="text-gray-600 mb-4 md:mb-6 animate-fade-in-delay min-h-[20px] text-sm md:text-base">
+        <p className="text-gray-600 mb-3 md:mb-4 animate-fade-in-delay min-h-[20px] text-sm md:text-base leading-relaxed">
           {loadingText}
         </p>
 
         {/* Progress bar */}
-        <div className="w-full bg-gray-200 rounded-full h-2 mb-4 md:mb-6 overflow-hidden">
+        <div className="w-full bg-gray-200 rounded-full h-2 mb-3 md:mb-4 overflow-hidden">
           <div 
             className="bg-gradient-to-r from-orange-500 to-orange-600 h-full rounded-full transition-all duration-300 ease-out"
             style={{ width: `${Math.min(progress, 100)}%` }}
@@ -101,7 +103,7 @@ const LoadingScreen = () => {
         </div>
 
         {/* Progress percentage */}
-        <p className="text-sm text-gray-500 font-medium mb-4 md:mb-6">
+        <p className="text-sm text-gray-500 font-medium mb-3 md:mb-4">
           {Math.round(progress)}%
         </p>
         

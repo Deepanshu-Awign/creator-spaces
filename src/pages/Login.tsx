@@ -89,6 +89,8 @@ const Login = () => {
           title: "Account Created!",
           description: `Your ${userRole === 'manager' ? 'host' : 'user'} account has been created! Please check your email to verify your account.`,
         });
+        // Switch to sign-in mode to allow immediate login after email verification
+        setAuthMode("signin");
       }
     } catch (error) {
       toast({
