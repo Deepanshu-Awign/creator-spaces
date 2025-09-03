@@ -27,7 +27,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
-  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [forgotStage, setForgotStage] = useState<"idle" | "sending" | "sent" | "error">("idle");
   
   const { toast } = useToast();
   const { user, signIn, signUp } = useAuth();
@@ -132,6 +132,7 @@ const Login = () => {
   };
 
   const handleForgotPassword = async () => {
+    setForgotStage("idle");
     setForgotOpen(true);
   };
 
@@ -141,29 +142,20 @@ const Login = () => {
       toast({ variant: "destructive", title: "Enter email", description: "Please enter your email to reset your password." });
       return;
     }
-    setCheckingEmail(true);
+    setForgotStage("sending");
     try {
-      // Check if email exists in profiles
-      const { data: exists, error: existsError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle();
-      if (existsError) throw existsError;
-      if (!exists) {
-        toast({ variant: "destructive", title: "Please check the email ID.", description: "We couldn't find an account with this email." });
-        return;
-      }
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${siteUrl}/reset-password`,
       });
-      if (error) throw error;
-      toast({ title: "Reset password email has been sent.", description: "Check your inbox for the link to update your password." });
-      setForgotOpen(false);
+      if (error) {
+        setForgotStage("error");
+        toast({ variant: "destructive", title: "Please check the email ID.", description: error.message || "We couldn't send a reset email for this address." });
+        return;
+      }
+      setForgotStage("sent");
     } catch (error: any) {
+      setForgotStage("error");
       toast({ variant: "destructive", title: "Error", description: error?.message || "Could not send reset email." });
-    } finally {
-      setCheckingEmail(false);
     }
   };
 
@@ -356,7 +348,6 @@ const Login = () => {
                           variant="ghost"
                           onClick={handleForgotPassword}
                           className="text-slate-500 hover:text-slate-700"
-                          disabled={isLoading}
                         >
                           Forgot password?
                         </Button>
@@ -391,22 +382,31 @@ const Login = () => {
           <DialogHeader>
             <DialogTitle>Reset your password</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleForgotSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="forgotEmail">Email Address</Label>
-              <Input
-                id="forgotEmail"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+          {forgotStage === "sent" ? (
+            <div className="space-y-4">
+              <p className="text-slate-700">Please check your email to reset your password.</p>
+              <Button onClick={() => setForgotOpen(false)} className="w-full bg-orange-500 hover:bg-orange-600">
+                Close
+              </Button>
             </div>
-            <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600" disabled={checkingEmail}>
-              {checkingEmail ? "Sending..." : "Send Reset Link"}
-            </Button>
-          </form>
+          ) : (
+            <form onSubmit={handleForgotSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="forgotEmail">Email Address</Label>
+                <Input
+                  id="forgotEmail"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600" disabled={forgotStage === "sending"}>
+                {forgotStage === "sending" ? "Sending..." : (forgotStage === "sent" ? "Email sent" : "Send Reset Link")}
+              </Button>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>
