@@ -63,15 +63,30 @@ const MobileStudioCard = ({ studio }: MobileStudioCardProps) => {
   };
 
   return (
-    <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 mb-4">
+    <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 mb-4 touch-manipulation">
       <div 
         className="relative h-48 cursor-pointer"
-        onClick={() => navigate(`/studio/${studio.id}`)}
+        onClick={(e) => {
+          // Prevent navigation if clicking on buttons
+          const target = e.target as Element;
+          if (target.closest('button')) {
+            return;
+          }
+          navigate(`/studio/${studio.id}`);
+        }}
+        onTouchEnd={(e) => {
+          // Prevent navigation if touching on buttons
+          const target = e.target as Element;
+          if (target.closest('button')) {
+            return;
+          }
+          navigate(`/studio/${studio.id}`);
+        }}
       >
         <img
           src={displayImage}
           alt={studio.title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover pointer-events-none"
           onTouchStart={(e) => {
             const startX = e.touches[0].clientX;
             const handleTouchEnd = (endEvent: TouchEvent) => {
@@ -88,7 +103,7 @@ const MobileStudioCard = ({ studio }: MobileStudioCardProps) => {
         
         {/* Image indicators */}
         {studio.images && studio.images.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 pointer-events-none">
             {studio.images.map((_, index) => (
               <div
                 key={index}
@@ -105,8 +120,14 @@ const MobileStudioCard = ({ studio }: MobileStudioCardProps) => {
           <Button
             variant="ghost"
             size="sm"
-            className="bg-white/80 hover:bg-white p-2"
+            className="bg-white/80 hover:bg-white p-2 z-20 touch-manipulation"
             onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleFavorite(studio.id);
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               toggleFavorite(studio.id);
             }}
@@ -116,8 +137,9 @@ const MobileStudioCard = ({ studio }: MobileStudioCardProps) => {
           <Button
             variant="ghost"
             size="sm"
-            className="bg-white/80 hover:bg-white p-2"
+            className="bg-white/80 hover:bg-white p-2 z-20 touch-manipulation"
             onClick={handleShare}
+            onTouchEnd={handleShare}
           >
             <Share2 className="w-4 h-4" />
           </Button>
@@ -125,7 +147,7 @@ const MobileStudioCard = ({ studio }: MobileStudioCardProps) => {
 
         {/* Distance badge */}
         {distance && (
-          <Badge className="absolute top-3 left-3 bg-orange-500 text-white">
+          <Badge className="absolute top-3 left-3 bg-orange-500 text-white pointer-events-none">
             {distance.toFixed(1)} km away
           </Badge>
         )}

@@ -15,8 +15,6 @@ const STUDIO_TAGS = [
   { value: 'popular', label: 'Popular', color: 'bg-orange-100 text-orange-800' },
 ];
 
-// Studio interface moved to shared types file
-
 interface StudioCardProps {
   studio: Studio;
 }
@@ -26,16 +24,17 @@ const StudioCard = ({ studio }: StudioCardProps) => {
   const { favorites, toggleFavorite } = useFavorites();
   const isFavorite = favorites.some((fav) => fav.id === studio.id);
 
-  const handleViewDetails = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCardClick = (e: React.MouseEvent | React.TouchEvent) => {
+    // Prevent navigation if clicking on the favorite button
+    const target = e.target as Element;
+    if (target.closest('button')) {
+      return;
+    }
     navigate(`/studio/${studio.id}`);
   };
 
-  const handleCardClick = () => {
-    navigate(`/studio/${studio.id}`);
-  };
-
-  const handleFavoriteClick = (e: React.MouseEvent) => {
+  const handleFavoriteClick = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     toggleFavorite(studio.id);
   };
@@ -51,24 +50,29 @@ const StudioCard = ({ studio }: StudioCardProps) => {
     : studio.location;
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-all duration-200 group cursor-pointer border border-neutral-200 shadow-sm bg-white rounded-xl sm:rounded-2xl w-[200px] lg:w-[250px]">
-      <div className="relative" onClick={handleCardClick}>
+    <Card 
+      className="overflow-hidden hover:shadow-lg transition-all duration-200 group cursor-pointer border border-neutral-200 shadow-sm bg-white rounded-xl sm:rounded-2xl w-[200px] lg:w-[250px] transform hover:scale-[1.02] active:scale-[0.98] touch-manipulation"
+      onClick={handleCardClick}
+      onTouchEnd={handleCardClick}
+    >
+      <div className="relative">
         <div className="w-full h-[140px] lg:h-[160px]">
           <img
             src={displayImage}
             alt={studio.title}
-            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-300 pointer-events-none"
           />
         </div>
         <Button
           variant="ghost"
           size="sm"
-          className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-white/90 hover:bg-white hover:scale-110 transition-all duration-200 rounded-full w-7 h-7 sm:w-8 sm:h-8 p-0 shadow-sm"
+          className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-white/90 hover:bg-white hover:scale-110 transition-all duration-200 rounded-full w-7 h-7 sm:w-8 sm:h-8 p-0 shadow-sm z-20 touch-manipulation"
           onClick={handleFavoriteClick}
+          onTouchEnd={handleFavoriteClick}
         >
           <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isFavorite ? "fill-brand text-brand" : "text-neutral-600"}`} />
         </Button>
-        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex flex-col gap-1">
+        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex flex-col gap-1 pointer-events-none">
           {studio.tags?.map((tagValue) => {
             const tag = STUDIO_TAGS.find(t => t.value === tagValue);
             return tag ? (
@@ -82,7 +86,7 @@ const StudioCard = ({ studio }: StudioCardProps) => {
       
       <CardContent className="p-3 lg:p-4">
         <div className="flex items-start justify-between mb-1">
-          <h3 className="font-semibold text-sm lg:text-base text-neutral-900 line-clamp-1 leading-tight flex-1 mr-2">
+          <h3 className="font-semibold text-sm lg:text-base text-neutral-900 line-clamp-1 leading-tight flex-1 mr-2 group-hover:text-brand transition-colors">
             {studio.title}
           </h3>
           <div className="flex items-center flex-shrink-0">
@@ -101,14 +105,9 @@ const StudioCard = ({ studio }: StudioCardProps) => {
             <span className="text-base lg:text-lg font-semibold text-neutral-900">₹{studio.price_per_hour}</span>
             <span className="text-xs lg:text-sm text-neutral-500 ml-1">per hour</span>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-xs lg:text-sm px-2 lg:px-3 py-1 h-7 lg:h-8 hover:bg-neutral-50 border-neutral-300"
-            onClick={handleViewDetails}
-          >
-            View
-          </Button>
+          <div className="text-xs lg:text-sm text-brand font-medium group-hover:scale-105 transition-transform">
+            View Details →
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -108,12 +108,21 @@ const Index = () => {
     }
   };
 
-  const handleSearch = () => {
+  const handleSearch = (filters?: { category?: string; amenities?: string[] }) => {
     const searchParams = new URLSearchParams();
     searchParams.set('city', selectedCity || '');
     if (searchQuery.trim()) {
       searchParams.set('search', searchQuery.trim());
     }
+    
+    // Add filter parameters
+    if (filters?.category) {
+      searchParams.set('category', filters.category);
+    }
+    if (filters?.amenities && filters.amenities.length > 0) {
+      searchParams.set('amenities', filters.amenities.join(','));
+    }
+    
     window.location.href = `/studios?${searchParams.toString()}`;
   };
 

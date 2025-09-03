@@ -12,6 +12,7 @@ import NetworkStatusBar from "@/components/NetworkStatusBar";
 import { useSafeArea } from "@/hooks/useSafeArea";
 import { useOfflineStorage } from "@/hooks/useOfflineStorage";
 import { lazy, useState, useEffect } from "react";
+import creatorSpacesLogo from "@/assets/creator-spaces-logo-colorful.png";
 
 // Lazy load all pages for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -149,7 +150,7 @@ const App = () => {
             const img = new Image();
             img.onload = resolve;
             img.onerror = resolve;
-            img.src = "/lovable-uploads/63c25b0c-9e71-4bbb-b0e3-4529c6c44ecf.png";
+            img.src = creatorSpacesLogo;
           }),
           // Minimum loading time for better UX
           new Promise(resolve => setTimeout(resolve, 1500))

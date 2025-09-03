@@ -139,50 +139,59 @@ const Navigation = ({ selectedCity, onCityChange }: NavigationProps) => {
           {/* Desktop Auth & User Actions */}
           <div className="hidden md:flex items-center space-x-3 lg:space-x-4">
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="hover:bg-neutral-100 rounded-full border border-neutral-300 px-3 py-2 flex items-center gap-2"
-                  >
-                    <div className="w-6 h-6 bg-neutral-900 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-medium">
-                        {user.email?.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <Menu className="w-4 h-4 text-neutral-600" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-white border border-neutral-200 shadow-lg min-w-48">
-                  <DropdownMenuItem onClick={handleProfileClick} className="hover:bg-neutral-50">
-                    <User className="w-4 h-4 mr-2" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/bookings")} className="hover:bg-neutral-50">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    My Bookings
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/favorites")} className="hover:bg-neutral-50">
-                    <Heart className="w-4 h-4 mr-2" />
-                    Favorites
-                  </DropdownMenuItem>
-                  {isManagerOrAdmin && (
-                    <>
-                      <DropdownMenuSeparator className="bg-neutral-200" />
-                      <DropdownMenuItem onClick={() => navigate(isAdmin ? "/admin" : "/host/dashboard")} className="hover:bg-neutral-50">
-                        <Shield className="w-4 h-4 mr-2" />
-                        {isAdmin ? "Admin Panel" : "Host Dashboard"}
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  <DropdownMenuSeparator className="bg-neutral-200" />
-                  <DropdownMenuItem onClick={handleSignOut} disabled={isLoggingOut} className="hover:bg-neutral-50">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <>
+                {/* Favorites Button - Desktop Only */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hover:bg-neutral-100 rounded-full border border-neutral-300 px-3 py-2 flex items-center gap-2"
+                  onClick={() => navigate("/favorites")}
+                >
+                  <Heart className="w-4 h-4 text-neutral-600" />
+                  <span className="text-sm font-medium">Favorites</span>
+                </Button>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="hover:bg-neutral-100 rounded-full border border-neutral-300 px-3 py-2 flex items-center gap-2"
+                    >
+                      <div className="w-6 h-6 bg-neutral-900 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-medium">
+                          {user.email?.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <Menu className="w-4 h-4 text-neutral-600" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-white border border-neutral-200 shadow-lg min-w-48">
+                    <DropdownMenuItem onClick={handleProfileClick} className="hover:bg-neutral-50">
+                      <User className="w-4 h-4 mr-2" />
+                      Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/bookings")} className="hover:bg-neutral-50">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      My Bookings
+                    </DropdownMenuItem>
+                    {isManagerOrAdmin && (
+                      <>
+                        <DropdownMenuSeparator className="bg-neutral-200" />
+                        <DropdownMenuItem onClick={() => navigate(isAdmin ? "/admin" : "/host/dashboard")} className="hover:bg-neutral-50">
+                          <Shield className="w-4 h-4 mr-2" />
+                          {isAdmin ? "Admin Panel" : "Host Dashboard"}
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    <DropdownMenuSeparator className="bg-neutral-200" />
+                    <DropdownMenuItem onClick={handleSignOut} disabled={isLoggingOut} className="hover:bg-neutral-50">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
               <Button 
                 className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-full px-6 py-2 font-medium transition-colors"

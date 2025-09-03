@@ -43,6 +43,7 @@ const Studios = () => {
   const { getCurrentLocation, location } = useMobileLocation();
   const { offlineData, isOnline, cacheData } = useOfflineStorage();
   const isMobile = useIsMobile();
+  const [isLocationSearching, setIsLocationSearching] = useState(false);
   
   // Filter state
   const [filters, setFilters] = useState({
@@ -58,12 +59,16 @@ const Studios = () => {
   useEffect(() => {
     const cityFromUrl = searchParams.get('city');
     const categoryFromUrl = searchParams.get('category');
+    const searchFromUrl = searchParams.get('search');
+    const amenitiesFromUrl = searchParams.get('amenities');
     const cityFromStorage = localStorage.getItem('selectedCity');
     
     setFilters(prev => ({
       ...prev,
       selectedCity: cityFromUrl || cityFromStorage || '',
       selectedCategory: categoryFromUrl || '',
+      searchTerm: searchFromUrl || '',
+      selectedAmenities: amenitiesFromUrl ? amenitiesFromUrl.split(',') : [],
     }));
   }, [searchParams]);
 
@@ -213,7 +218,73 @@ const Studios = () => {
   };
 
   const handleLocationSearch = async () => {
-    await getCurrentLocation();
+    setIsLocationSearching(true);
+    try {
+      const userLocation = await getCurrentLocation();
+      if (userLocation) {
+        // Find the nearest city from available cities
+        const cityCoordinates: { [key: string]: { lat: number; lng: number } } = {
+          "Mumbai": { lat: 19.0760, lng: 72.8777 },
+          "Delhi": { lat: 28.7041, lng: 77.1025 },
+          "Bangalore": { lat: 12.9716, lng: 77.5946 },
+          "Hyderabad": { lat: 17.3850, lng: 78.4867 },
+          "Chennai": { lat: 13.0827, lng: 80.2707 },
+          "Pune": { lat: 18.5204, lng: 73.8567 },
+          "Kolkata": { lat: 22.5726, lng: 88.3639 },
+          "Ahmedabad": { lat: 23.0225, lng: 72.5714 },
+          "Kochi": { lat: 9.9312, lng: 76.2673 },
+          "Jaipur": { lat: 26.9124, lng: 75.7873 }
+        };
+
+        const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+          const R = 6371; // Radius of the Earth in kilometers
+          const dLat = (lat2 - lat1) * (Math.PI / 180);
+          const dLon = (lon2 - lon1) * (Math.PI / 180);
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * (Math.PI / 180)) *
+              Math.cos(lat2 * (Math.PI / 180)) *
+              Math.sin(dLon / 2) *
+              Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          return R * c;
+        };
+
+        let nearestCity = "";
+        let shortestDistance = Infinity;
+
+        Object.entries(cityCoordinates).forEach(([city, coords]) => {
+          const distance = calculateDistance(
+            userLocation.latitude, 
+            userLocation.longitude, 
+            coords.lat, 
+            coords.lng
+          );
+          if (distance < shortestDistance) {
+            shortestDistance = distance;
+            nearestCity = city;
+          }
+        });
+
+        if (nearestCity) {
+          // Update the city filter to the nearest city
+          handleCityChange(nearestCity);
+          
+          // Show success message
+          const { toast } = await import('sonner');
+          toast.success(`Found studios near ${nearestCity} (${Math.round(shortestDistance)}km away)`);
+        } else {
+          const { toast } = await import('sonner');
+          toast.error('No nearby cities found');
+        }
+      }
+    } catch (error) {
+      console.error('Location search failed:', error);
+      const { toast } = await import('sonner');
+      toast.error('Failed to get your location. Please try again.');
+    } finally {
+      setIsLocationSearching(false);
+    }
   };
 
   return (
@@ -240,11 +311,21 @@ const Studios = () => {
           <div className="mb-4">
             <Button
               onClick={handleLocationSearch}
+              disabled={isLocationSearching}
               variant="outline"
-              className="w-full mb-4 text-orange-600 border-orange-300 hover:bg-orange-50"
+              className="w-full mb-4 text-orange-600 border-orange-300 hover:bg-orange-50 disabled:opacity-50"
             >
-              <MapPin className="w-4 h-4 mr-2" />
-              Find studios near me
+              {isLocationSearching ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Finding studios near you...
+                </>
+              ) : (
+                <>
+                  <MapPin className="w-4 h-4 mr-2" />
+                  Find studios near me
+                </>
+              )}
             </Button>
           </div>
         )}

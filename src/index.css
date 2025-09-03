@@ -58,6 +58,20 @@ button {
   transform: translateZ(0);
   /* Reduce paint operations */
   will-change: transform;
+  /* Improve touch handling */
+  touch-action: manipulation;
+}
+
+/* Improve touch handling for clickable elements */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Optimize card interactions */
+.card {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Optimize animations */
@@ -72,8 +86,53 @@ button {
   }
 }
 
+@keyframes logoSpin {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.05);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes logoRing {
+  0% {
+    transform: rotate(0deg);
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 0.3;
+  }
+}
+
+@keyframes logoPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.2;
+  }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
+}
+
+.animate-fade-in-delay {
+  animation: fadeIn 0.3s ease-out 0.5s both;
 }
 
 
