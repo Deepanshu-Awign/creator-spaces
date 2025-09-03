@@ -84,7 +84,7 @@ const SearchBarWithCity = ({
 
   useEffect(() => {
     // Generate search suggestions based on selected filters
-    const suggestions = [];
+    const suggestions = [] as string[];
     if (selectedCategory) {
       suggestions.push(selectedCategory);
     }
@@ -295,7 +295,7 @@ const SearchBarWithCity = ({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-between h-12 px-3 sm:px-4 border-r-0 sm:border-r border-gray-200 rounded-lg sm:rounded-l-lg sm:rounded-r-none"
+                className="w-full justify-between h-12 px-3 sm:px-4 border border-gray-200 rounded-l-lg rounded-r-none"
               >
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-gray-500" />
@@ -348,7 +348,7 @@ const SearchBarWithCity = ({
         </div>
 
         {/* Search Input */}
-        <div className="flex-1 flex items-center px-3 sm:px-4 md:px-6 h-12 border border-gray-200 sm:border-l-0 rounded-lg sm:rounded-none sm:rounded-r-none relative search-input-container">
+        <div className="flex-1 flex items-center px-3 sm:px-4 md:px-6 h-12 border border-gray-200 rounded-none relative search-input-container">
           <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-2 sm:mr-3 flex-shrink-0" />
           <Input
             placeholder={placeholder}
@@ -383,7 +383,7 @@ const SearchBarWithCity = ({
           <Button
             variant="outline"
             size="sm"
-            className={`h-12 px-3 border-gray-200 ${hasActiveFilters ? 'bg-orange-50 border-orange-200 text-orange-600' : ''}`}
+            className={`h-12 px-3 border border-gray-200 rounded-l-none rounded-r-lg ${hasActiveFilters ? 'bg-orange-50 border-orange-200 text-orange-600' : ''}`}
             onClick={() => setShowFilters(!showFilters)}
           >
             <Filter className="w-4 h-4 mr-2" />
