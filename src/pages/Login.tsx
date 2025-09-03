@@ -200,6 +200,25 @@ const Login = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast({ variant: "destructive", title: "Enter email", description: "Please enter your email to reset your password." });
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast({ title: "Reset email sent", description: "Check your inbox for a password reset link." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error?.message || "Could not send reset email." });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const switchAuthMode = () => {
     setAuthMode(authMode === "signin" ? "signup" : "signin");
     setStep("auth");
@@ -383,6 +402,17 @@ const Login = () => {
                           : "Already have an account? Sign in"
                         }
                       </Button>
+                      {authMode === "signin" && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={handleForgotPassword}
+                          className="text-slate-500 hover:text-slate-700"
+                          disabled={isLoading}
+                        >
+                          Forgot password?
+                        </Button>
+                      )}
                     </div>
 
                     {signInType === "otp" && (

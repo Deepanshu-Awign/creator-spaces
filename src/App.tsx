@@ -25,6 +25,7 @@ const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BookingDetails = lazy(() => import("./pages/BookingDetails"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 // Lazy load host pages
 const HostDashboard = lazy(() => import("./pages/host/HostDashboard"));
@@ -81,6 +82,7 @@ const AppContent = () => {
           <Route path="/booking/:id" element={<LazyWrapper><BookingDetails /></LazyWrapper>} />
           <Route path="/favorites" element={<LazyWrapper><Favorites /></LazyWrapper>} />
           <Route path="/login" element={<LazyWrapper><Login /></LazyWrapper>} />
+          <Route path="/reset-password" element={<LazyWrapper><ResetPassword /></LazyWrapper>} />
           <Route path="/about" element={<LazyWrapper><About /></LazyWrapper>} />
           <Route path="/contact" element={<LazyWrapper><Contact /></LazyWrapper>} />
           
@@ -148,8 +150,8 @@ const App = () => {
           // Preload logo image
           new Promise((resolve) => {
             const img = new Image();
-            img.onload = resolve;
-            img.onerror = resolve;
+            img.onload = resolve as any;
+            img.onerror = resolve as any;
             img.src = creatorSpacesLogo;
           }),
           // Minimum loading time for better UX
