@@ -139,7 +139,11 @@ const MobileStudioCard = ({ studio }: MobileStudioCardProps) => {
             size="sm"
             className="bg-white/80 hover:bg-white p-2 z-20 touch-manipulation"
             onClick={handleShare}
-            onTouchEnd={handleShare}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleShare(e as any);
+            }}
           >
             <Share2 className="w-4 h-4" />
           </Button>
