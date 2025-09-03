@@ -22,8 +22,8 @@ const LoadingScreen = () => {
     // Update loading text based on progress
     const textInterval = setInterval(() => {
       setLoadingText(prev => {
-        if (progress < 30) return "Initializing...";
-        if (progress < 60) return "Loading resources...";
+        if (progress < 20) return "Initializing...";
+        if (progress < 50) return "Loading resources...";
         if (progress < 90) return "Preparing your experience...";
         return "Almost ready...";
       });
