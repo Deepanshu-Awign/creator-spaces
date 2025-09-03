@@ -92,7 +92,7 @@ const RealTimeAvailability: React.FC<RealTimeAvailabilityProps> = ({
   const handleSlotClick = (slot: TimeSlot, date: string) => {
     if (!slot.available) return;
     
-    if (user?.verified && slot.instantBookable) {
+    if (user && slot.instantBookable) {
       onBookNow({ date, time: slot.time });
     } else {
       onRequestBooking({ date, time: slot.time });
@@ -132,7 +132,7 @@ const RealTimeAvailability: React.FC<RealTimeAvailabilityProps> = ({
     if (!slot.available) {
       return { status: 'booked', label: 'Booked', color: 'bg-gray-200 text-gray-500' };
     }
-    if (slot.instantBookable && user?.verified) {
+    if (slot.instantBookable && user) {
       return { status: 'instant', label: 'Instant Book', color: 'bg-green-100 text-green-700 hover:bg-green-200' };
     }
     return { status: 'request', label: 'Request', color: 'bg-blue-100 text-blue-700 hover:bg-blue-200' };
@@ -158,7 +158,7 @@ const RealTimeAvailability: React.FC<RealTimeAvailabilityProps> = ({
 
       {/* User Status */}
       <Alert>
-        {user?.verified ? (
+        {user ? (
           <div className="flex items-center gap-2">
             <UserCheck className="h-4 w-4 text-green-600" />
             <AlertDescription>

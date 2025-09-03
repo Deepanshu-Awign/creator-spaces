@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Search, MoreHorizontal, Shield, ShieldCheck, Edit, Trash2, UserCheck, Plus } from 'lucide-react';
+import { Search, MoreHorizontal, Shield, ShieldCheck, Edit, Trash2, UserCheck, Plus, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import EditUserModal from '@/components/admin/EditUserModal';
 import AddUserModal from '@/components/admin/AddUserModal';
@@ -38,6 +38,8 @@ const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<any>(null);
   const [deletingUser, setDeletingUser] = useState<any>(null);
+  const [roleChangeUser, setRoleChangeUser] = useState<any>(null);
+  const [newRole, setNewRole] = useState<'admin' | 'manager' | 'user'>('user');
   const [showAddUser, setShowAddUser] = useState(false);
   const queryClient = useQueryClient();
 
@@ -137,12 +139,19 @@ const AdminUsers = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
       toast.success('Role updated successfully');
+      setRoleChangeUser(null);
     },
     onError: (error) => {
       console.error('Error updating role:', error);
       toast.error('Failed to update role');
+      setRoleChangeUser(null);
     }
   });
+
+  const handleRoleChange = (user: any, role: 'admin' | 'manager' | 'user') => {
+    setRoleChangeUser(user);
+    setNewRole(role);
+  };
 
   // Delete user mutation
   const deleteUserMutation = useMutation({
@@ -300,21 +309,21 @@ const AdminUsers = () => {
                             Edit User
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => assignRoleMutation.mutate({ userId: user.id, role: 'admin' })}
+                            onClick={() => handleRoleChange(user, 'admin')}
                             className="gap-2"
                           >
                             <Shield className="w-4 h-4" />
                             Make Admin
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => assignRoleMutation.mutate({ userId: user.id, role: 'manager' })}
+                            onClick={() => handleRoleChange(user, 'manager')}
                             className="gap-2"
                           >
                             <ShieldCheck className="w-4 h-4" />
                             Make Manager
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => assignRoleMutation.mutate({ userId: user.id, role: 'user' })}
+                            onClick={() => handleRoleChange(user, 'user')}
                             className="gap-2"
                           >
                             <UserCheck className="w-4 h-4" />
@@ -352,6 +361,47 @@ const AdminUsers = () => {
           user={editingUser}
         />
       )}
+
+      {/* Role Change Confirmation Dialog */}
+      <AlertDialog open={!!roleChangeUser} onOpenChange={() => setRoleChangeUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              {newRole === 'admin' ? 'Security Warning: Admin Role Assignment' : `Change User Role to ${newRole}`}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                You are about to change "{roleChangeUser?.full_name || roleChangeUser?.email}" 
+                from <strong>{getUserRole(roleChangeUser)}</strong> to <strong>{newRole}</strong>.
+              </p>
+              {newRole === 'admin' && (
+                <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                  <p className="text-red-800 font-medium">⚠️ Critical Action Warning:</p>
+                  <p className="text-red-700 text-sm mt-1">
+                    Admin users have full system access including user management, 
+                    studio management, and system configuration. Only grant admin 
+                    access to trusted personnel.
+                  </p>
+                </div>
+              )}
+              <p className="text-sm">This action will be logged for security purposes.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => assignRoleMutation.mutate({ 
+                userId: roleChangeUser?.id, 
+                role: newRole 
+              })}
+              className={newRole === 'admin' ? "bg-red-600 hover:bg-red-700" : undefined}
+            >
+              {newRole === 'admin' ? 'Confirm Admin Access' : `Assign ${newRole} Role`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deletingUser} onOpenChange={() => setDeletingUser(null)}>

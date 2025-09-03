@@ -403,7 +403,7 @@ const Login = () => {
                 />
               </div>
               <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600" disabled={forgotStage === "sending"}>
-                {forgotStage === "sending" ? "Sending..." : (forgotStage === "sent" ? "Email sent" : "Send Reset Link")}
+                {forgotStage === "sending" ? "Sending..." : "Send Reset Link"}
               </Button>
             </form>
           )}

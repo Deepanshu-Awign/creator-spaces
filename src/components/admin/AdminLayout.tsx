@@ -11,7 +11,8 @@ import {
   Bell,
   Menu,
   X,
-  LogOut
+  LogOut,
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,6 +35,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { name: 'Bookings', href: '/admin/bookings', icon: Calendar },
     { name: 'Studios', href: '/admin/studios', icon: Building },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+    { name: 'Security', href: '/admin/security', icon: Shield },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];
 

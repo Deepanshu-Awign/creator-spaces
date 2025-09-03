@@ -41,6 +41,7 @@ const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminBookings = lazy(() => import("./pages/admin/AdminBookings"));
 const AdminStudios = lazy(() => import("./pages/admin/AdminStudios"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
+const AdminSecurity = lazy(() => import("./pages/admin/AdminSecurity"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 
 // Create query client with caching optimizations
@@ -105,6 +106,7 @@ const AppContent = () => {
             <Route path="bookings" element={<LazyWrapper><AdminBookings /></LazyWrapper>} />
             <Route path="studios" element={<LazyWrapper><AdminStudios /></LazyWrapper>} />
             <Route path="analytics" element={<LazyWrapper><AdminAnalytics /></LazyWrapper>} />
+            <Route path="security" element={<LazyWrapper><AdminSecurity /></LazyWrapper>} />
             <Route path="settings" element={<LazyWrapper><AdminSettings /></LazyWrapper>} />
           </Route>
           
