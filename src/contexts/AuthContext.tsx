@@ -3,6 +3,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+const siteUrl = (import.meta as any)?.env?.VITE_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://creatorspaces.lovable');
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -82,7 +84,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signUp = async (email: string, password: string, fullName: string, role?: string) => {
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = siteUrl;
       
       const { data, error } = await supabase.auth.signUp({
         email,

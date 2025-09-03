@@ -10,6 +10,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import Navigation from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+const siteUrl = (import.meta as any)?.env?.VITE_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://creatorspaces.lovable');
 
 const Login = () => {
   const [searchParams] = useSearchParams();
@@ -23,6 +26,8 @@ const Login = () => {
   const [signInType, setSignInType] = useState<"password" | "otp">("password");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
   
   const { toast } = useToast();
   const { user, signIn, signUp } = useAuth();
@@ -103,119 +108,62 @@ const Login = () => {
     }
   };
 
-  const handleSendOTP = async (e: React.FormEvent) => {
+  // "Direct Sign In" using magic link (no OTP code)
+  const handleSendMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
     try {
-      if (authMode === "signup") {
-        // For signup, we create the account first
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password: Math.random().toString(36).substring(2, 15), // Random password since we're using OTP
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              full_name: fullName,
-            }
-          }
-        });
-        
-        if (signUpError) {
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: signUpError.message || "Failed to create account. Please try again.",
-          });
-          return;
-        }
-      }
-
-      // Send OTP (this should send a 6-digit code, not a magic link)
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
+          emailRedirectTo: siteUrl,
           shouldCreateUser: authMode === "signup",
-          data: authMode === "signup" ? { full_name: fullName } : undefined
-        }
+          data: authMode === "signup" ? { full_name: fullName } : undefined,
+        },
       });
-      
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: error.message || "Failed to send OTP. Please try again.",
-        });
-      } else {
-        setStep("otp-sent");
-        toast({
-          title: "OTP Sent!",
-          description: "Please check your email for the 6-digit verification code.",
-        });
-      }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token: otp,
-        type: "email"
-      });
-      
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: error.message || "Invalid OTP. Please try again.",
-        });
-      } else {
-        toast({
-          title: "Success!",
-          description: authMode === "signup" ? "Account created successfully!" : "You have been logged in successfully.",
-        });
-        // Force page reload to ensure clean state
-        window.location.href = '/';
-      }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-      });
+      if (error) throw error;
+      setStep("otp-sent");
+      toast({ title: "Magic link sent!", description: "Please check your email to continue." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error?.message || "Failed to send magic link." });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleForgotPassword = async () => {
+    setForgotOpen(true);
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!email) {
       toast({ variant: "destructive", title: "Enter email", description: "Please enter your email to reset your password." });
       return;
     }
-    setIsLoading(true);
+    setCheckingEmail(true);
     try {
+      // Check if email exists in profiles
+      const { data: exists, error: existsError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+      if (existsError) throw existsError;
+      if (!exists) {
+        toast({ variant: "destructive", title: "Please check the email ID.", description: "We couldn't find an account with this email." });
+        return;
+      }
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${siteUrl}/reset-password`,
       });
       if (error) throw error;
-      toast({ title: "Reset email sent", description: "Check your inbox for a password reset link." });
+      toast({ title: "Reset password email has been sent.", description: "Check your inbox for the link to update your password." });
+      setForgotOpen(false);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error", description: error?.message || "Could not send reset email." });
     } finally {
-      setIsLoading(false);
+      setCheckingEmail(false);
     }
   };
 
@@ -240,7 +188,7 @@ const Login = () => {
             </h1>
             <p className="text-slate-600">
               {step === "otp-sent" 
-                ? "Enter the 6-digit code sent to your email" 
+                ? "We\'ve sent you a magic link to your email"
                 : authMode === "signin" 
                   ? "Sign in to your account"
                   : "Create your account to get started"
@@ -252,7 +200,7 @@ const Login = () => {
             <CardHeader>
               <CardTitle className="text-center">
                 {step === "otp-sent" 
-                  ? "Verify Email" 
+                  ? "Check Your Email" 
                   : authMode === "signin" 
                     ? "Sign In" 
                     : "Create Account"
@@ -278,12 +226,12 @@ const Login = () => {
                         onClick={() => setSignInType("otp")}
                         className="flex-1"
                       >
-                        Email Code
+                        Direct Sign In
                       </Button>
                     </div>
                   )}
 
-                  <form onSubmit={signInType === "password" ? (authMode === "signin" ? handlePasswordSignIn : handlePasswordSignUp) : handleSendOTP} className="space-y-4">
+                  <form onSubmit={signInType === "password" ? (authMode === "signin" ? handlePasswordSignIn : handlePasswordSignUp) : handleSendMagicLink} className="space-y-4">
                     {authMode === "signup" && (
                       <>
                         <div>
@@ -312,7 +260,7 @@ const Login = () => {
                               className="flex-1 gap-2"
                             >
                               <User className="w-4 h-4" />
-                              I'm a User
+                              I\'m a User
                             </Button>
                             <Button
                               type="button"
@@ -321,7 +269,7 @@ const Login = () => {
                               className="flex-1 gap-2"
                             >
                               <Building2 className="w-4 h-4" />
-                              I'm a Host
+                              I\'m a Host
                             </Button>
                           </div>
                           <p className="text-xs text-slate-500 mt-1">
@@ -383,7 +331,7 @@ const Login = () => {
                         <>
                           {signInType === "password" 
                             ? (authMode === "signin" ? "Sign In" : "Create Account")
-                            : (authMode === "signin" ? "Send Verification Code" : "Create Account & Send Code")
+                            : (authMode === "signin" ? "Send Magic Link" : "Create Account & Send Link")
                           }
                           <ArrowRight className="w-5 h-5 ml-2" />
                         </>
@@ -398,7 +346,7 @@ const Login = () => {
                         className="text-orange-500 hover:text-orange-600"
                       >
                         {authMode === "signin" 
-                          ? "Don't have an account? Sign up" 
+                          ? "Don\'t have an account? Sign up" 
                           : "Already have an account? Sign in"
                         }
                       </Button>
@@ -414,12 +362,6 @@ const Login = () => {
                         </Button>
                       )}
                     </div>
-
-                    {signInType === "otp" && (
-                      <p className="text-xs text-slate-500 text-center">
-                        We'll send you a 6-digit verification code to your email.
-                      </p>
-                    )}
                   </form>
                 </>
               ) : (
@@ -433,53 +375,8 @@ const Login = () => {
                       Check Your Email
                     </h3>
                     <p className="text-slate-600 mb-4">
-                      We sent a 6-digit verification code to <strong>{email}</strong>
+                      We\'ve sent a magic link to <strong>{email}</strong>
                     </p>
-                  </div>
-
-                  <form onSubmit={handleVerifyOTP} className="space-y-4">
-                    <div>
-                      <Label htmlFor="otp">Verification Code</Label>
-                      <Input
-                        id="otp"
-                        type="text"
-                        placeholder="Enter 6-digit code"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        maxLength={6}
-                        className="text-center text-lg tracking-widest"
-                        required
-                      />
-                    </div>
-
-                    <Button
-                      type="submit"
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3"
-                      disabled={isLoading || otp.length !== 6}
-                    >
-                      {isLoading ? "Verifying..." : "Verify Code"}
-                    </Button>
-                  </form>
-
-                  <div className="text-center space-y-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => handleSendOTP(new Event('submit') as any)}
-                      className="text-orange-500 hover:text-orange-600"
-                      disabled={isLoading}
-                    >
-                      Resend Code
-                    </Button>
-                    <br />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => setStep("auth")}
-                      className="text-slate-500 hover:text-slate-600"
-                    >
-                      Back to {authMode === "signin" ? "Sign In" : "Sign Up"}
-                    </Button>
                   </div>
                 </div>
               )}
@@ -487,6 +384,31 @@ const Login = () => {
           </Card>
         </div>
       </div>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset your password</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleForgotSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="forgotEmail">Email Address</Label>
+              <Input
+                id="forgotEmail"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600" disabled={checkingEmail}>
+              {checkingEmail ? "Sending..." : "Send Reset Link"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
