@@ -42,6 +42,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null);
         setLoading(false);
 
+        // Route specifically for password recovery sessions
+        if (event === 'PASSWORD_RECOVERY') {
+          // Always show the reset form
+          if (typeof window !== 'undefined' && window.location.pathname !== '/reset-password') {
+            window.location.href = '/reset-password';
+          }
+          return;
+        }
+
         // Defer any additional data fetching to prevent deadlocks
         if (session?.user && event === 'SIGNED_IN') {
           setTimeout(() => {
