@@ -218,7 +218,7 @@ const LocationSelector = ({ onCitySelect }: LocationSelectorProps) => {
       <div className="max-w-4xl mx-auto text-center">
         <div className="mb-8">
           <h1 className="text-4xl md:text-6xl font-bold text-slate-800 mb-4">
-            Book<span className="text-orange-500">MyStudio</span>
+            Creator <span className="text-orange-500">Spaces</span>
           </h1>
           <p className="text-xl text-slate-600 mb-8">
             Choose your city to discover amazing studios near you
