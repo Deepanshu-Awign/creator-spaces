@@ -4,25 +4,25 @@ import { Search, Calendar, CreditCard, Camera } from 'lucide-react';
 
 const steps = [
   {
-    icon: <Search className="w-12 h-12" />,
+    icon: <Search className="w-8 h-8 sm:w-12 sm:h-12" />,
     title: 'Discover Studios',
     description: 'Browse through hundreds of professional studios in your city. Filter by type, amenities, and price.',
     step: '01'
   },
   {
-    icon: <Calendar className="w-12 h-12" />,
+    icon: <Calendar className="w-8 h-8 sm:w-12 sm:h-12" />,
     title: 'Check Availability',
     description: 'View real-time availability and select the perfect time slot for your creative session.',
     step: '02'
   },
   {
-    icon: <CreditCard className="w-12 h-12" />,
+    icon: <CreditCard className="w-8 h-8 sm:w-12 sm:h-12" />,
     title: 'Book & Pay',
     description: 'Secure your booking with instant payment. Get confirmation and studio details immediately.',
     step: '03'
   },
   {
-    icon: <Camera className="w-12 h-12" />,
+    icon: <Camera className="w-8 h-8 sm:w-12 sm:h-12" />,
     title: 'Create Magic',
     description: 'Show up and create amazing content. Everything you need is ready and waiting for you.',
     step: '04'
