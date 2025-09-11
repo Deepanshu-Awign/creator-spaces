@@ -56,7 +56,9 @@ const AdminUsers = () => {
         .order('created_at', { ascending: false });
 
       if (searchTerm) {
-        profileQuery = profileQuery.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        // Sanitize to avoid breaking the OR filter with special chars like commas
+        const safe = searchTerm.replace(/[,]/g, '');
+        profileQuery = profileQuery.or(`full_name.ilike.%${safe}%,email.ilike.%${safe}%`);
       }
 
       const { data: profiles, error: profilesError } = await profileQuery;
@@ -67,7 +69,7 @@ const AdminUsers = () => {
       }
 
       if (!profiles || profiles.length === 0) {
-        return [];
+        return [] as any[];
       }
 
       // Get user roles for all users
@@ -90,16 +92,18 @@ const AdminUsers = () => {
         console.error('Error fetching bookings:', bookingsError);
       }
 
-      // Combine the data
-      const usersWithRolesAndBookings = profiles.map(profile => {
-        const userRole = userRoles?.find(role => role.user_id === profile.id);
-        const userBookings = bookingCounts?.filter(booking => booking.user_id === profile.id) || [];
+      // Combine the data (with guards)
+      const usersWithRolesAndBookings = (profiles || []).map((profile) => {
+        const roleList = userRoles || [];
+        const userRole = roleList.find((r) => r.user_id === profile.id);
+        const bookingsList = bookingCounts || [];
+        const userBookings = bookingsList.filter((b) => b.user_id === profile.id);
         
         return {
           ...profile,
           user_roles: userRole ? [{ role: userRole.role }] : [],
-          bookings: userBookings
-        };
+          bookings: userBookings,
+        } as any;
       });
 
       console.log('Users fetched:', usersWithRolesAndBookings);
@@ -185,9 +189,11 @@ const AdminUsers = () => {
     }
   });
 
-  const getUserRole = (user: any): string => {
-    if (user.user_roles && user.user_roles.length > 0) {
-      return user.user_roles[0].role;
+  const getUserRole = (user: any | null | undefined): string => {
+    if (!user) return 'user';
+    const roles = Array.isArray(user.user_roles) ? user.user_roles : [];
+    if (roles.length > 0 && roles[0]?.role) {
+      return roles[0].role as string;
     }
     return 'user';
   };
@@ -216,7 +222,7 @@ const AdminUsers = () => {
         <Card>
           <CardContent className="p-6">
             <div className="text-center text-red-500">
-              Error loading users: {error.message}
+              Error loading users: {(error as any)?.message || 'Unexpected error'}
             </div>
           </CardContent>
         </Card>
@@ -271,7 +277,7 @@ const AdminUsers = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {(users as any[]).filter(Boolean).map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       <div>
@@ -290,7 +296,7 @@ const AdminUsers = () => {
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        {new Date(user.created_at).toLocaleDateString()}
+                        {user.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}
                       </div>
                     </TableCell>
                     <TableCell>
