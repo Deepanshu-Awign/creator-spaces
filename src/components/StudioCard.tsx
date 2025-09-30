@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useFavorites } from "@/hooks/useFavorites";
 import type { Studio } from "@/types/studio";
+import { useRef } from "react";
 
 const STUDIO_TAGS = [
   { value: 'hot-selling', label: 'Hot Selling', color: 'bg-red-100 text-red-800' },
@@ -24,10 +25,20 @@ const StudioCard = ({ studio }: StudioCardProps) => {
   const { favorites, toggleFavorite } = useFavorites();
   const isFavorite = favorites.some((fav) => fav.id === studio.id);
 
+  const touchStartX = useRef<number>(0);
+  const touchStartY = useRef<number>(0);
+  const isDraggingRef = useRef<boolean>(false);
+  const lastDragTouchTimeRef = useRef<number>(0);
+
   const handleCardClick = (e: React.MouseEvent | React.TouchEvent) => {
     // Prevent navigation if clicking on the favorite button
     const target = e.target as Element;
     if (target.closest('button')) {
+      return;
+    }
+    // Prevent synthetic click right after a drag/swipe end
+    const now = Date.now();
+    if (now - lastDragTouchTimeRef.current < 300) {
       return;
     }
     navigate(`/studio/${studio.id}`);
@@ -53,7 +64,29 @@ const StudioCard = ({ studio }: StudioCardProps) => {
     <Card 
       className="overflow-hidden hover:shadow-lg transition-all duration-200 group cursor-pointer border border-neutral-200 shadow-sm bg-white rounded-xl sm:rounded-2xl w-[200px] lg:w-[250px] transform hover:scale-[1.02] active:scale-[0.98] touch-manipulation"
       onClick={handleCardClick}
-      onTouchEnd={handleCardClick}
+      onTouchStart={(e) => {
+        const t = e.touches[0];
+        touchStartX.current = t.clientX;
+        touchStartY.current = t.clientY;
+        isDraggingRef.current = false;
+      }}
+      onTouchMove={(e) => {
+        const t = e.touches[0];
+        const dx = Math.abs(t.clientX - touchStartX.current);
+        const dy = Math.abs(t.clientY - touchStartY.current);
+        if (dx > 10 || dy > 10) {
+          isDraggingRef.current = true;
+        }
+      }}
+      onTouchEnd={(e) => {
+        const target = e.target as Element;
+        if (target.closest('button')) return;
+        if (isDraggingRef.current) {
+          lastDragTouchTimeRef.current = Date.now();
+          return;
+        }
+        handleCardClick(e);
+      }}
     >
       <div className="relative">
         <div className="w-full h-[140px] lg:h-[160px]">

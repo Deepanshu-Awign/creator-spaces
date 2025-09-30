@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Heart, Star, MapPin, Share2, Navigation } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,9 @@ const MobileStudioCard = ({ studio }: MobileStudioCardProps) => {
   const { favorites, toggleFavorite } = useFavorites();
   const { location, calculateDistance } = useMobileLocation();
   const [imageIndex, setImageIndex] = useState(0);
+  const touchStartX = useRef<number>(0);
+  const touchStartY = useRef<number>(0);
+  const isDraggingRef = useRef<boolean>(false);
   
   const isFavorite = favorites.some((fav) => fav.id === studio.id);
   const displayImage = studio.images && studio.images.length > 0 
@@ -67,19 +70,34 @@ const MobileStudioCard = ({ studio }: MobileStudioCardProps) => {
       <div 
         className="relative h-48 cursor-pointer"
         onClick={(e) => {
-          // Prevent navigation if clicking on buttons
           const target = e.target as Element;
-          if (target.closest('button')) {
-            return;
-          }
+          if (target.closest('button')) return;
           navigate(`/studio/${studio.id}`);
         }}
+        onTouchStart={(e) => {
+          const t = e.touches[0];
+          touchStartX.current = t.clientX;
+          touchStartY.current = t.clientY;
+          isDraggingRef.current = false;
+        }}
+        onTouchMove={(e) => {
+          const t = e.touches[0];
+          const dx = Math.abs(t.clientX - touchStartX.current);
+          const dy = Math.abs(t.clientY - touchStartY.current);
+          if (dx > 10 || dy > 10) {
+            isDraggingRef.current = true;
+          }
+        }}
         onTouchEnd={(e) => {
-          // Prevent navigation if touching on buttons
           const target = e.target as Element;
-          if (target.closest('button')) {
+          if (target.closest('button')) return;
+          const endX = e.changedTouches[0]?.clientX ?? touchStartX.current;
+          const diffX = touchStartX.current - endX;
+          if (Math.abs(diffX) > 50) {
+            handleSwipeImage(diffX > 0 ? 'right' : 'left');
             return;
           }
+          if (isDraggingRef.current) return;
           navigate(`/studio/${studio.id}`);
         }}
       >
@@ -87,18 +105,6 @@ const MobileStudioCard = ({ studio }: MobileStudioCardProps) => {
           src={displayImage}
           alt={studio.title}
           className="w-full h-full object-cover pointer-events-none"
-          onTouchStart={(e) => {
-            const startX = e.touches[0].clientX;
-            const handleTouchEnd = (endEvent: TouchEvent) => {
-              const endX = endEvent.changedTouches[0].clientX;
-              const diff = startX - endX;
-              if (Math.abs(diff) > 50) {
-                handleSwipeImage(diff > 0 ? 'right' : 'left');
-              }
-              document.removeEventListener('touchend', handleTouchEnd);
-            };
-            document.addEventListener('touchend', handleTouchEnd);
-          }}
         />
         
         {/* Image indicators */}
