@@ -144,7 +144,7 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
     // If external onSubmit is provided, use it (for modal usage)
     if (onSubmit) {
       const locationValue = formData.location?.trim() || [formData.city, formData.state].filter(Boolean).join(', ');
-      const submissionData = {
+      const baseData: any = {
         title: formData.title,
         description: formData.description,
         location: locationValue,
@@ -157,10 +157,14 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
         images: formData.images,
         latitude: formData.latitude ? parseFloat(formData.latitude) : null,
         longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-        host_id: user.id,
         is_active: true,
         approval_status: 'approved'
       };
+      // Only set host_id when creating a new studio
+      if (!studioData?.id) {
+        baseData.host_id = user.id;
+      }
+      const submissionData = baseData;
       
       console.log('Submitting form data via external onSubmit:', submissionData);
       await onSubmit(submissionData);
@@ -172,7 +176,7 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
 
     try {
       const locationValue = formData.location?.trim() || [formData.city, formData.state].filter(Boolean).join(', ');
-      const submissionData = {
+      const baseData: any = {
         title: formData.title,
         description: formData.description,
         location: locationValue,
@@ -185,10 +189,13 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
         images: formData.images,
         latitude: formData.latitude ? parseFloat(formData.latitude) : null,
         longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-        host_id: user.id,
         is_active: true,
         approval_status: 'approved'
       };
+      if (!studioData?.id) {
+        baseData.host_id = user.id;
+      }
+      const submissionData = baseData;
 
       console.log('Submitting studio data:', submissionData);
 
