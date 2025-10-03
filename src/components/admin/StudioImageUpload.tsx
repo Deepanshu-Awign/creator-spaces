@@ -91,44 +91,56 @@ const StudioImageUpload: React.FC<StudioImageUploadProps> = ({
         </p>
       </div>
 
-      {/* Upload Area */}
-      {canAddMore && (
-        <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-            dragOver
-              ? 'border-blue-500 bg-blue-50'
-              : 'border-gray-300 hover:border-gray-400'
-          }`}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-        >
-          <div className="flex flex-col items-center gap-2">
-            <Upload className="w-8 h-8 text-gray-400" />
-            <div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-              >
-                Select Images
-              </Button>
-              <p className="text-sm text-gray-500 mt-2">
-                or drag and drop images here
-              </p>
-            </div>
+      {/* Upload Area (always visible; disabled state when at max) */}
+      <div
+        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+          dragOver
+            ? 'border-blue-500 bg-blue-50'
+            : 'border-gray-300 hover:border-gray-400'
+        } ${!canAddMore ? 'opacity-60' : ''}`}
+        onDrop={canAddMore ? handleDrop : undefined}
+        onDragOver={canAddMore ? handleDragOver : undefined}
+        onDragLeave={canAddMore ? handleDragLeave : undefined}
+        onClick={() => {
+          if (canAddMore && !isUploading) fileInputRef.current?.click();
+        }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && canAddMore && !isUploading) {
+            e.preventDefault();
+            fileInputRef.current?.click();
+          }
+        }}
+        aria-disabled={!canAddMore}
+      >
+        <div className="flex flex-col items-center gap-2">
+          <Upload className="w-8 h-8 text-gray-400" />
+          <div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={!canAddMore || isUploading}
+            >
+              {canAddMore ? 'Select Images' : 'Maximum images reached'}
+            </Button>
+            <p className="text-sm text-gray-500 mt-2">
+              {canAddMore ? 'Or drag and drop images here' : 'Remove an image to add more'}
+            </p>
           </div>
-          <Input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={(e) => handleFileSelect(e.target.files)}
-          />
         </div>
-      )}
+        <Input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          // Hint for mobile to use camera when available
+          capture="environment"
+          className="hidden"
+          onChange={(e) => handleFileSelect(e.target.files)}
+        />
+      </div>
 
       {/* Upload Progress */}
       {isUploading && (
