@@ -113,23 +113,14 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
       return false;
     }
 
-    if (!formData.price_per_hour || parseInt(formData.price_per_hour) <= 0) {
+    if (!formData.price_per_hour || isNaN(parseInt(formData.price_per_hour)) || parseInt(formData.price_per_hour) <= 0) {
       toast.error('Valid price per hour is required');
       return false;
     }
 
-    if (!formData.location.trim()) {
-      toast.error('Location is required. Please select a location from the map.');
-      return false;
-    }
-
-    if (!formData.city.trim() || !formData.state.trim()) {
-      toast.error('City and state are required. Please select a complete location.');
-      return false;
-    }
-
-    if (!formData.latitude || !formData.longitude) {
-      toast.error('Coordinates are required. Please select a location from the map.');
+    // Allow either full map location OR at minimum city + state
+    if (!formData.location.trim() && (!formData.city.trim() || !formData.state.trim())) {
+      toast.error('Please provide either a full location from the map or at least city and state.');
       return false;
     }
 
@@ -152,10 +143,11 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
 
     // If external onSubmit is provided, use it (for modal usage)
     if (onSubmit) {
+      const locationValue = formData.location?.trim() || [formData.city, formData.state].filter(Boolean).join(', ');
       const submissionData = {
         title: formData.title,
         description: formData.description,
-        location: formData.location,
+        location: locationValue,
         city: formData.city,
         state: formData.state,
         country: formData.country,
@@ -179,10 +171,11 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
     setLoading(true);
 
     try {
+      const locationValue = formData.location?.trim() || [formData.city, formData.state].filter(Boolean).join(', ');
       const submissionData = {
         title: formData.title,
         description: formData.description,
-        location: formData.location,
+        location: locationValue,
         city: formData.city,
         state: formData.state,
         country: formData.country,
@@ -262,6 +255,17 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
           </div>
 
           <div>
+            <Label htmlFor="address">Address (optional if using map)</Label>
+            <Textarea
+              id="address"
+              value={formData.location}
+              onChange={(e) => handleInputChange("location", e.target.value)}
+              placeholder="Enter full address (street, area, city, state, pincode)"
+              rows={3}
+            />
+          </div>
+
+          <div>
             <Label htmlFor="price_per_hour">Price per Hour (₹) *</Label>
             <Input
               id="price_per_hour"
@@ -276,7 +280,7 @@ const StudioForm = ({ studio, onSuccess, onSubmit, initialData, isLoading: exter
 
         <div className="space-y-4">
           <div>
-            <Label>Location *</Label>
+            <Label>Map Location (optional)</Label>
             <GoogleMapsPicker
               onLocationSelect={handleLocationSelect}
               initialLocation={
