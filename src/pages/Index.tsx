@@ -110,19 +110,17 @@ const Index = () => {
 
   const handleSearch = (filters?: { category?: string; amenities?: string[] }) => {
     const searchParams = new URLSearchParams();
-    searchParams.set('city', selectedCity || '');
-    if (searchQuery.trim()) {
-      searchParams.set('search', searchQuery.trim());
+    if (selectedCity) searchParams.set('city', selectedCity);
+    const q = searchQuery.trim();
+    if (q) {
+      const safe = q.replace(/[%,]/g, ' ').slice(0, 100);
+      searchParams.set('search', safe);
     }
-    
-    // Add filter parameters
-    if (filters?.category) {
-      searchParams.set('category', filters.category);
-    }
+    if (filters?.category) searchParams.set('category', filters.category);
     if (filters?.amenities && filters.amenities.length > 0) {
-      searchParams.set('amenities', filters.amenities.join(','));
+      const unique = Array.from(new Set(filters.amenities)).slice(0, 10);
+      searchParams.set('amenities', unique.join(','));
     }
-    
     window.location.href = `/studios?${searchParams.toString()}`;
   };
 

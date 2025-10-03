@@ -2,8 +2,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-
-const siteUrl = (import.meta as any)?.env?.VITE_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://creatorspaces.lovable.app');
+import { getSiteUrl } from '@/lib/utils';
+const siteUrl = getSiteUrl();
 
 interface AuthContextType {
   user: User | null;

@@ -11,8 +11,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import Navigation from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
-const siteUrl = (import.meta as any)?.env?.VITE_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://creatorspaces.lovable.app');
+import { getSiteUrl } from "@/lib/utils";
+const siteUrl = getSiteUrl();
 
 const Login = () => {
   const [searchParams] = useSearchParams();

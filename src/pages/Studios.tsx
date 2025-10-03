@@ -94,17 +94,16 @@ const Studios = () => {
 
       // Apply comprehensive search filters
       if (filters.searchTerm) {
-        const searchTerm = filters.searchTerm.toLowerCase();
+        const raw = filters.searchTerm.trim().slice(0, 100);
+        const safe = raw.replace(/[%,]/g, ' ');
         query = query.or(`
-          title.ilike.%${filters.searchTerm}%,
-          description.ilike.%${filters.searchTerm}%,
-          location.ilike.%${filters.searchTerm}%,
-          city.ilike.%${filters.searchTerm}%,
-          state.ilike.%${filters.searchTerm}%,
-          category.ilike.%${filters.searchTerm}%,
-          tags.cs.{${filters.searchTerm}},
-          amenities.cs.{${filters.searchTerm}},
-          profiles!studios_host_id_fkey.full_name.ilike.%${filters.searchTerm}%
+          title.ilike.%${safe}%,
+          description.ilike.%${safe}%,
+          location.ilike.%${safe}%,
+          city.ilike.%${safe}%,
+          state.ilike.%${safe}%,
+          category.ilike.%${safe}%,
+          profiles!studios_host_id_fkey.full_name.ilike.%${safe}%
         `);
       }
       
