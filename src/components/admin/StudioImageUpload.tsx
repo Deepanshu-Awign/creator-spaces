@@ -17,7 +17,7 @@ interface StudioImageUploadProps {
 const StudioImageUpload: React.FC<StudioImageUploadProps> = ({
   images,
   onImagesChange,
-  maxImages = 5
+  maxImages = 15
 }) => {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,7 +87,7 @@ const StudioImageUpload: React.FC<StudioImageUploadProps> = ({
       <div>
         <Label>Studio Images</Label>
         <p className="text-sm text-gray-500 mt-1">
-          Upload up to {maxImages} images. Drag and drop or click to select files.
+          Upload up to {maxImages} images (max 5 MB each). Drag and drop or click to select files.
         </p>
       </div>
 
