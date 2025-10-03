@@ -98,8 +98,8 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
     components.forEach((component: any) => {
       const types = component.types;
       
-      if (types.includes('locality') || types.includes('administrative_area_level_2')) {
-        city = component.long_name;
+      if (types.includes('locality') || types.includes('administrative_area_level_2') || types.includes('sublocality') || types.includes('postal_town')) {
+        if (!city) city = component.long_name;
       } else if (types.includes('administrative_area_level_1')) {
         state = component.long_name;
       } else if (types.includes('country')) {
@@ -108,6 +108,14 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
         pincode = component.long_name;
       }
     });
+
+    // Fallback: if city still empty, attempt to derive from formatted_address
+    if (!city && typeof place.formatted_address === 'string') {
+      const parts = place.formatted_address.split(',').map((s: string) => s.trim());
+      if (parts.length >= 2) {
+        city = parts[parts.length - 3] || parts[parts.length - 2] || '';
+      }
+    }
 
     const extractedData = {
       address: place.formatted_address || place.name || '',
@@ -125,6 +133,11 @@ const GoogleMapsPicker: React.FC<GoogleMapsPickerProps> = ({
 
   const loadGoogleMaps = () => {
     if (mapLoaded || !apiKey) return;
+    if (window.google && window.google.maps) {
+      setMapLoaded(true);
+      setTimeout(initializeMap, 100);
+      return;
+    }
 
     setIsLoading(true);
     const script = document.createElement('script');
