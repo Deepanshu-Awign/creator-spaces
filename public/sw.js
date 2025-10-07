@@ -66,7 +66,8 @@ self.addEventListener('fetch', (event) => {
       caches.open(CACHE_NAME).then(cache => {
         return fetch(request)
           .then(response => {
-            if (response.ok) {
+            // Only cache successful GET responses; skip HEAD/other methods
+            if (response.ok && request.method === 'GET') {
               cache.put(request, response.clone());
             }
             return response;
